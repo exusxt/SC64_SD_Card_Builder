@@ -49,6 +49,14 @@ linux:
       arch:
         - x64
         - arm64
+    - target: rpm
+      arch:
+        - x64
+        - arm64
+    - target: pacman
+      arch:
+        - x64
+        - arm64
   category: Utility
   maintainer: sc64-tools
   synopsis: Prepare an SD card for the SummerCart64
