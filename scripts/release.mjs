@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -75,15 +74,5 @@ gitRun(['push', 'origin', 'main'], root)
 gitRun(['push', 'origin', 'main', '--tags'], root)
 console.log('Pushed to origin')
 
-const publish = spawnSync('npm', ['run', 'publish'], {
-  cwd: root,
-  encoding: 'utf8',
-  stdio: 'inherit',
-  env: { ...process.env, GH_TOKEN: process.env.GH_TOKEN }
-})
-if (publish.status !== 0) {
-  console.error('Publish failed. The tag/commit are already pushed; fix and run `npm run publish` to retry uploads.')
-  process.exit(publish.status ?? 1)
-}
-
-console.log(`Done: https://github.com/exusxt/SC64_SD_Card_Builder/releases/tag/${nextTag}`)
+console.log(`Done: the ${nextTag} tag triggers the release workflow, which builds and publishes all platforms.`)
+console.log('For immediate Windows-only uploads (or to retry uploads), run: npm run publish')

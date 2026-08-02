@@ -86,7 +86,7 @@ jobs:
           if ($multi) {
             $multi | Remove-Item -Force
             if ($env:GITHUB_REF -like 'refs/tags/v*') {
-              gh release delete-asset "$env:GITHUB_REF_NAME" "$($multi.Name)" --yes
+              gh release delete-asset "$env:GITHUB_REF_NAME" "$($multi.Name)" --yes || $true
             }
           }
 

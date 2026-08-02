@@ -86,16 +86,16 @@ Auto-updates use GitHub Releases (`github.com/exusxt/SC64_SD_Card_Builder`).
 git tag v0.2.1 && git push origin main --tags
 ```
 
-Each runner creates/updates the release (notes come from the `## [vX.Y.Z]` section of `CHANGELOG.md`) and uploads its artifacts: NSIS + portable exe, dmg + zip, AppImage + deb/rpm/pacman, plus `latest.yml` / `latest-mac.yml` / `latest-linux.yml` for auto-updates.
+Each runner creates/updates the release (notes come from the `## [vX.Y.Z]` section of `CHANGELOG.md`) and uploads its artifacts: NSIS + portable exe, dmg + zip, AppImage + deb/rpm/pacman, plus `latest.yml` / `latest-mac.yml` / `latest-linux.yml` for auto-updates. This is the single publisher — don't also publish locally to the same tag.
 
-**Windows-only quick release (from this machine):** `npm run release` runs `scripts/release.mjs` — bumps the patch version (or pass one explicitly: `npm run release -- 0.2.1`), generates categorized release notes (Added/Changed/Fixed/Infra from your commit messages) into `CHANGELOG.md`, commits and tags (`v0.2.1`), pushes, then builds and uploads the Windows installers plus `latest.yml`. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
+**From this machine (bump + tag only):** `npm run release` runs `scripts/release.mjs` — bumps the patch version (or pass one explicitly: `npm run release -- 0.2.1`), generates categorized release notes (Added/Changed/Fixed/Infra from your commit messages) into `CHANGELOG.md`, commits and tags (`v0.2.1`), then pushes — which triggers the CI release above. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
 
 ```bash
 $env:GH_TOKEN="ghp_..."   # PowerShell: a GitHub token with repo scope
 npm run release
 ```
 
-To re-upload the current version without a bump, use `npm run publish` (Windows) or run the workflow manually.
+For immediate Windows-only uploads (or to retry a failed upload without waiting for CI), use `npm run publish` — it builds and uploads the Windows installers plus `latest.yml`. To re-upload the current version without a bump, run the workflow manually from the Actions tab.
 
 ### Release notes
 
