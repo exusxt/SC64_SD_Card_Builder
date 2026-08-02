@@ -52,6 +52,14 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: npx electron-builder ${{ matrix.args }} --publish ${{ startsWith(github.ref, 'refs/tags/v') && 'always' || 'never' }}
 
+      - name: Remove redundant multi-arch portable
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -Filter 'SC64-SD-Card-Builder-*.exe' |
+            Where-Object { $_.Name -notmatch 'Setup' -and $_.Name -notmatch '-x64\.exe$' -and $_.Name -notmatch '-arm64\.exe$' } |
+            Remove-Item -Force
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

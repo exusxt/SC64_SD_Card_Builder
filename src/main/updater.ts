@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { spawn } from 'node:child_process'
 import { join } from 'node:path'
+import { writeFileSync } from 'node:fs'
 import { downloadFile } from './download'
 import { getAppLatestRelease } from './releases'
 import type { ReleaseAsset } from './releases'
@@ -97,26 +98,33 @@ function portableReplace(): void {
   const p = pending
   const exe = process.env.PORTABLE_EXECUTABLE_FILE
   if (!p?.downloadedPath || !exe) return
-  const src = p.downloadedPath.replace(/'/g, "''")
-  const dst = exe.replace(/'/g, "''")
+  const src = p.downloadedPath
+  const dst = exe
+  // The downloaded portable exe cannot overwrite the running one directly (it is
+  // locked). Run a small detached batch file that waits for the app to exit and
+  // then swaps the files and relaunches. A .bat is used instead of PowerShell to
+  // keep the heuristic surface of the packaged binary smaller.
   const script = [
-    `$src = '${src}'`,
-    `$dst = '${dst}'`,
-    `for ($i = 0; $i -lt 60 -and (Test-Path -LiteralPath $src); $i++) {`,
-    `  try {`,
-    `    Move-Item -LiteralPath $src -Destination $dst -Force -ErrorAction Stop`,
-    `    break`,
-    `  } catch {`,
-    `    Start-Sleep -Milliseconds 500`,
-    `  }`,
-    `}`,
-    `if (Test-Path -LiteralPath $dst) { Start-Process -FilePath $dst }`
-  ].join('\n')
-  const child = spawn(
-    'powershell.exe',
-    ['-NoProfile', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass', '-Command', script],
-    { detached: true, stdio: 'ignore', windowsHide: true }
-  )
+    '@echo off',
+    'set n=0',
+    ':loop',
+    'set /a n+=1',
+    'if %n% gtr 60 goto relaunch',
+    `move /y "${src}" "${dst}" >nul 2>&1`,
+    'if errorlevel 1 (',
+    '  ping -n 2 127.0.0.1 >nul',
+    '  goto loop',
+    ')',
+    ':relaunch',
+    `start "" "${dst}"`
+  ].join('\r\n')
+  const batPath = join(app.getPath('temp'), 'sc64-portable-update.bat')
+  try {
+    writeFileSync(batPath, script)
+  } catch {
+    return
+  }
+  const child = spawn('cmd.exe', ['/c', batPath], { detached: true, stdio: 'ignore', windowsHide: true })
   child.unref()
   app.exit(0)
 }
