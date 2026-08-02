@@ -2,39 +2,21 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { gitRun, lastTag, commitsInRange, renderSection } from './changelog.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const packageFile = path.join(root, 'package.json')
-
-const GIT_CANDIDATES = [
-  process.env.SC64_GIT,
-  'git',
-  'C:\\Users\\exus\\AppData\\Local\\GitHubDesktop\\app-3.6.3\\resources\\app\\git\\cmd\\git.exe',
-]
-
-function findGit() {
-  for (const candidate of GIT_CANDIDATES) {
-    if (!candidate) continue
-    if (candidate === 'git') {
-      const probe = spawnSync('git', ['--version'], { encoding: 'utf8' })
-      if (probe.status === 0) return candidate
-      continue
-    }
-    if (existsSync(candidate)) return candidate
-  }
-  throw new Error('git not found. Install git or point the SC64_GIT env var at git.exe.')
-}
-
-const git = findGit()
-
-function run(args, options = {}) {
-  const result = spawnSync(git, args, { cwd: root, encoding: 'utf8', ...options })
-  if (result.status !== 0) {
-    const detail = (result.stderr || result.stdout || '').trim()
-    throw new Error(`git ${args.join(' ')} failed: ${detail}`)
-  }
-  return result.stdout.trim()
-}
+const changelogFile = path.join(root, 'CHANGELOG.md')
+const releaseNotesFile = path.join(root, 'release-notes.md')
+const CHANGELOG_HEADER = [
+  '# Changelog',
+  '',
+  'All notable changes to SC64 SD Card Builder.',
+  '',
+  'The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),',
+  'and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).',
+  ''
+].join('\n')
 
 function bumpPatch(version) {
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version)
@@ -48,46 +30,57 @@ if (!process.env.GH_TOKEN) {
 }
 
 const pkg = JSON.parse(readFileSync(packageFile, 'utf8'))
-const nextVersion = bumpPatch(pkg.version)
+const explicitVersion = process.argv[2]
+const nextVersion = (explicitVersion || bumpPatch(pkg.version)).replace(/^v/, '')
+if (!/^\d+\.\d+\.\d+$/.test(nextVersion)) {
+  throw new Error(`invalid version "${nextVersion}"`)
+}
 const nextTag = `v${nextVersion}`
+const prevTag = lastTag(root)
+const date = new Date().toISOString().slice(0, 10)
+const commits = commitsInRange(prevTag, 'HEAD', root)
+const section = renderSection({ version: nextTag, date, fromTag: prevTag, toTag: nextTag, commits })
+
 console.log(`Releasing ${nextTag}...`)
+console.log('')
+console.log(section)
 
-const tags = run(['tag', '--list', '--sort=-version:refname'])
-const previousTag = tags.split('\n')[0] || null
-const range = previousTag ? `${previousTag}..HEAD` : 'HEAD'
-const commits = run(['log', range, '--pretty=format:%s'])
-const notes = commits
-  .split('\n')
-  .map((line) => line.trim())
-  .filter(Boolean)
-  .map((line) => `- ${line}`)
-  .join('\n')
-
-writeFileSync(
-  path.join(root, 'release-notes.md'),
-  `## ${nextTag}\n\n${notes}\n`,
-  'utf8'
-)
+writeFileSync(releaseNotesFile, section + '\n', 'utf8')
+console.log('')
 console.log('Wrote release-notes.md')
-console.log(notes)
+
+let changelog = existsSync(changelogFile) ? readFileSync(changelogFile, 'utf8') : ''
+if (!changelog.startsWith('# Changelog')) {
+  changelog = CHANGELOG_HEADER + changelog
+}
+const headerEnd = changelog.indexOf('\n## ')
+if (headerEnd === -1) {
+  changelog = changelog.replace(/\n+$/, '') + '\n\n' + section + '\n'
+} else {
+  const header = changelog.slice(0, headerEnd + 1)
+  const rest = changelog.slice(headerEnd + 1)
+  changelog = header + section + '\n\n' + rest
+}
+writeFileSync(changelogFile, changelog, 'utf8')
+console.log('Updated CHANGELOG.md')
 
 pkg.version = nextVersion
 writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8')
 
-run(['add', 'package.json'])
-run(['commit', '-m', `Release ${nextTag}`])
-run(['tag', nextTag])
+gitRun(['add', 'package.json', 'CHANGELOG.md', 'release-notes.md'], root)
+gitRun(['commit', '-m', `Release ${nextTag}`], root)
+gitRun(['tag', nextTag], root)
 console.log(`Committed and tagged ${nextTag}`)
 
-run(['push', 'origin', 'main'])
-run(['push', 'origin', 'main', '--tags'])
+gitRun(['push', 'origin', 'main'], root)
+gitRun(['push', 'origin', 'main', '--tags'], root)
 console.log('Pushed to origin')
 
 const publish = spawnSync('npm', ['run', 'publish'], {
   cwd: root,
   encoding: 'utf8',
   stdio: 'inherit',
-  env: { ...process.env, GH_TOKEN: process.env.GH_TOKEN },
+  env: { ...process.env, GH_TOKEN: process.env.GH_TOKEN }
 })
 if (publish.status !== 0) {
   console.error('Publish failed. The tag/commit are already pushed; fix and run `npm run publish` to retry uploads.')
