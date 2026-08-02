@@ -62,6 +62,10 @@ linux:
   category: Utility
   maintainer: sc64-tools
   synopsis: Prepare an SD card for the SummerCart64
+deb:
+  afterInstall: build/linux-postinstall.sh
+rpm:
+  afterInstall: build/linux-postinstall.sh
 npmRebuild: false
 publish:
   provider: github
