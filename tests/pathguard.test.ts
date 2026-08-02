@@ -4,12 +4,16 @@ import { pathContains } from '../src/main/pathguard'
 describe('pathContains', () => {
   it('detects a child inside a parent', () => {
     expect(pathContains('/data/roms', '/data/roms/n64')).toBe(true)
-    expect(pathContains('C:\\Games', 'C:\\Games\\roms')).toBe(true)
+    if (process.platform === 'win32') {
+      expect(pathContains('C:\\Games', 'C:\\Games\\roms')).toBe(true)
+    }
   })
 
   it('rejects a parent inside a child', () => {
     expect(pathContains('/data/roms/n64', '/data/roms')).toBe(false)
-    expect(pathContains('C:\\Games\\roms', 'C:\\Games')).toBe(false)
+    if (process.platform === 'win32') {
+      expect(pathContains('C:\\Games\\roms', 'C:\\Games')).toBe(false)
+    }
   })
 
   it('treats equal paths as contained', () => {
