@@ -36,8 +36,21 @@ export function initUpdater(w: BrowserWindow): void {
   })
   autoUpdater.on('error', (err) => {
     busy = false
-    send({ type: 'update', state: 'error', message: err?.message ?? String(err) })
+    const message = updaterErrorMessage(err)
+    if (message === 'not-available') {
+      send({ type: 'update', state: 'not-available' })
+    } else {
+      send({ type: 'update', state: 'error', message })
+    }
   })
+}
+
+function updaterErrorMessage(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err)
+  if (/no published versions|no releases/i.test(message)) {
+    return 'not-available'
+  }
+  return message
 }
 
 export function checkForUpdates(): void {
@@ -49,7 +62,12 @@ export function checkForUpdates(): void {
   busy = true
   void autoUpdater.checkForUpdates().catch((e: unknown) => {
     busy = false
-    send({ type: 'update', state: 'error', message: e instanceof Error ? e.message : String(e) })
+    const message = updaterErrorMessage(e)
+    if (message === 'not-available') {
+      send({ type: 'update', state: 'not-available' })
+    } else {
+      send({ type: 'update', state: 'error', message })
+    }
   })
 }
 
