@@ -213,4 +213,19 @@ export async function latestReleaseAssets(repo: string, force = false): Promise<
   return rel.assets.map((a) => ({ name: a.name, size: a.size, browser_download_url: a.browser_download_url }))
 }
 
+export interface AppUpdateInfo {
+  version: string
+  assets: ReleaseAsset[]
+}
+
+const APP_REPO = 'exusxt/SC64_SD_Card_Builder'
+
+export async function getAppLatestRelease(force = false): Promise<AppUpdateInfo> {
+  const rel = await githubRequest<GhRelease>(`/repos/${APP_REPO}/releases/latest`, force)
+  return {
+    version: rel.tag_name.replace(/^v/i, ''),
+    assets: rel.assets.map((a) => ({ name: a.name, size: a.size, browser_download_url: a.browser_download_url }))
+  }
+}
+
 export type { EmulatorKey, EmulatorInfo }

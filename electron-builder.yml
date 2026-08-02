@@ -24,6 +24,8 @@ nsis:
   perMachine: true
   allowToChangeInstallationDirectory: true
   deleteAppDataOnUninstall: false
+portable:
+  artifactName: SC64-SD-Card-Builder-${version}-${arch}.${ext}
 mac:
   icon: build/icon.png
   target:
