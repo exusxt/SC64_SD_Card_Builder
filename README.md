@@ -33,9 +33,9 @@ Outputs to `dist/`.
 
 Auto-updates use GitHub Releases (`github.com/exusxt/SC64_SD_Card_Builder`).
 
-**Windows-only, quick release (from this machine):** `npm run release` runs `scripts/release.mjs` — bumps the patch version (or pass one explicitly: `npm run release -- 0.2.1`), generates categorized release notes (Added/Changed/Fixed/Infra from your commit messages) into `release-notes.md` and `CHANGELOG.md`, commits and tags (`v0.1.1`), pushes, then builds and uploads the Windows installers plus `latest.yml`. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
+**Windows-only, quick release (from this machine):** `npm run release` runs `scripts/release.mjs` — bumps the patch version (or pass one explicitly: `npm run release -- 0.2.1`), generates categorized release notes (Added/Changed/Fixed/Infra from your commit messages) into `CHANGELOG.md`, commits and tags (`v0.1.1`), pushes, then builds and uploads the Windows installers plus `latest.yml`. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
 
-To make nice changelog entries, write commit messages with a type prefix (`feat:`, `fix:`, `chore:`, `refactor:`, `ci:`, …) or a leading verb (`Add …`, `Fix …`, `Remove …`). The GitHub release body is taken from `release-notes.md` (the workflow falls back to auto-generated notes if it is missing or stale).
+To make nice changelog entries, write commit messages with a type prefix (`feat:`, `fix:`, `chore:`, `refactor:`, `ci:`, …) or a leading verb (`Add …`, `Fix …`, `Remove …`). The GitHub release body is the `## [vX.Y.Z]` section of `CHANGELOG.md` (the workflow falls back to auto-generated notes if that section is missing).
 
 ```bash
 $env:GH_TOKEN="ghp_..."   # PowerShell: set a GitHub token with repo scope

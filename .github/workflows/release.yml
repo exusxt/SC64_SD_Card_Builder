@@ -46,12 +46,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -f release-notes.md ] && grep -q "$GITHUB_REF_NAME" release-notes.md; then
-            gh release create "$GITHUB_REF_NAME" --notes-file release-notes.md \
-              || gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md
+          notes_file=$(mktemp)
+          awk -v tag="$GITHUB_REF_NAME" '
+            /^## \[/ {
+              if (f) exit
+              if (index($0, "## [" tag "]") == 1) f = 1
+            }
+            f { print }
+          ' CHANGELOG.md > "$notes_file"
+          if [ -s "$notes_file" ]; then
+            gh release create "$GITHUB_REF_NAME" --notes-file "$notes_file" \
+              || gh release edit "$GITHUB_REF_NAME" --notes-file "$notes_file"
           else
             gh release create "$GITHUB_REF_NAME" --generate-notes || true
           fi
+          rm -f "$notes_file"
 
       - name: Package
         env:

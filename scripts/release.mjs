@@ -7,7 +7,6 @@ import { gitRun, lastTag, commitsInRange, renderSection } from './changelog.mjs'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const packageFile = path.join(root, 'package.json')
 const changelogFile = path.join(root, 'CHANGELOG.md')
-const releaseNotesFile = path.join(root, 'release-notes.md')
 const CHANGELOG_HEADER = [
   '# Changelog',
   '',
@@ -45,29 +44,29 @@ console.log(`Releasing ${nextTag}...`)
 console.log('')
 console.log(section)
 
-writeFileSync(releaseNotesFile, section + '\n', 'utf8')
-console.log('')
-console.log('Wrote release-notes.md')
-
 let changelog = existsSync(changelogFile) ? readFileSync(changelogFile, 'utf8') : ''
 if (!changelog.startsWith('# Changelog')) {
   changelog = CHANGELOG_HEADER + changelog
 }
-const headerEnd = changelog.indexOf('\n## ')
-if (headerEnd === -1) {
-  changelog = changelog.replace(/\n+$/, '') + '\n\n' + section + '\n'
+if (changelog.includes(`## [${nextTag}]`)) {
+  console.log('CHANGELOG.md already contains this release; not prepending.')
 } else {
-  const header = changelog.slice(0, headerEnd + 1)
-  const rest = changelog.slice(headerEnd + 1)
-  changelog = header + section + '\n\n' + rest
+  const headerEnd = changelog.indexOf('\n## ')
+  if (headerEnd === -1) {
+    changelog = changelog.replace(/\n+$/, '') + '\n\n' + section + '\n'
+  } else {
+    const header = changelog.slice(0, headerEnd + 1)
+    const rest = changelog.slice(headerEnd + 1)
+    changelog = header + section + '\n\n' + rest
+  }
+  writeFileSync(changelogFile, changelog, 'utf8')
+  console.log('Updated CHANGELOG.md')
 }
-writeFileSync(changelogFile, changelog, 'utf8')
-console.log('Updated CHANGELOG.md')
 
 pkg.version = nextVersion
 writeFileSync(packageFile, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8')
 
-gitRun(['add', 'package.json', 'CHANGELOG.md', 'release-notes.md'], root)
+gitRun(['add', 'package.json', 'CHANGELOG.md'], root)
 gitRun(['commit', '-m', `Release ${nextTag}`], root)
 gitRun(['tag', nextTag], root)
 console.log(`Committed and tagged ${nextTag}`)
