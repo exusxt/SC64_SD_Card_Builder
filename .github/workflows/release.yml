@@ -61,8 +61,8 @@ jobs:
             f { print }
           ' CHANGELOG.md > "$notes_file"
           if [ -s "$notes_file" ]; then
-            gh release create "$GITHUB_REF_NAME" --notes-file "$notes_file" \
-              || gh release edit "$GITHUB_REF_NAME" --notes-file "$notes_file"
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$notes_file" \
+              || gh release edit "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$notes_file"
           else
             gh release create "$GITHUB_REF_NAME" --generate-notes || true
           fi
