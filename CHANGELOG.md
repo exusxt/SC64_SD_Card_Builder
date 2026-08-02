@@ -5,6 +5,19 @@ All notable changes to SC64 SD Card Builder.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.5] - 2026-08-02
+
+### Fixed
+
+- Install to space-free path so Chromium SUID sandbox works on Ubuntu 24.04+
+
+### Infra
+
+- Add troubleshooting section for sandbox and unsigned builds
+- Set release title from tag name
+
+[Compare v0.2.4...v0.2.5](https://github.com/exusxt/SC64_SD_Card_Builder/compare/v0.2.4...v0.2.5)
+
 ## [v0.2.4] - 2026-08-02
 
 ### Fixed
