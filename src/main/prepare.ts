@@ -8,6 +8,7 @@ import { downloadFile } from './download'
 import { getMenuRelease, getMetadataRelease, latestReleaseAssets, GB64_TEMPLATE_URL } from './releases'
 import { extractZip, findEntriesInZip, extractEntryTo, copyDirContents, rmTree, listDirDeep } from './unzip'
 import { verifyFile } from './verify'
+import { pathContains } from './pathguard'
 
 export interface PrepareCallbacks {
   emit: (ev: AppEvent) => void
@@ -403,6 +404,12 @@ function isInsideDest(p: string, destNorm: string): boolean {
 export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Promise<PrepareResult> {
   const runner = new Runner(cb, options.locale ?? 'en')
   try {
+    const guardSources = options.mode === 'fromPrepared' ? [options.preparedSource ?? ''] : options.copyRoms ? options.romSources : []
+    for (const src of guardSources) {
+      if (src && pathContains(src, options.destination)) {
+        throw new Error(runner.t('prepare.conflictingSource', { path: src }))
+      }
+    }
     if (options.mode === 'fromPrepared') {
       const src = options.preparedSource
       if (!src || !existsSync(src)) {

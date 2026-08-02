@@ -96,6 +96,12 @@ const ro = {
   'dest.preparedReady': 'Folder pregătit gata — {count} fișiere vor fi copiate pe card.',
   'dest.preparedCopy': 'Copiază folderul pregătit pe cardul SD',
   'dest.freeWarning': 'Doar {free} libere pe acest card.',
+  'dest.confirmTitle': 'Confirmă destinația',
+  'dest.confirmMessage': 'Fișierele vor fi scrise în {path}. Aplici această destinație?',
+  'dest.confirmApply': 'Folosește această cale',
+  'dest.formatConfirmLabel': 'Scrie {dest} pentru a activa formatarea',
+  'dest.formatConfirmPlaceholder': 'Scrie {dest} aici…',
+  'dest.formatConfirmMismatch': 'Textul nu se potrivește — formatarea rămâne blocată.',
 
   'opt.folders': 'Creează structura standard de foldere',
   'opt.foldersHint': 'Creează menu/, menu/metadata/, menu/64ddipl/ și menu/emulators/ pe destinație.',
@@ -203,6 +209,7 @@ const ro = {
 
   'prepare.noDestination': 'Destinația nu există: {path}',
   'prepare.notWritable': 'Destinația nu este scriibilă: {path}',
+  'prepare.conflictingSource': 'Destinația se suprapune cu un folder sursă: {path}. Alege o destinație în afara folderelor din care copiezi.',
 
   'summary.done': 'Gata. {menu}{roms} ROM copiate, {saves} folder(e) de salvare.',
   'summary.doneCopy': 'Gata. {count} fișier(e) copiat(e) pe cardul SD.',

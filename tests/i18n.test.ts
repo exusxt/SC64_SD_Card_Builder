@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { LOCALES, getLocaleName, translate } from '../src/shared/i18n'
+import en from '../src/shared/i18n/en'
 
 describe('translate', () => {
   it('returns a non-empty title for every locale', () => {
@@ -28,6 +29,17 @@ describe('getLocaleName', () => {
       const name = getLocaleName(locale)
       expect(name.length).toBeGreaterThan(0)
       expect(name).not.toBe(`lang.${locale}`)
+    }
+  })
+})
+
+describe('translation completeness', () => {
+  it('every locale defines every English key', () => {
+    const keys = Object.keys(en) as Array<keyof typeof en>
+    for (const locale of LOCALES) {
+      for (const key of keys) {
+        expect(translate(locale, key)).not.toBe(key)
+      }
     }
   })
 })

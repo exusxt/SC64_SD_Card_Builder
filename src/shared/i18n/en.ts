@@ -96,6 +96,12 @@ const en = {
   'dest.preparedReady': 'Prepared folder ready — {count} files will be copied to the card.',
   'dest.preparedCopy': 'Copy prepared folder to SD card',
   'dest.freeWarning': 'Only {free} free on this card.',
+  'dest.confirmTitle': 'Confirm destination',
+  'dest.confirmMessage': 'Files will be written to {path}. Apply this as the destination?',
+  'dest.confirmApply': 'Use this path',
+  'dest.formatConfirmLabel': 'Type {dest} to enable formatting',
+  'dest.formatConfirmPlaceholder': 'Type {dest} here…',
+  'dest.formatConfirmMismatch': "Text doesn't match — formatting stays locked.",
 
   'opt.folders': 'Create the standard folder structure',
   'opt.foldersHint': 'Creates menu/, menu/metadata/, menu/64ddipl/ and menu/emulators/ on the destination.',
@@ -203,6 +209,7 @@ const en = {
 
   'prepare.noDestination': 'Destination does not exist: {path}',
   'prepare.notWritable': 'Destination is not writable: {path}',
+  'prepare.conflictingSource': 'Destination overlaps a source folder: {path}. Choose a destination outside the folders you are copying from.',
 
   'summary.done': 'Done. {menu}{roms} ROM(s) copied, {saves} saves folder(s).',
   'summary.doneCopy': 'Done. {count} file(s) copied to the SD card.',

@@ -96,6 +96,12 @@ const el = {
   'dest.preparedReady': 'Ο προετοιμασμένος φάκελος είναι έτοιμος — {count} αρχεία θα αντιγραφούν στην κάρτα.',
   'dest.preparedCopy': 'Αντιγραφή προετοιμασμένου φακέλου στην κάρτα SD',
   'dest.freeWarning': 'Μόνο {free} ελεύθερα σε αυτή την κάρτα.',
+  'dest.confirmTitle': 'Επιβεβαίωση προορισμού',
+  'dest.confirmMessage': 'Τα αρχεία θα εγγραφούν στο {path}. Να εφαρμοστεί αυτός ο προορισμός;',
+  'dest.confirmApply': 'Χρήση αυτής της διαδρομής',
+  'dest.formatConfirmLabel': 'Πληκτρολογήστε {dest} για ενεργοποίηση της μορφοποίησης',
+  'dest.formatConfirmPlaceholder': 'Πληκτρολογήστε {dest} εδώ…',
+  'dest.formatConfirmMismatch': 'Το κείμενο δεν ταιριάζει — η μορφοποίηση παραμένει κλειδωμένη.',
 
   'opt.folders': 'Δημιουργία τυπικής δομής φακέλων',
   'opt.foldersHint': 'Δημιουργεί menu/, menu/metadata/, menu/64ddipl/ και menu/emulators/ στον προορισμό.',
@@ -203,6 +209,7 @@ const el = {
 
   'prepare.noDestination': 'Ο προορισμός δεν υπάρχει: {path}',
   'prepare.notWritable': 'Ο προορισμός δεν είναι εγγράψιμος: {path}',
+  'prepare.conflictingSource': 'Ο προορισμός αλληλεπικαλύπτεται με έναν φάκελο προέλευσης: {path}. Επιλέξτε προορισμό εκτός των φακέλων από τους οποίους αντιγράφετε.',
 
   'summary.done': 'Ολοκληρώθηκε. {menu}{roms} ROM αντιγράφηκαν, {saves} φάκελοι αποθήκευσης.',
   'summary.doneCopy': 'Ολοκληρώθηκε. {count} αρχείο(α) αντιγράφηκαν στην κάρτα SD.',

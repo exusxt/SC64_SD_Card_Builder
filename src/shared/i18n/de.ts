@@ -96,6 +96,12 @@ const de = {
   'dest.preparedReady': 'Vorbereiteter Ordner bereit – {count} Dateien werden auf die Karte kopiert.',
   'dest.preparedCopy': 'Vorbereiteten Ordner auf SD-Karte kopieren',
   'dest.freeWarning': 'Nur {free} frei auf dieser Karte.',
+  'dest.confirmTitle': 'Ziel bestätigen',
+  'dest.confirmMessage': 'Dateien werden nach {path} geschrieben. Als Ziel übernehmen?',
+  'dest.confirmApply': 'Diesen Pfad verwenden',
+  'dest.formatConfirmLabel': 'Gebe {dest} ein, um das Formatieren zu aktivieren',
+  'dest.formatConfirmPlaceholder': '{dest} hier eingeben…',
+  'dest.formatConfirmMismatch': 'Der Text stimmt nicht überein – das Formatieren bleibt gesperrt.',
 
   'opt.folders': 'Standard-Ordnerstruktur anlegen',
   'opt.foldersHint': 'Erstellt menu/, menu/metadata/, menu/64ddipl/ und menu/emulators/ am Zielort.',
@@ -203,6 +209,7 @@ const de = {
 
   'prepare.noDestination': 'Ziel existiert nicht: {path}',
   'prepare.notWritable': 'Ziel ist nicht beschreibbar: {path}',
+  'prepare.conflictingSource': 'Das Ziel überschneidet sich mit einem Quellordner: {path}. Wähle ein Ziel außerhalb der Ordner, aus denen du kopierst.',
 
   'summary.done': 'Fertig. {menu}{roms} ROM(s) kopiert, {saves} Speicherordner.',
   'summary.doneCopy': 'Fertig. {count} Datei(en) auf die SD-Karte kopiert.',

@@ -96,6 +96,12 @@ const hu = {
   'dest.preparedReady': 'Előkészített mappa kész — {count} fájl kerül a kártyára.',
   'dest.preparedCopy': 'Előkészített mappa másolása SD-kártyára',
   'dest.freeWarning': 'Ezen a kártyán csak {free} szabad.',
+  'dest.confirmTitle': 'Cél megerősítése',
+  'dest.confirmMessage': 'A fájlok ide kerülnek: {path}. Alkalmazza ezt a célt?',
+  'dest.confirmApply': 'Ennek az elérési útnak a használata',
+  'dest.formatConfirmLabel': 'Írja be: {dest} a formázás engedélyezéséhez',
+  'dest.formatConfirmPlaceholder': 'Ide írja be: {dest}…',
+  'dest.formatConfirmMismatch': 'A szöveg nem egyezik — a formázás zárolva marad.',
 
   'opt.folders': 'Szabványos mappastruktúra létrehozása',
   'opt.foldersHint': 'A célon létrehozza a menu/, menu/metadata/, menu/64ddipl/ és menu/emulators/ mappákat.',
@@ -203,6 +209,7 @@ const hu = {
 
   'prepare.noDestination': 'A cél nem létezik: {path}',
   'prepare.notWritable': 'A cél nem írható: {path}',
+  'prepare.conflictingSource': 'A cél átfedésben van egy forrásmappával: {path}. Válasszon célt a másolási forrásokon kívül.',
 
   'summary.done': 'Kész. {menu}{roms} ROM másolva, {saves} mentésmappa.',
   'summary.doneCopy': 'Kész. {count} fájl másolva az SD-kártyára.',

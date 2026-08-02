@@ -15,6 +15,7 @@ All artifacts are published to the [Releases page](https://github.com/exusxt/SC6
 ## Features
 
 - Detect SD cards, verify FAT32, format large cards (>32 GB) as FAT32 (requires admin)
+- **Pre-flight safety**: formatting requires typing the drive letter to confirm, and the destination must be confirmed when typed by hand; overlapping source/destination folders are rejected before anything is written
 - Install the latest N64FlashcartMenu, boxart/metadata pack and emulators onto the card
 - Copy your own ROMs while preserving folder structure (optional save folders, file-type filter)
 - **Prepared-folder flow**: stage a build or copy an already-prepared folder (e.g. from a friend) to the card with an animated transfer view
@@ -54,7 +55,7 @@ npm test             # run unit tests (Vitest)
 npm run build        # build to out/
 ```
 
-Tests live in `tests/` and cover the shared i18n helpers, renderer utils and the changelog classifier. A CI gate (`.github/workflows/ci.yml`) runs typecheck + tests on every push/PR; the release workflow runs them too before packaging.
+Tests live in `tests/` and cover the shared i18n helpers, the path-guard utility, renderer utils and the changelog classifier. A CI gate (`.github/workflows/ci.yml`) runs typecheck + tests on every push/PR; the release workflow runs them too before packaging.
 
 ## Building & packaging
 

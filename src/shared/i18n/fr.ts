@@ -96,6 +96,12 @@ const fr = {
   'dest.preparedReady': 'Dossier préparé prêt — {count} fichiers seront copiés sur la carte.',
   'dest.preparedCopy': 'Copier le dossier préparé sur la carte SD',
   'dest.freeWarning': 'Seulement {free} libres sur cette carte.',
+  'dest.confirmTitle': 'Confirmer la destination',
+  'dest.confirmMessage': 'Les fichiers seront écrits dans {path}. Appliquer cette destination ?',
+  'dest.confirmApply': 'Utiliser ce chemin',
+  'dest.formatConfirmLabel': 'Saisissez {dest} pour activer le formatage',
+  'dest.formatConfirmPlaceholder': 'Saisissez {dest} ici…',
+  'dest.formatConfirmMismatch': 'Le texte ne correspond pas – le formatage reste verrouillé.',
 
   'opt.folders': 'Créer la structure de dossiers standard',
   'opt.foldersHint': 'Crée menu/, menu/metadata/, menu/64ddipl/ et menu/emulators/ sur la destination.',
@@ -203,6 +209,7 @@ const fr = {
 
   'prepare.noDestination': 'La destination n’existe pas : {path}',
   'prepare.notWritable': 'La destination n’est pas accessible en écriture : {path}',
+  'prepare.conflictingSource': 'La destination chevauche un dossier source : {path}. Choisissez une destination en dehors des dossiers que vous copiez.',
 
   'summary.done': 'Terminé. {menu}{roms} ROM copiée(s), {saves} dossier(s) de sauvegarde.',
   'summary.doneCopy': 'Terminé. {count} fichier(s) copié(s) sur la carte SD.',

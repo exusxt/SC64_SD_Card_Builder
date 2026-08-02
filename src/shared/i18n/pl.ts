@@ -96,6 +96,12 @@ const pl = {
   'dest.preparedReady': 'Przygotowany folder gotowy — {count} plików zostanie skopiowanych na kartę.',
   'dest.preparedCopy': 'Skopiuj przygotowany folder na kartę SD',
   'dest.freeWarning': 'Na tej karcie zostało tylko {free}.',
+  'dest.confirmTitle': 'Potwierdź miejsce docelowe',
+  'dest.confirmMessage': 'Pliki zostaną zapisane w {path}. Zastosować to miejsce docelowe?',
+  'dest.confirmApply': 'Użyj tej ścieżki',
+  'dest.formatConfirmLabel': 'Wpisz {dest}, aby włączyć formatowanie',
+  'dest.formatConfirmPlaceholder': 'Wpisz tutaj {dest}…',
+  'dest.formatConfirmMismatch': 'Tekst nie pasuje — formatowanie pozostaje zablokowane.',
 
   'opt.folders': 'Utwórz standardową strukturę folderów',
   'opt.foldersHint': 'Tworzy menu/, menu/metadata/, menu/64ddipl/ i menu/emulators/ w miejscu docelowym.',
@@ -203,6 +209,7 @@ const pl = {
 
   'prepare.noDestination': 'Miejsce docelowe nie istnieje: {path}',
   'prepare.notWritable': 'Miejsce docelowe nie jest zapisywalne: {path}',
+  'prepare.conflictingSource': 'Miejsce docelowe pokrywa się z folderem źródłowym: {path}. Wybierz miejsce docelowe poza folderami, z których kopiujesz.',
 
   'summary.done': 'Gotowe. {menu}skopiowano {roms} ROM-ów, utworzono {saves} folder(ów) zapisów.',
   'summary.doneCopy': 'Gotowe. Skopiowano {count} plik(ów) na kartę SD.',

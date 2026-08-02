@@ -96,6 +96,12 @@ const sv = {
   'dest.preparedReady': 'Förberedd mapp klar — {count} filer kommer att kopieras till kortet.',
   'dest.preparedCopy': 'Kopiera förberedd mapp till SD-kortet',
   'dest.freeWarning': 'Endast {free} ledigt på detta kort.',
+  'dest.confirmTitle': 'Bekräfta mål',
+  'dest.confirmMessage': 'Filer skrivs till {path}. Använd detta mål?',
+  'dest.confirmApply': 'Använd den här sökvägen',
+  'dest.formatConfirmLabel': 'Skriv {dest} för att aktivera formatering',
+  'dest.formatConfirmPlaceholder': 'Skriv {dest} här…',
+  'dest.formatConfirmMismatch': 'Texten stämmer inte — formateringen förblir låst.',
 
   'opt.folders': 'Skapa standardmappstrukturen',
   'opt.foldersHint': 'Skapar menu/, menu/metadata/, menu/64ddipl/ och menu/emulators/ på målet.',
@@ -203,6 +209,7 @@ const sv = {
 
   'prepare.noDestination': 'Destinationen finns inte: {path}',
   'prepare.notWritable': 'Destinationen är inte skrivbar: {path}',
+  'prepare.conflictingSource': 'Målet överlappar en källmapp: {path}. Välj ett mål utanför mapparna som du kopierar från.',
 
   'summary.done': 'Klart. {menu}{roms} ROM kopierade, {saves} sparmapp(ar).',
   'summary.doneCopy': 'Klart. {count} fil(er) kopierade till SD-kortet.',

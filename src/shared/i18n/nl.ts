@@ -96,6 +96,12 @@ const nl = {
   'dest.preparedReady': 'Voorbereide map klaar — {count} bestanden worden naar de kaart gekopieerd.',
   'dest.preparedCopy': 'Voorbereide map naar SD-kaart kopiëren',
   'dest.freeWarning': 'Slechts {free} vrij op deze kaart.',
+  'dest.confirmTitle': 'Bestemming bevestigen',
+  'dest.confirmMessage': 'Bestanden worden geschreven naar {path}. Deze bestemming toepassen?',
+  'dest.confirmApply': 'Dit pad gebruiken',
+  'dest.formatConfirmLabel': 'Typ {dest} om formatteren in te schakelen',
+  'dest.formatConfirmPlaceholder': 'Typ {dest} hier…',
+  'dest.formatConfirmMismatch': 'Tekst komt niet overeen — formatteren blijft vergrendeld.',
 
   'opt.folders': 'De standaardmapstructuur aanmaken',
   'opt.foldersHint': 'Maakt menu/, menu/metadata/, menu/64ddipl/ en menu/emulators/ op de bestemming.',
@@ -203,6 +209,7 @@ const nl = {
 
   'prepare.noDestination': 'Doelmap bestaat niet: {path}',
   'prepare.notWritable': 'Doelmap is niet beschrijfbaar: {path}',
+  'prepare.conflictingSource': 'Bestemming overlapt een bronmap: {path}. Kies een bestemming buiten de mappen waaruit je kopieert.',
 
   'summary.done': 'Klaar. {menu}{roms} ROM(s) gekopieerd, {saves} opslagmap(pen).',
   'summary.doneCopy': 'Klaar. {count} bestand(en) naar de SD-kaart gekopieerd.',

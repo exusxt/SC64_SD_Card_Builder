@@ -96,6 +96,12 @@ const ru = {
   'dest.preparedReady': 'Подготовленная папка готова — на карту будет скопировано {count} файлов.',
   'dest.preparedCopy': 'Скопировать подготовленную папку на SD-карту',
   'dest.freeWarning': 'На этой карте свободно только {free}.',
+  'dest.confirmTitle': 'Подтвердить назначение',
+  'dest.confirmMessage': 'Файлы будут записаны в {path}. Применить это назначение?',
+  'dest.confirmApply': 'Использовать этот путь',
+  'dest.formatConfirmLabel': 'Введите {dest}, чтобы разрешить форматирование',
+  'dest.formatConfirmPlaceholder': 'Введите {dest} здесь…',
+  'dest.formatConfirmMismatch': 'Текст не совпадает — форматирование остаётся заблокированным.',
 
   'opt.folders': 'Создать стандартную структуру папок',
   'opt.foldersHint': 'Создаёт menu/, menu/metadata/, menu/64ddipl/ и menu/emulators/ в месте назначения.',
@@ -203,6 +209,7 @@ const ru = {
 
   'prepare.noDestination': 'Целевой каталог не существует: {path}',
   'prepare.notWritable': 'Целевой каталог недоступен для записи: {path}',
+  'prepare.conflictingSource': 'Назначение пересекается с исходной папкой: {path}. Выберите назначение вне папок, из которых выполняется копирование.',
 
   'summary.done': 'Готово. {menu}скопировано ROM: {roms}, папок сохранений: {saves}.',
   'summary.doneCopy': 'Готово. На SD-карту скопировано файлов: {count}.',

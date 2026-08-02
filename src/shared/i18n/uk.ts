@@ -96,6 +96,12 @@ const uk = {
   'dest.preparedReady': 'Підготовлену папку готово — на картку буде скопійовано {count} файлів.',
   'dest.preparedCopy': 'Скопіювати підготовлену папку на SD-картку',
   'dest.freeWarning': 'На цій картці вільно лише {free}.',
+  'dest.confirmTitle': 'Підтвердити призначення',
+  'dest.confirmMessage': 'Файли буде записано в {path}. Застосувати це призначення?',
+  'dest.confirmApply': 'Використати цей шлях',
+  'dest.formatConfirmLabel': 'Введіть {dest}, щоб дозволити форматування',
+  'dest.formatConfirmPlaceholder': 'Введіть {dest} тут…',
+  'dest.formatConfirmMismatch': 'Текст не збігається — форматування залишається заблокованим.',
 
   'opt.folders': 'Створити стандартну структуру папок',
   'opt.foldersHint': 'Створює menu/, menu/metadata/, menu/64ddipl/ і menu/emulators/ у місці призначення.',
@@ -203,6 +209,7 @@ const uk = {
 
   'prepare.noDestination': 'Цільової папки не існує: {path}',
   'prepare.notWritable': 'Цільова папка недоступна для запису: {path}',
+  'prepare.conflictingSource': 'Призначення перетинається з вихідною папкою: {path}. Виберіть призначення поза папками, з яких виконується копіювання.',
 
   'summary.done': 'Готово. {menu}скопійовано ROM: {roms}, папок збережень: {saves}.',
   'summary.doneCopy': 'Готово. На SD-картку скопійовано файлів: {count}.',

@@ -39,12 +39,17 @@ export function DestinationStep({
   onReveal: () => void
 }): React.JSX.Element {
   const [showFormat, setShowFormat] = useState(false)
+  const [formatConfirm, setFormatConfirm] = useState('')
+  const [folderDraft, setFolderDraft] = useState(settings.folder ?? '')
   const removableDrives = drives.filter((d) => d.removable)
   const selected = drives.find((d) => d.id === settings.driveId) ?? null
   const hasDest = destination.trim().length > 0
   const fs = (selected?.filesystem ?? '').trim().toUpperCase()
   const isFat32 = fs === 'FAT32'
   const almostFull = selected?.free !== null && selected?.free !== undefined && selected.free < 512 * 1024 * 1024
+  const mountpointKey = (selected?.mountpoint ?? '').trim().replace(/[\\/]+$/, '').toLowerCase()
+  const formatConfirmValid = mountpointKey.length > 0 && formatConfirm.trim().toLowerCase() === mountpointKey
+  const folderDraftPending = folderDraft !== (settings.folder ?? '')
 
   return (
     <div className="space-y-4">
@@ -82,7 +87,10 @@ export function DestinationStep({
                 <div className="flex gap-2">
                   <Select
                     value={settings.driveId ?? ''}
-                    onChange={(e) => onSettingsChange({ driveId: e.target.value || null })}
+                    onChange={(e) => {
+                      onSettingsChange({ driveId: e.target.value || null })
+                      setFormatConfirm('')
+                    }}
                     className="flex-1"
                   >
                     <option value="">{t('dest.selectCard')}</option>
@@ -191,15 +199,31 @@ export function DestinationStep({
                         onChange={(v) => onSettingsChange({ formatOptions: { ...settings.formatOptions, fullFormat: v } })}
                         className="flex-1"
                       />
-                      <Button
-                        variant="danger"
-                        onClick={onFormat}
-                        disabled={!selected || drivesLoading}
-                        title={selected ? t('dest.formatButtonTitle') : t('dest.formatButtonTitleNone')}
-                      >
-                        {t('dest.formatButton', { dest: selected?.mountpoint ?? '' })}
-                      </Button>
                     </div>
+                    <div>
+                      <Field label={t('dest.formatConfirmLabel', { dest: selected?.mountpoint ?? t('dest.notSelected') })} className="w-full">
+                        <Input
+                          value={formatConfirm}
+                          onChange={(e) => setFormatConfirm(e.target.value)}
+                          placeholder={t('dest.formatConfirmPlaceholder', { dest: selected?.mountpoint ?? '' })}
+                          className="w-full"
+                        />
+                      </Field>
+                      {formatConfirm.trim().length > 0 && !formatConfirmValid ? (
+                        <p className="mt-1 flex items-center gap-1.5 text-xs text-sc64-bad">
+                          <XCircle className="h-3.5 w-3.5 shrink-0" />
+                          {t('dest.formatConfirmMismatch')}
+                        </p>
+                      ) : null}
+                    </div>
+                    <Button
+                      variant="danger"
+                      onClick={onFormat}
+                      disabled={!formatConfirmValid || drivesLoading}
+                      title={selected ? t('dest.formatButtonTitle') : t('dest.formatButtonTitleNone')}
+                    >
+                      {t('dest.formatButton', { dest: selected?.mountpoint ?? '' })}
+                    </Button>
                   </div>
                 )}
 
@@ -222,26 +246,54 @@ export function DestinationStep({
             <Field label={t('dest.folderField')} hint={t('dest.folderHint')}>
               <div className="flex gap-2">
                 <Input
-                  readOnly
-                  value={settings.folder ?? ''}
+                  value={folderDraft}
+                  onChange={(e) => setFolderDraft(e.target.value)}
                   placeholder={t('dest.folderPlaceholder')}
-                  className="flex-1 cursor-default"
-                  onClick={async () => {
-                    const dir = await window.api.chooseFolder()
-                    if (dir) onSettingsChange({ folder: dir })
-                  }}
+                  className="flex-1"
                 />
                 <Button
                   variant="outline"
                   onClick={async () => {
                     const dir = await window.api.chooseFolder()
-                    if (dir) onSettingsChange({ folder: dir })
+                    if (dir) {
+                      setFolderDraft(dir)
+                      onSettingsChange({ folder: dir })
+                    }
                   }}
                 >
                   <FolderOpen className="h-4 w-4" /> {t('common.browse')}
                 </Button>
               </div>
             </Field>
+            {folderDraftPending ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-sc64-warn/40 bg-sc64-warn/10 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-sc64-warn">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    {t('dest.confirmTitle')}
+                  </div>
+                  <div className="mt-0.5 text-xs text-sc64-warn/80">
+                    {t('dest.confirmMessage', { path: folderDraft.trim() || t('dest.notSelected') })}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    disabled={folderDraft.trim().length === 0}
+                    onClick={() => {
+                      onSettingsChange({ folder: folderDraft.trim() })
+                      setFolderDraft(folderDraft.trim())
+                    }}
+                  >
+                    {t('dest.confirmApply')}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setFolderDraft(settings.folder ?? '')}>
+                    {t('common.cancel')}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
             {settings.folder ? (
               <p className="flex items-center gap-1.5 text-xs text-sc64-muted">
                 <CheckCircle2 className="h-3.5 w-3.5 text-sc64-good" />

@@ -96,6 +96,12 @@ const fi = {
   'dest.preparedReady': 'Valmisteltu kansio valmis — {count} tiedostoa kopioidaan kortille.',
   'dest.preparedCopy': 'Kopioi valmisteltu kansio SD-kortille',
   'dest.freeWarning': 'Tällä kortilla on vapaana vain {free}.',
+  'dest.confirmTitle': 'Vahvista kohde',
+  'dest.confirmMessage': 'Tiedostot kirjoitetaan kohteeseen {path}. Käytetäänkö tätä kohdetta?',
+  'dest.confirmApply': 'Käytä tätä polkua',
+  'dest.formatConfirmLabel': 'Kirjoita {dest} ottaaksesi alustuksen käyttöön',
+  'dest.formatConfirmPlaceholder': 'Kirjoita {dest} tähän…',
+  'dest.formatConfirmMismatch': 'Teksti ei täsmää — alustus pysyy lukittuna.',
 
   'opt.folders': 'Luo vakiokansiorakenne',
   'opt.foldersHint': 'Luo kohteeseen kansiot menu/, menu/metadata/, menu/64ddipl/ ja menu/emulators/.',
@@ -203,6 +209,7 @@ const fi = {
 
   'prepare.noDestination': 'Kohdetta ei ole olemassa: {path}',
   'prepare.notWritable': 'Kohde ei ole kirjoitettavissa: {path}',
+  'prepare.conflictingSource': 'Kohde on päällekkäinen lähdekansion kanssa: {path}. Valitse kohde kopioitavien kansioiden ulkopuolelta.',
 
   'summary.done': 'Valmis. {menu}{roms} ROM-tiedostoa kopioitu, {saves} tallennuskansiota.',
   'summary.doneCopy': 'Valmis. {count} tiedostoa kopioitu SD-kortille.',

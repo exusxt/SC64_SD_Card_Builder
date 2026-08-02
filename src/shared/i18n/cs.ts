@@ -96,6 +96,12 @@ const cs = {
   'dest.preparedReady': 'Připravená složka je hotová — na kartu se zkopíruje {count} souborů.',
   'dest.preparedCopy': 'Zkopírovat připravenou složku na SD kartu',
   'dest.freeWarning': 'Na této kartě je volno pouze {free}.',
+  'dest.confirmTitle': 'Potvrdit cíl',
+  'dest.confirmMessage': 'Soubory budou zapsány do {path}. Použít tento cíl?',
+  'dest.confirmApply': 'Použít tuto cestu',
+  'dest.formatConfirmLabel': 'Zadejte {dest} pro povolení formátování',
+  'dest.formatConfirmPlaceholder': 'Zadejte sem {dest}…',
+  'dest.formatConfirmMismatch': 'Text se neshoduje — formátování zůstává uzamčené.',
 
   'opt.folders': 'Vytvořit standardní strukturu složek',
   'opt.foldersHint': 'Vytvoří menu/, menu/metadata/, menu/64ddipl/ a menu/emulators/ v cíli.',
@@ -203,6 +209,7 @@ const cs = {
 
   'prepare.noDestination': 'Cíl neexistuje: {path}',
   'prepare.notWritable': 'Cíl není zapisovatelný: {path}',
+  'prepare.conflictingSource': 'Cíl se překrývá se zdrojovou složkou: {path}. Vyberte cíl mimo složky, ze kterých kopírujete.',
 
   'summary.done': 'Hotovo. {menu}zkopírováno {roms} ROM, {saves} složek pro uložení.',
   'summary.doneCopy': 'Hotovo. Na SD kartu zkopírováno {count} soubor(ů).',

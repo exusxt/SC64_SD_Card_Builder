@@ -96,6 +96,12 @@ const es = {
   'dest.preparedReady': 'Carpeta preparada lista — {count} archivos se copiarán a la tarjeta.',
   'dest.preparedCopy': 'Copiar carpeta preparada a la tarjeta SD',
   'dest.freeWarning': 'Solo hay {free} libres en esta tarjeta.',
+  'dest.confirmTitle': 'Confirmar destino',
+  'dest.confirmMessage': 'Los archivos se escribirán en {path}. ¿Aplicar este destino?',
+  'dest.confirmApply': 'Usar esta ruta',
+  'dest.formatConfirmLabel': 'Escribe {dest} para habilitar el formateo',
+  'dest.formatConfirmPlaceholder': 'Escribe {dest} aquí…',
+  'dest.formatConfirmMismatch': 'El texto no coincide: el formateo sigue bloqueado.',
 
   'opt.folders': 'Crear la estructura de carpetas estándar',
   'opt.foldersHint': 'Crea menu/, menu/metadata/, menu/64ddipl/ y menu/emulators/ en el destino.',
@@ -203,6 +209,7 @@ const es = {
 
   'prepare.noDestination': 'El destino no existe: {path}',
   'prepare.notWritable': 'El destino no es escribible: {path}',
+  'prepare.conflictingSource': 'El destino se superpone con una carpeta de origen: {path}. Elige un destino fuera de las carpetas desde las que copias.',
 
   'summary.done': 'Listo. {menu}{roms} ROM copiada(s), {saves} carpeta(s) de guardado.',
   'summary.doneCopy': 'Listo. {count} archivo(s) copiado(s) a la tarjeta SD.',

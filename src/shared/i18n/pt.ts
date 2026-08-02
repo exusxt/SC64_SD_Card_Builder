@@ -96,6 +96,12 @@ const pt = {
   'dest.preparedReady': 'Pasta preparada pronta — {count} ficheiros serão copiados para o cartão.',
   'dest.preparedCopy': 'Copiar pasta preparada para o cartão SD',
   'dest.freeWarning': 'Apenas {free} livres neste cartão.',
+  'dest.confirmTitle': 'Confirmar destino',
+  'dest.confirmMessage': 'Os arquivos serão gravados em {path}. Aplicar este destino?',
+  'dest.confirmApply': 'Usar este caminho',
+  'dest.formatConfirmLabel': 'Digite {dest} para ativar a formatação',
+  'dest.formatConfirmPlaceholder': 'Digite {dest} aqui…',
+  'dest.formatConfirmMismatch': 'O texto não corresponde — a formatação permanece bloqueada.',
 
   'opt.folders': 'Criar a estrutura de pastas padrão',
   'opt.foldersHint': 'Cria menu/, menu/metadata/, menu/64ddipl/ e menu/emulators/ no destino.',
@@ -203,6 +209,7 @@ const pt = {
 
   'prepare.noDestination': 'O destino não existe: {path}',
   'prepare.notWritable': 'O destino não é gravável: {path}',
+  'prepare.conflictingSource': 'O destino se sobrepõe a uma pasta de origem: {path}. Escolha um destino fora das pastas de onde você está copiando.',
 
   'summary.done': 'Concluído. {menu}{roms} ROM(s) copiada(s), {saves} pasta(s) de guardar.',
   'summary.doneCopy': 'Concluído. {count} ficheiro(s) copiado(s) para o cartão SD.',
