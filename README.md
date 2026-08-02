@@ -1,6 +1,16 @@
 # SC64 SD Card Builder
 
-Prepare an SD card for the SummerCart64 (N64FlashcartMenu). Cross-platform Electron app with 18 languages and 4 themes.
+Prepare an SD card for the SummerCart64 (N64FlashcartMenu). Cross-platform Electron app for Windows, macOS and Linux, with 18 languages and 4 themes.
+
+## Supported platforms
+
+| Platform | Architectures | Installers | Update channel |
+|----------|---------------|------------|----------------|
+| Windows | x64, arm64 | NSIS installer + portable `.exe` | `latest.yml` (installed) / in-app portable replace |
+| macOS | x64, arm64 | `.dmg` + `.zip` | `latest-mac.yml` |
+| Linux | x64, arm64 | AppImage, `.deb`, `.rpm`, `.pacman` | `latest-linux.yml` |
+
+All artifacts are published to the [Releases page](https://github.com/exusxt/SC64_SD_Card_Builder/releases).
 
 ## Features
 
@@ -9,8 +19,30 @@ Prepare an SD card for the SummerCart64 (N64FlashcartMenu). Cross-platform Elect
 - Copy your own ROMs while preserving folder structure (optional save folders, file-type filter)
 - **Prepared-folder flow**: stage a build or copy an already-prepared folder (e.g. from a friend) to the card with an animated transfer view
 - **Byte-for-byte verification** of every copied file (optional)
-- Auto-updates via GitHub Releases (NSIS installs)
+- Auto-updates via GitHub Releases
 - 18 languages · 4 themes · custom frameless title bar
+
+## Installing
+
+Grab the matching artifact from the [Releases page](https://github.com/exusxt/SC64_SD_Card_Builder/releases):
+
+- **Windows**: the NSIS installer (auto-updates) or the portable `.exe` (no install, self-updates by downloading the newer portable). Both are available for x64 and arm64.
+- **macOS**: the `.dmg` (drag the app to Applications) or the `.zip`. See the macOS note below — builds are unsigned.
+- **Linux**: the AppImage (most distros), or the `.deb` / `.rpm` / `.pacman` matching your package manager.
+
+### Platform notes
+
+- **macOS (unsigned):** there is no Apple Developer certificate. The first time you run the app (and after each manual update), right-click the app → **Open** instead of double-clicking; Gatekeeper will otherwise block it.
+- **Windows:** builds are unsigned, so SmartScreen may show "Unknown publisher" — choose *More info → Run anyway*. This is a reputation issue, not malware; see the troubleshooting note below.
+- **Linux:** the AppImage may need `libfuse2` on older distros (FUSE 2); modern distros with FUSE 3 work out of the box.
+
+### Formatting
+
+Formatting a physical drive requires elevated privileges, which the app requests on your behalf:
+
+- **Windows:** the app relaunches itself as administrator (UAC prompt). USB/SD cards are detected and large cards (>32 GB) are formatted as FAT32.
+- **macOS:** an administrator password prompt is shown. Internal disks are filtered out; only removable media is listed.
+- **Linux:** `pkexec` asks for root. Detection uses `lsblk`; internal disks are hidden.
 
 ## Development
 
@@ -21,47 +53,64 @@ npm run typecheck    # type check
 npm run build        # build to out/
 ```
 
-## Packaging
+## Building & packaging
+
+Build each platform on its native OS (or use the release workflow below to build all platforms in CI). Outputs go to `dist/`.
 
 ```bash
-npm run dist:win     # NSIS installer + portable exe (x64 + arm64)
+npm run dist:win          # NSIS installer + portable exe (x64 + arm64)
+npm run dist:win:x64      # Windows x64 only
+npm run dist:win:arm64    # Windows arm64 only
+
+npm run dist:mac          # dmg + zip (x64 + arm64)
+npm run dist:mac:x64
+npm run dist:mac:arm64
+
+npm run dist:linux        # AppImage + deb + rpm + pacman (x64 + arm64)
+npm run dist:linux:x64
+npm run dist:linux:arm64
 ```
 
-Outputs to `dist/`.
+Linux packaging notes: `.deb` needs `dpkg-deb`/`fakeroot`, `.rpm` needs `rpmbuild`, `.pacman` needs `bsdtar` (e.g. `libarchive-tools`). Install what your distro doesn't ship, or let CI handle it.
 
 ## Publishing updates
 
 Auto-updates use GitHub Releases (`github.com/exusxt/SC64_SD_Card_Builder`).
 
-**Windows-only, quick release (from this machine):** `npm run release` runs `scripts/release.mjs` — bumps the patch version (or pass one explicitly: `npm run release -- 0.2.1`), generates categorized release notes (Added/Changed/Fixed/Infra from your commit messages) into `CHANGELOG.md`, commits and tags (`v0.1.1`), pushes, then builds and uploads the Windows installers plus `latest.yml`. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
-
-To make nice changelog entries, write commit messages with a type prefix (`feat:`, `fix:`, `chore:`, `refactor:`, `ci:`, …) or a leading verb (`Add …`, `Fix …`, `Remove …`). The GitHub release body is the `## [vX.Y.Z]` section of `CHANGELOG.md` (the workflow falls back to auto-generated notes if that section is missing).
+**All platforms (recommended):** push a `v*` tag and the GitHub Actions workflow (`.github/workflows/release.yml`) builds each platform on its native runner and publishes the artifacts to the release — no local mac/Linux machine needed:
 
 ```bash
-$env:GH_TOKEN="ghp_..."   # PowerShell: set a GitHub token with repo scope
+git tag v0.2.1 && git push origin main --tags
+```
+
+Each runner creates/updates the release (notes come from the `## [vX.Y.Z]` section of `CHANGELOG.md`) and uploads its artifacts: NSIS + portable exe, dmg + zip, AppImage + deb/rpm/pacman, plus `latest.yml` / `latest-mac.yml` / `latest-linux.yml` for auto-updates.
+
+**Windows-only quick release (from this machine):** `npm run release` runs `scripts/release.mjs` — bumps the patch version (or pass one explicitly: `npm run release -- 0.2.1`), generates categorized release notes (Added/Changed/Fixed/Infra from your commit messages) into `CHANGELOG.md`, commits and tags (`v0.2.1`), pushes, then builds and uploads the Windows installers plus `latest.yml`. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
+
+```bash
+$env:GH_TOKEN="ghp_..."   # PowerShell: a GitHub token with repo scope
 npm run release
 ```
 
-**All platforms (Linux/macOS/Windows):** pushing a `v*` tag triggers the GitHub Actions workflow (`.github/workflows/release.yml`). Each platform is built on its native runner and the artifacts are published to the same release automatically — no local mac/Linux machine needed:
-
-```bash
-git tag v0.1.1 && git push origin main --tags
-```
-
-Each runner creates the release (idempotent, auto-generated notes) and uploads its artifacts: NSIS + portable exe, dmg + zip, AppImage + deb, plus `latest.yml`/`latest-linux.yml`/`latest-mac.yml` for auto-updates.
-
-**Notes**
-- macOS builds are **unsigned** (no Apple Developer certificate). Users must right-click → Open the first time; Gatekeeper will otherwise block it. To sign/notarize, add `CSC_LINK`/`CSC_KEY_PASSWORD` and `APPLE_ID`/`APPLE_APP_SPECIFIC_PASSWORD`/`APPLE_TEAM_ID` secrets to the workflow.
-- Users on the **installed (NSIS)** Windows version are notified automatically and can restart to install. The **portable** exe does not support auto-update — download the new one from Releases instead. The updater only offers versions newer than the installed one.
-
 To re-upload the current version without a bump, use `npm run publish` (Windows) or run the workflow manually.
+
+### Release notes
+
+To make nice changelog entries, write commit messages with a type prefix (`feat:`, `fix:`, `chore:`, `refactor:`, `ci:`, …) or a leading verb (`Add …`, `Fix …`, `Remove …`). `scripts/release.mjs` groups them into Added/Changed/Fixed/Infra. The GitHub release body is the `## [vX.Y.Z]` section of `CHANGELOG.md` (the workflow falls back to auto-generated notes if that section is missing).
+
+### Update notes
+
+- **Windows installed (NSIS):** users are notified automatically and can restart to install; the portable `.exe` self-updates by downloading the newer portable instead.
+- **macOS:** updates install from the `.zip`; because builds are unsigned, each update may need the right-click → Open step once.
+- **Linux:** installed packages (deb/rpm/pacman/AppImage) update via `latest-linux.yml`.
+- The updater only offers versions newer than the installed one.
 
 ## Icon
 
 The app icon and title-bar logo are generated from `icon-assets/appstore.png`:
 
 ```bash
-powershell -File scripts/make-icons.ps1   # regenerates build/icon.ico and the renderer logo
+powershell -File scripts/make-icons.ps1   # regenerates build/icon.ico, build/icon.png and the renderer logo
 ```
 
 ## License
