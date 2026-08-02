@@ -50,8 +50,11 @@ Formatting a physical drive requires elevated privileges, which the app requests
 npm install
 npm run dev          # run in development
 npm run typecheck    # type check
+npm test             # run unit tests (Vitest)
 npm run build        # build to out/
 ```
+
+Tests live in `tests/` and cover the shared i18n helpers, renderer utils and the changelog classifier. A CI gate (`.github/workflows/ci.yml`) runs typecheck + tests on every push/PR; the release workflow runs them too before packaging.
 
 ## Building & packaging
 
