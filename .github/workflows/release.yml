@@ -56,9 +56,15 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Get-ChildItem dist -Filter 'SC64-SD-Card-Builder-*.exe' |
+          $multi = Get-ChildItem dist -Filter 'SC64-SD-Card-Builder-*.exe' |
             Where-Object { $_.Name -notmatch 'Setup' -and $_.Name -notmatch '-x64\.exe$' -and $_.Name -notmatch '-arm64\.exe$' } |
-            Remove-Item -Force
+            Select-Object -First 1
+          if ($multi) {
+            $multi | Remove-Item -Force
+            if ($env:GITHUB_REF -like 'refs/tags/v*') {
+              gh release delete-asset "$env:GITHUB_REF_NAME" "$($multi.Name)" --yes
+            }
+          }
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
