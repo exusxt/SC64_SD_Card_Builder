@@ -1,27 +1,60 @@
 import AdmZip from 'adm-zip'
-import { readdirSync, statSync, readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { readdirSync, statSync } from 'node:fs'
+import { access, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 
-export function extractZip(zipPath: string, destDir: string): void {
-  const zip = new AdmZip(zipPath)
-  mkdirSync(destDir, { recursive: true })
-  zip.extractAllTo(destDir, true)
+async function openZip(zipPath: string): Promise<AdmZip> {
+  return new AdmZip(await readFile(zipPath))
 }
 
-export function findEntriesInZip(zipPath: string, predicate: (name: string) => boolean): string[] {
-  const zip = new AdmZip(zipPath)
+function entryData(entry: AdmZip.IZipEntry): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    entry.getDataAsync((data, err) => {
+      if (err || !data) reject(new Error(err || `Failed to extract ${entry.entryName}`))
+      else resolve(data)
+    })
+  })
+}
+
+function safeJoin(base: string, name: string): string | null {
+  const norm = name.replace(/\\/g, '/')
+  if (norm.startsWith('/') || /^[a-zA-Z]:/.test(norm)) return null
+  const parts = norm.split('/').filter((p) => p !== '' && p !== '.')
+  if (parts.length === 0 || parts.some((p) => p === '..')) return null
+  return join(base, ...parts)
+}
+
+export async function extractZip(zipPath: string, destDir: string, onEntry?: (done: number, total: number) => void): Promise<number> {
+  const zip = await openZip(zipPath)
+  await mkdir(destDir, { recursive: true })
+  const entries = zip.getEntries().filter((e) => !e.isDirectory)
+  let done = 0
+  for (const entry of entries) {
+    const target = safeJoin(destDir, entry.entryName)
+    if (target) {
+      await mkdir(dirname(target), { recursive: true })
+      await writeFile(target, await entryData(entry))
+    }
+    done++
+    onEntry?.(done, entries.length)
+  }
+  return done
+}
+
+export async function findEntriesInZip(zipPath: string, predicate: (name: string) => boolean): Promise<string[]> {
+  const zip = await openZip(zipPath)
   return zip
     .getEntries()
     .filter((e) => !e.isDirectory && predicate(e.entryName))
     .map((e) => e.entryName)
 }
 
-export function extractEntryTo(zipPath: string, entryName: string, destFile: string): void {
-  const zip = new AdmZip(zipPath)
+export async function extractEntryTo(zipPath: string, entryName: string, destFile: string): Promise<void> {
+  const zip = await openZip(zipPath)
   const entry = zip.getEntry(entryName)
   if (!entry) throw new Error(`Entry not found in archive: ${entryName}`)
-  mkdirSync(join(destFile, '..'), { recursive: true })
-  writeFileSync(destFile, entry.getData())
+  await mkdir(dirname(destFile), { recursive: true })
+  await writeFile(destFile, await entryData(entry))
 }
 
 export function listDirDeep(dir: string): string[] {
@@ -48,21 +81,28 @@ export function listDirDeep(dir: string): string[] {
   return result
 }
 
-export function copyDirContents(srcDir: string, destDir: string, overwrite: boolean): number {
+export async function copyDirContents(srcDir: string, destDir: string, overwrite: boolean, onProgress?: (done: number, total: number) => void): Promise<number> {
   const files = listDirDeep(srcDir)
   let copied = 0
   for (const file of files) {
     const rel = file.slice(srcDir.length).replace(/^[/\\]/, '')
     const dest = join(destDir, rel)
-    if (existsSync(dest) && !overwrite) continue
-    mkdirSync(join(dest, '..'), { recursive: true })
-    writeFileSync(dest, readFileSync(file))
+    if (!overwrite) {
+      try {
+        await access(dest)
+        continue
+      } catch {
+        // file does not exist — proceed with copy
+      }
+    }
+    await mkdir(dirname(dest), { recursive: true })
+    await copyFile(file, dest)
     copied++
+    onProgress?.(copied, files.length)
   }
   return copied
 }
 
-export function rmTree(path: string): void {
-  if (!existsSync(path)) return
-  rmSync(path, { recursive: true, force: true })
+export async function rmTree(path: string): Promise<void> {
+  await rm(path, { recursive: true, force: true })
 }

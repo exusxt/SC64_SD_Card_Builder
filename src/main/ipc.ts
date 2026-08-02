@@ -1,5 +1,6 @@
 import { app, dialog, ipcMain, shell, BrowserWindow, IpcMainInvokeEvent } from 'electron'
-import { existsSync, statSync } from 'node:fs'
+import { existsSync } from 'node:fs'
+import { stat } from 'node:fs/promises'
 import type { AppEvent, PrepareOptions, FormatOptions } from '../shared/types'
 import { listDrives } from './drives'
 import { getSettings, saveSettings } from './settings'
@@ -93,13 +94,13 @@ export function registerIpc(): void {
     prepareCancel.cancelled = true
   })
 
-  ipcMain.handle('prepare:countPrepared', (_e, path: string) => {
+  ipcMain.handle('prepare:countPrepared', async (_e, path: string) => {
     if (!path || !existsSync(path)) return null
     const files = listDirDeep(path)
     let bytes = 0
     for (const f of files) {
       try {
-        bytes += statSync(f).size
+        bytes += (await stat(f)).size
       } catch {
         // ignore
       }

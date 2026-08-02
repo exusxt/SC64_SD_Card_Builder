@@ -158,15 +158,19 @@ class Runner {
       await this.download(rel.downloadUrl, zipPath, 'boxart & metadata pack')
       this.log('info', this.t('log.metaExtracting'))
       const extractDir = join(work, 'extracted')
-      extractZip(zipPath, extractDir)
+      const onProgress = (done: number, total: number): void => {
+        this.checkCancel()
+        this.progress(done, total, this.t('log.metaExtracting'))
+      }
+      await extractZip(zipPath, extractDir, onProgress)
       const source = this.findMetadataSource(extractDir)
       const target = join(destination, 'menu', 'metadata')
       await mkdir(target, { recursive: true })
-      const count = copyDirContents(source, target, true)
+      const count = await copyDirContents(source, target, true, onProgress)
       this.log('success', this.t('log.metaExtracted', { count: String(count) }))
       this.step('metadata', 'done')
     } finally {
-      rmTree(work)
+      await rmTree(work)
     }
   }
 
@@ -204,10 +208,10 @@ class Runner {
         if (!zip) throw new Error('No Neon64 zip asset found')
         const zipPath = join(emuDir, '.neon64.zip')
         await this.download(zip.browser_download_url, zipPath, 'Neon64')
-        const entries = findEntriesInZip(zipPath, (n) => /\.rom$/i.test(n) || /neon64/i.test(n))
+        const entries = await findEntriesInZip(zipPath, (n) => /\.rom$/i.test(n) || /neon64/i.test(n))
         const chosen = entries.find((n) => /bu/i.test(n)) ?? entries[0]
         if (!chosen) throw new Error('No Neon64 ROM found in zip')
-        extractEntryTo(zipPath, chosen, join(emuDir, 'neon64bu.rom'))
+        await extractEntryTo(zipPath, chosen, join(emuDir, 'neon64bu.rom'))
         await rm(zipPath, { force: true })
         this.log('success', `    ${this.t('log.installed', { name: 'neon64bu.rom' })}`)
       })
@@ -220,10 +224,10 @@ class Runner {
         if (!zip) throw new Error('No Sodium64 zip asset found')
         const zipPath = join(emuDir, '.sodium64.zip')
         await this.download(zip.browser_download_url, zipPath, 'Sodium64')
-        const entries = findEntriesInZip(zipPath, (n) => /\.(z64|v64|n64)$/i.test(n))
+        const entries = await findEntriesInZip(zipPath, (n) => /\.(z64|v64|n64)$/i.test(n))
         const chosen = entries.find((n) => /sodium64/i.test(n)) ?? entries[0]
         if (!chosen) throw new Error('No Sodium64 ROM found in zip')
-        extractEntryTo(zipPath, chosen, join(emuDir, 'sodium64.z64'))
+        await extractEntryTo(zipPath, chosen, join(emuDir, 'sodium64.z64'))
         await rm(zipPath, { force: true })
         this.log('success', `    ${this.t('log.installed', { name: 'sodium64.z64' })}`)
       })
