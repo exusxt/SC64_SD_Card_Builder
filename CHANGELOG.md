@@ -5,6 +5,18 @@ All notable changes to SC64 SD Card Builder.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.3] - 2026-08-02
+
+### Added
+
+- Pre-flight safety for destination and formatting
+
+### Fixed
+
+- Publish releases from CI only to avoid asset races
+
+[Compare v0.2.2...v0.2.3](https://github.com/exusxt/SC64_SD_Card_Builder/compare/v0.2.2...v0.2.3)
+
 ## [v0.2.2] - 2026-08-02
 
 ### Added
