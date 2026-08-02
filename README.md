@@ -31,18 +31,28 @@ Outputs to `dist/`.
 
 ## Publishing updates
 
-Auto-updates use GitHub Releases (`github.com/exusxt/SC64_SD_Card_Builder`). One command creates the whole release — bumps the version, generates release notes from commits, tags, pushes and publishes:
+Auto-updates use GitHub Releases (`github.com/exusxt/SC64_SD_Card_Builder`).
+
+**Windows-only, quick release (from this machine):** `npm run release` runs `scripts/release.mjs` — bumps the patch version, generates `release-notes.md` from `git log`, commits and tags (`v0.1.1`), pushes, then builds and uploads the Windows installers plus `latest.yml`. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
 
 ```bash
 $env:GH_TOKEN="ghp_..."   # PowerShell: set a GitHub token with repo scope
-npm run release           # everything from version bump to published release
+npm run release
 ```
 
-`npm run release` runs `scripts/release.mjs`: it bumps the patch version (`0.1.0` → `0.1.1`), writes `release-notes.md` from `git log`, commits and tags (`v0.1.1`), pushes, then builds and uploads the installers plus `latest.yml`. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
+**All platforms (Linux/macOS/Windows):** pushing a `v*` tag triggers the GitHub Actions workflow (`.github/workflows/release.yml`). Each platform is built on its native runner and the artifacts are published to the same release automatically — no local mac/Linux machine needed:
 
-To publish the current version without a bump (e.g. re-upload after a fix), use `npm run publish`.
+```bash
+git tag v0.1.1 && git push origin main --tags
+```
 
-Users on the **installed (NSIS)** version are notified automatically and can restart to install. The **portable** exe does not support auto-update — download the new one from Releases instead. The updater only offers versions newer than the installed one.
+Each runner creates the release (idempotent, auto-generated notes) and uploads its artifacts: NSIS + portable exe, dmg + zip, AppImage + deb, plus `latest.yml`/`latest-linux.yml`/`latest-mac.yml` for auto-updates.
+
+**Notes**
+- macOS builds are **unsigned** (no Apple Developer certificate). Users must right-click → Open the first time; Gatekeeper will otherwise block it. To sign/notarize, add `CSC_LINK`/`CSC_KEY_PASSWORD` and `APPLE_ID`/`APPLE_APP_SPECIFIC_PASSWORD`/`APPLE_TEAM_ID` secrets to the workflow.
+- Users on the **installed (NSIS)** Windows version are notified automatically and can restart to install. The **portable** exe does not support auto-update — download the new one from Releases instead. The updater only offers versions newer than the installed one.
+
+To re-upload the current version without a bump, use `npm run publish` (Windows) or run the workflow manually.
 
 ## Icon
 

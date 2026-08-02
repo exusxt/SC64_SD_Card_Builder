@@ -74,7 +74,20 @@ $g.Dispose()
 $logo.Save($outPng, [System.Drawing.Imaging.ImageFormat]::Png)
 $logo.Dispose()
 
+$outBuildPng = Join-Path $root 'build\icon.png'
+$iconPng = New-Object System.Drawing.Bitmap(1024, 1024)
+$g = [System.Drawing.Graphics]::FromImage($iconPng)
+$g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+$g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+$g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+$g.Clear([System.Drawing.Color]::Transparent)
+$g.DrawImage($source, 0, 0, 1024, 1024)
+$g.Dispose()
+$iconPng.Save($outBuildPng, [System.Drawing.Imaging.ImageFormat]::Png)
+$iconPng.Dispose()
+
 $source.Dispose()
 
 Write-Output "Wrote $outIco ($((Get-Item -LiteralPath $outIco).Length) bytes)"
 Write-Output "Wrote $outPng"
+Write-Output "Wrote $outBuildPng"
