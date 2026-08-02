@@ -1,5 +1,5 @@
 appId: dev.sc64.sdcardbuilder
-productName: SC64 SD Card Builder
+productName: SC64-SD-Card-Builder
 directories:
   buildResources: build
   output: dist
@@ -41,7 +41,12 @@ mac:
   hardenedRuntime: false
   gatekeeperAssess: false
 linux:
+  # Space-free install dir (/opt/SC64-SD-Card-Builder): Chromium's SUID sandbox
+  # cannot run from a path containing spaces.
+  executableName: sc64-sd-card-builder
   icon: build/icon.png
+  desktop:
+    Name: SC64 SD Card Builder
   target:
     - target: AppImage
       arch:

@@ -48,14 +48,14 @@ Formatting a physical drive requires elevated privileges, which the app requests
 ## Troubleshooting
 
 - **Windows — SmartScreen "Unknown publisher":** builds are unsigned (no code-signing certificate), so SmartScreen may warn on first run. This is a reputation issue, not malware — choose *More info → Run anyway*.
-- **Linux — app closes instantly with `SIGTRAP` / "The SUID sandbox helper binary was found, but is not configured correctly"** (e.g. Ubuntu 24.04+/25.04): the Chromium sandbox lost its setuid bit during packaging. Since v0.2.4 the `.deb`/`.rpm` `postinst` fixes this automatically — just reinstall the package. To repair an existing install without reinstalling:
+- **Linux — app closes instantly with `SIGTRAP`** (e.g. Ubuntu 24.04+/25.04): Chromium's SUID sandbox cannot run from a path containing spaces, and these distros block the alternative user-namespace sandbox. Since v0.2.5 the `.deb`/`.rpm` install to the space-free `/opt/SC64-SD-Card-Builder` and set the sandbox's setuid bit at install time — just reinstall the package. If launching still aborts with "SUID sandbox helper binary … not configured correctly", repair the permissions:
 
   ```bash
-  sudo chown root:root "/opt/SC64 SD Card Builder/chrome-sandbox"
-  sudo chmod 4755 "/opt/SC64 SD Card Builder/chrome-sandbox"
+  sudo chown root:root /opt/SC64-SD-Card-Builder/chrome-sandbox
+  sudo chmod 4755 /opt/SC64-SD-Card-Builder/chrome-sandbox
   ```
 
-  As a temporary workaround you can also launch with `--no-sandbox` (disables the Chromium sandbox — not recommended).
+  As a last resort you can also launch with `--no-sandbox` (disables the Chromium sandbox — not recommended).
 - **Linux AppImage on Ubuntu 24.04+/25.04:** these distros restrict unprivileged user namespaces (AppArmor), which the AppImage relies on because its sandbox cannot be setuid. Prefer the `.deb` on these systems, or run the AppImage with `--no-sandbox`.
 - **macOS — Gatekeeper blocks the app:** builds are unsigned; the first time (and after each manual update) right-click the app → **Open** instead of double-clicking.
 
