@@ -55,7 +55,7 @@ function pickPortableAsset(assets: ReleaseAsset[], version: string): ReleaseAsse
 
 async function portableCheck(): Promise<void> {
   try {
-    const info = await getAppLatestRelease(true)
+    const info = await getAppLatestRelease()
     if (!isNewerVersion(info.version, app.getVersion())) {
       send({ type: 'update', state: 'not-available' })
       return
