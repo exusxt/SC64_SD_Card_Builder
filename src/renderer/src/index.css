@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sc64-bg: #0b1020;
+  --sc64-panel: #111a30;
+  --sc64-panel2: #0e1526;
+  --sc64-deep: #070b16;
+  --sc64-border: #223052;
+  --sc64-borderlight: #2e3f6b;
+  --sc64-accent: #38bdf8;
+  --sc64-accent2: #a78bfa;
+  --sc64-good: #34d399;
+  --sc64-warn: #fbbf24;
+  --sc64-bad: #f87171;
+  --sc64-muted: #8b98b8;
+  --sc64-text: #e2e8f0;
+  --sc64-glow: 0 0 24px rgba(56, 189, 248, 0.25);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-sc64-bg text-sc64-text antialiased;
+  background-image: radial-gradient(
+      1200px 600px at 20% -10%,
+      color-mix(in srgb, var(--sc64-accent) 14%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(1000px 500px at 90% 110%, color-mix(in srgb, var(--sc64-accent2) 14%, transparent), transparent 60%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--sc64-accent) 35%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sc64-borderlight) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--sc64-borderlight);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 18px color-mix(in srgb, var(--sc64-accent) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 30px color-mix(in srgb, var(--sc64-accent) 60%, transparent);
+  }
+}
+
+.animate-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes sc64-marquee {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.animate-marquee {
+  background-size: 200% 200%;
+  animation: sc64-marquee 3s linear infinite;
+}
+
+@keyframes sc64-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.animate-shimmer {
+  animation: sc64-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes sc64-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-float {
+  animation: sc64-float 2.2s ease-in-out infinite;
+}

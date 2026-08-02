@@ -1,2 +1,47 @@
-# Auto detect text files and perform LF normalization
+# Normalize text files to LF on commit and checkout (cross-platform)
 * text=auto
+
+# Dotfiles (no extension)
+.* text eol=lf
+
+# Source, config and docs: LF everywhere, regardless of autocrlf
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.svg text eol=lf
+*.ps1 text eol=lf
+*.d.ts text eol=lf
+*.tsbuildinfo text eol=lf
+
+# Never run line-ending conversion on binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.exe binary
+*.zip binary
+*.n64 binary
+*.z64 binary
+*.v64 binary
+*.rom binary
+*.nes binary
+*.smc binary
+*.sfc binary
+*.gb binary
+*.gbc binary
+*.sms binary
+*.gg binary
+*.chf binary
+*.ndd binary
+*.d64 binary

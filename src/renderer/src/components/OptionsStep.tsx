@@ -1,0 +1,218 @@
+import { FolderPlus, Trash2, FolderOpen } from 'lucide-react'
+import type { AppSettings, EmulatorsInfo, EmulatorKey, MenuReleaseInfo, MetadataReleaseInfo } from '../../../shared/types'
+import type { T } from '../i18n'
+import { Badge, Button, Checkbox, Field } from './ui'
+import { cn, EMULATOR_LABELS, ROM_TYPE_LABELS } from '../lib'
+
+export function OptionsStep({
+  t,
+  settings,
+  menu,
+  metadata,
+  emulators,
+  onSettingsChange,
+  onAddSources,
+  onRemoveSource
+}: {
+  t: T
+  settings: AppSettings
+  menu: MenuReleaseInfo | null
+  metadata: MetadataReleaseInfo | null
+  emulators: EmulatorsInfo | null
+  onSettingsChange: (patch: Partial<AppSettings>) => void
+  onAddSources: () => void
+  onRemoveSource: (path: string) => void
+}): React.JSX.Element {
+  const hasAnyAction =
+    settings.downloadMenu ||
+    settings.downloadMetadata ||
+    settings.createFolders ||
+    settings.downloadEmulators ||
+    (settings.copyRoms && settings.romSources.length > 0 && (settings.copyAllTypes || Object.values(settings.romTypes).some(Boolean)))
+
+  return (
+    <div className="space-y-4">
+      <Checkbox
+        label={t('opt.folders')}
+        hint={t('opt.foldersHint')}
+        checked={settings.createFolders}
+        onChange={(v) => onSettingsChange({ createFolders: v })}
+      />
+
+      <Checkbox
+        label={
+          <span className="flex items-center gap-2">
+            {t('opt.menu')} <code className="font-mono text-[11px] text-sc64-accent">sc64menu.n64</code>
+            {menu ? <Badge tone="accent">{menu.tag}</Badge> : null}
+          </span>
+        }
+        hint={t('opt.menuHint')}
+        checked={settings.downloadMenu}
+        onChange={(v) => onSettingsChange({ downloadMenu: v })}
+      />
+
+      <Checkbox
+        label={
+          <span className="flex items-center gap-2">
+            {t('opt.metadata')}
+            {metadata ? <Badge tone="default">{metadata.tag}</Badge> : null}
+          </span>
+        }
+        hint={t('opt.metadataHint')}
+        checked={settings.downloadMetadata}
+        onChange={(v) => onSettingsChange({ downloadMetadata: v })}
+      />
+
+      <Checkbox
+        label={t('opt.emulators')}
+        hint={t('opt.emulatorsHint')}
+        checked={settings.downloadEmulators}
+        onChange={(v) => onSettingsChange({ downloadEmulators: v })}
+      />
+
+      <div className={cn('space-y-2 pl-1 transition-opacity', !settings.downloadEmulators && 'pointer-events-none opacity-40')}>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {(Object.keys(EMULATOR_LABELS) as EmulatorKey[]).map((key) => {
+            const info = emulators?.list.find((e) => e.key === key)
+            return (
+              <label
+                key={key}
+                className={cn(
+                  'flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition-colors',
+                  settings.emulators[key]
+                    ? 'border-sc64-accent/50 bg-sc64-accent/10'
+                    : 'border-sc64-border bg-sc64-panel/50 hover:border-sc64-borderlight'
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={settings.emulators[key]}
+                  onChange={(e) => onSettingsChange({ emulators: { ...settings.emulators, [key]: e.target.checked } })}
+                  className="h-4 w-4 cursor-pointer appearance-none rounded border border-sc64-borderlight bg-sc64-panel2 transition-all checked:border-sc64-accent checked:bg-sc64-accent"
+                />
+                <span className="flex-1 min-w-0">
+                  <span className="block font-medium">{EMULATOR_LABELS[key]}</span>
+                  <span className="block truncate font-mono text-[11px] text-sc64-muted">
+                    {info?.error ? t('opt.unavailable') : info?.version ? `${info.fileName} (${info.version})` : info?.fileName ?? key}
+                  </span>
+                </span>
+                {info?.error ? <Badge tone="bad">{t('opt.offline')}</Badge> : null}
+              </label>
+            )
+          })}
+        </div>
+      </div>
+
+      <Checkbox
+        label={
+          <span className="flex items-center gap-2">
+            {t('opt.roms')} <Badge tone="good">{t('opt.recommended')}</Badge>
+          </span>
+        }
+        hint={t('opt.romsHint')}
+        checked={settings.copyRoms}
+        onChange={(v) => onSettingsChange({ copyRoms: v })}
+      />
+
+      <div className={cn('space-y-3 rounded-xl border border-sc64-border bg-sc64-panel2/40 p-4 transition-opacity', !settings.copyRoms && 'pointer-events-none opacity-40')}>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-sc64-muted">{t('opt.romSources')}</span>
+          <Button variant="outline" size="sm" onClick={onAddSources}>
+            <FolderPlus className="h-3.5 w-3.5" /> {t('opt.addFolders')}
+          </Button>
+        </div>
+
+        {settings.romSources.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-sc64-border px-3 py-4 text-center text-xs text-sc64-muted">
+            {t('opt.noFolders')}
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {settings.romSources.map((src) => (
+              <li key={src} className="group flex items-center gap-2 rounded-lg border border-sc64-border bg-sc64-panel px-3 py-2">
+                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-sc64-accent" />
+                <span className="min-w-0 flex-1 truncate font-mono text-xs">{src}</span>
+                <button
+                  onClick={() => onRemoveSource(src)}
+                  className="text-sc64-muted opacity-0 transition-opacity hover:text-sc64-bad group-hover:opacity-100"
+                  title={t('opt.removeFolder')}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+          <Checkbox
+            label={t('opt.subdirs')}
+            hint={t('opt.subdirsHint')}
+            checked={settings.includeSubdirs}
+            onChange={(v) => onSettingsChange({ includeSubdirs: v })}
+            className="flex-1"
+          />
+          <Checkbox
+            label={t('opt.createSaves')}
+            hint={t('opt.createSavesHint')}
+            checked={settings.createSaves}
+            onChange={(v) => onSettingsChange({ createSaves: v })}
+            className="flex-1"
+          />
+        </div>
+
+        <Field label={t('opt.fileTypes')}>
+          <div className="grid gap-1.5 sm:grid-cols-2">
+            {(Object.keys(ROM_TYPE_LABELS) as Array<keyof AppSettings['romTypes']>).map((key) => (
+              <label
+                key={key}
+                className={cn(
+                  'flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-xs transition-colors',
+                  settings.romTypes[key]
+                    ? 'border-sc64-accent/50 bg-sc64-accent/10'
+                    : 'border-sc64-border bg-sc64-panel/50 hover:border-sc64-borderlight'
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={settings.romTypes[key]}
+                  onChange={(e) => onSettingsChange({ romTypes: { ...settings.romTypes, [key]: e.target.checked } })}
+                  className="h-3.5 w-3.5 cursor-pointer appearance-none rounded border border-sc64-borderlight bg-sc64-panel2 transition-all checked:border-sc64-accent checked:bg-sc64-accent"
+                />
+                {ROM_TYPE_LABELS[key]}
+              </label>
+            ))}
+          </div>
+        </Field>
+      </div>
+
+      <Checkbox
+        label={t('opt.overwrite')}
+        hint={t('opt.overwriteHint')}
+        checked={settings.overwrite}
+        onChange={(v) => onSettingsChange({ overwrite: v })}
+      />
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Checkbox
+          label={t('opt.stage')}
+          hint={t('opt.stageHint')}
+          checked={settings.stage}
+          onChange={(v) => onSettingsChange({ stage: v })}
+        />
+        <Checkbox
+          label={t('opt.verify')}
+          hint={t('opt.verifyHint')}
+          checked={settings.verify}
+          onChange={(v) => onSettingsChange({ verify: v })}
+        />
+      </div>
+
+      {!hasAnyAction && !settings.preparedSource ? (
+        <p className="rounded-xl border border-sc64-warn/40 bg-sc64-warn/10 px-4 py-3 text-xs text-sc64-warn">
+          {t('opt.nothingSelected')}
+        </p>
+      ) : null}
+    </div>
+  )
+}
