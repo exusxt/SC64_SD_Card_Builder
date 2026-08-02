@@ -32,6 +32,7 @@ export default function App(): React.JSX.Element {
   const [metadata, setMetadata] = useState<MetadataReleaseInfo | null>(null)
   const [emulators, setEmulators] = useState<EmulatorsInfo | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [version, setVersion] = useState('')
   const [maximized, setMaximized] = useState(false)
   const [preparedCount, setPreparedCount] = useState<{ files: number; bytes: number } | null>(null)
   const [running, setRunning] = useState<'prepare' | 'format' | null>(null)
@@ -94,6 +95,7 @@ export default function App(): React.JSX.Element {
       setSettings({ ...DEFAULT_SETTINGS, ...s })
       setIsAdmin(admin)
       setMaximized(winMax)
+      window.api.getVersion().then(setVersion).catch(() => undefined)
       loadedRef.current = true
     })()
     void refreshDrives()
@@ -242,6 +244,7 @@ export default function App(): React.JSX.Element {
     <div className="flex h-screen flex-col overflow-hidden">
       <TitleBar
         t={t}
+        version={version}
         theme={settings.theme}
         language={settings.language}
         maximized={maximized}

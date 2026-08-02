@@ -1,4 +1,4 @@
-import { dialog, ipcMain, shell, BrowserWindow, IpcMainInvokeEvent } from 'electron'
+import { app, dialog, ipcMain, shell, BrowserWindow, IpcMainInvokeEvent } from 'electron'
 import { existsSync, statSync } from 'node:fs'
 import type { AppEvent, PrepareOptions, FormatOptions } from '../shared/types'
 import { listDrives } from './drives'
@@ -75,6 +75,7 @@ export function registerIpc(): void {
   ipcMain.handle('releases:emulators', () => getEmulatorsInfo())
 
   ipcMain.handle('app:isAdmin', () => isElevated())
+  ipcMain.handle('app:getVersion', () => app.getVersion())
   ipcMain.handle('app:relaunchAdmin', () => showAdminPrompt())
   ipcMain.handle('app:openDocs', () => {
     void shell.openExternal('https://menu.summercart64.dev/docs/00_index.html')

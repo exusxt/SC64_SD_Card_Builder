@@ -72,6 +72,7 @@ function MenuItem({ active, onClick, children }: MenuItemProps): React.JSX.Eleme
 
 interface TitleBarProps {
   t: T
+  version: string
   theme: ThemeId
   language: Locale
   maximized: boolean
@@ -85,7 +86,7 @@ interface TitleBarProps {
 }
 
 export function TitleBar(props: TitleBarProps): React.JSX.Element {
-  const { t, theme, language, maximized, updateState } = props
+  const { t, version, theme, language, maximized, updateState } = props
 
   const updateActive =
     updateState === 'available' || updateState === 'downloading' || updateState === 'downloaded' || updateState === 'checking'
@@ -98,6 +99,7 @@ export function TitleBar(props: TitleBarProps): React.JSX.Element {
       <div className="mr-3 flex items-center gap-2">
         <img src={appIcon} alt={t('app.title')} className="h-5 w-5 rounded-md object-cover" />
         <span className="text-xs font-semibold tracking-wide text-sc64-text">{t('app.title')}</span>
+        {version ? <span className="text-[10px] font-normal text-sc64-muted">v{version}</span> : null}
       </div>
 
       <div className="flex items-center gap-0.5">

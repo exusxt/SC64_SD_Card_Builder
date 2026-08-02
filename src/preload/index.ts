@@ -23,6 +23,7 @@ const api = {
   getMetadataRelease: (): Promise<MetadataReleaseInfo> => ipcRenderer.invoke('releases:metadata'),
   getEmulatorsInfo: (): Promise<EmulatorsInfo> => ipcRenderer.invoke('releases:emulators'),
   isAdmin: (): Promise<boolean> => ipcRenderer.invoke('app:isAdmin'),
+  getVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
   relaunchAdmin: (): Promise<void> => ipcRenderer.invoke('app:relaunchAdmin'),
   openDocs: (): Promise<void> => ipcRenderer.invoke('app:openDocs'),
   reveal: (path: string): Promise<void> => ipcRenderer.invoke('app:reveal', path),
