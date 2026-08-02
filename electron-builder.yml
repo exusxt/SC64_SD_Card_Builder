@@ -55,4 +55,4 @@ publish:
   provider: github
   owner: exusxt
   repo: SC64_SD_Card_Builder
-  releaseType: draft
+  releaseType: release

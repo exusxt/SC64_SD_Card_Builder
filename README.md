@@ -31,16 +31,18 @@ Outputs to `dist/`.
 
 ## Publishing updates
 
-Auto-updates use GitHub Releases (`github.com/exusxt/SC64_SD_Card_Builder`). Releases are created as drafts:
+Auto-updates use GitHub Releases (`github.com/exusxt/SC64_SD_Card_Builder`). One command creates the whole release — bumps the version, generates release notes from commits, tags, pushes and publishes:
 
 ```bash
 $env:GH_TOKEN="ghp_..."   # PowerShell: set a GitHub token with repo scope
-npm run publish           # builds and uploads, creates a draft release
+npm run release           # everything from version bump to published release
 ```
 
-Then publish the draft on GitHub. Users on the **installed (NSIS)** version are notified automatically and can restart to install. The **portable** exe does not support auto-update — download the new one from Releases instead.
+`npm run release` runs `scripts/release.mjs`: it bumps the patch version (`0.1.0` → `0.1.1`), writes `release-notes.md` from `git log`, commits and tags (`v0.1.1`), pushes, then builds and uploads the installers plus `latest.yml`. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
 
-Bump `version` in `package.json` before each release; the updater only offers versions newer than the installed one.
+To publish the current version without a bump (e.g. re-upload after a fix), use `npm run publish`.
+
+Users on the **installed (NSIS)** version are notified automatically and can restart to install. The **portable** exe does not support auto-update — download the new one from Releases instead. The updater only offers versions newer than the installed one.
 
 ## Icon
 
