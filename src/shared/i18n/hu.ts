@@ -22,6 +22,10 @@ const hu = {
   'theme.ocean': 'Óceán',
   'theme.forest': 'Erdő',
   'theme.sunset': 'Naplemente',
+  'theme.gallery': 'Galéria',
+  'theme.royal': 'Királyi',
+  'theme.candy': 'Cukorka',
+  'theme.paper': 'Papír',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

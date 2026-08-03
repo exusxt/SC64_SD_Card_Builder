@@ -22,6 +22,10 @@ const fi = {
   'theme.ocean': 'Valtameri',
   'theme.forest': 'Metsä',
   'theme.sunset': 'Auringonlasku',
+  'theme.gallery': 'Galleria',
+  'theme.royal': 'Kuninkaallinen',
+  'theme.candy': 'Karkki',
+  'theme.paper': 'Paperi',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

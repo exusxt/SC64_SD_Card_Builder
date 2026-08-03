@@ -22,6 +22,10 @@ const el = {
   'theme.ocean': 'Ωκεανός',
   'theme.forest': 'Δάσος',
   'theme.sunset': 'Ηλιοβασίλεμα',
+  'theme.gallery': 'Γκαλερί',
+  'theme.royal': 'Βασιλικό',
+  'theme.candy': 'Καραμέλα',
+  'theme.paper': 'Χαρτί',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

@@ -13,6 +13,7 @@ import type {
   StepState
 } from '../../shared/types'
 import { DEFAULT_SETTINGS, applyTheme } from './lib'
+import { BACKGROUNDS } from './backgrounds'
 import { useT } from './i18n'
 import { Header } from './components/Header'
 import { TitleBar } from './components/TitleBar'
@@ -52,6 +53,7 @@ export default function App(): React.JSX.Element {
   const [update, setUpdate] = useState<UpdateState | null>(null)
   const updateTimer = useRef<number | null>(null)
   const loadedRef = useRef(false)
+  const [galleryBg, setGalleryBg] = useState<string | null>(null)
 
   const t = useT(settings.language)
 
@@ -121,6 +123,16 @@ export default function App(): React.JSX.Element {
 
   useEffect(() => {
     applyTheme(settings.theme)
+  }, [settings.theme])
+
+  // Gallery theme: pick a fresh random background on startup and whenever the
+  // theme is (re)selected.
+  useEffect(() => {
+    if (settings.theme !== 'gallery') {
+      setGalleryBg(null)
+      return
+    }
+    setGalleryBg(BACKGROUNDS.length > 0 ? BACKGROUNDS[Math.floor(Math.random() * BACKGROUNDS.length)] : null)
   }, [settings.theme])
 
   useEffect(() => {
@@ -312,23 +324,39 @@ export default function App(): React.JSX.Element {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      <TitleBar
-        t={t}
-        version={version}
-        theme={settings.theme}
-        language={settings.language}
-        maximized={maximized}
-        updateState={update?.state ?? null}
-        onThemeChange={(theme) => patchSettings({ theme })}
-        onLanguageChange={(language) => patchSettings({ language })}
-        onCheckForUpdates={() => void window.api.checkForUpdates()}
-        onMinimize={() => void window.api.windowMinimize()}
-        onToggleMaximize={() => void window.api.windowToggleMaximize().then(setMaximized)}
-        onClose={() => void window.api.windowClose()}
-      />
+    <div className="relative flex h-screen flex-col overflow-hidden">
+      {settings.theme === 'gallery' && galleryBg ? (
+        <>
+          <img
+            src={galleryBg}
+            alt=""
+            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+          />
+          <div
+            className="pointer-events-none absolute inset-0 z-0"
+            style={{ background: 'rgba(7, 11, 22, 0.55)' }}
+          />
+        </>
+      ) : null}
 
-      <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-y-auto px-6 pb-6 pt-5">
+      <div className="relative z-10 shrink-0">
+        <TitleBar
+          t={t}
+          version={version}
+          theme={settings.theme}
+          language={settings.language}
+          maximized={maximized}
+          updateState={update?.state ?? null}
+          onThemeChange={(theme) => patchSettings({ theme })}
+          onLanguageChange={(language) => patchSettings({ language })}
+          onCheckForUpdates={() => void window.api.checkForUpdates()}
+          onMinimize={() => void window.api.windowMinimize()}
+          onToggleMaximize={() => void window.api.windowToggleMaximize().then(setMaximized)}
+          onClose={() => void window.api.windowClose()}
+        />
+      </div>
+
+      <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-y-auto px-6 pb-6 pt-5">
         <Header t={t} menu={menu} metadata={metadata} isAdmin={isAdmin} onRequestAdmin={() => void requestAdmin()} adminRequesting={adminRequesting} onPreview={() => destination && setPreviewRoot(destination)} canPreview={destination.trim().length > 0} />
         <Stepper t={t} step={step} onNavigate={setStep} locked={running !== null} />
 

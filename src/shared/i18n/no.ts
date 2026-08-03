@@ -22,6 +22,10 @@ const no = {
   'theme.ocean': 'Hav',
   'theme.forest': 'Skog',
   'theme.sunset': 'Solnedgang',
+  'theme.gallery': 'Galleri',
+  'theme.royal': 'Kongelig',
+  'theme.candy': 'Godteri',
+  'theme.paper': 'Papir',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

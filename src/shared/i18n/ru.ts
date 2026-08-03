@@ -22,6 +22,10 @@ const ru = {
   'theme.ocean': 'Океан',
   'theme.forest': 'Лес',
   'theme.sunset': 'Закат',
+  'theme.gallery': 'Галерея',
+  'theme.royal': 'Королевский',
+  'theme.candy': 'Конфеты',
+  'theme.paper': 'Бумага',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import type { PreviewEntry } from '../../../shared/types'
 import type { T } from '../i18n'
+import { BACKGROUNDS } from '../backgrounds'
 import { Button } from './ui'
 
 const SCREEN_W = 640
@@ -19,11 +20,6 @@ const BOXART_JP = { x: 471, y: 218, w: 112, h: 158 }
 const BOXART_DD = { x: 456, y: 264, w: 129, h: 112 }
 
 const EMULATOR_EXTS = new Set(['.nes', '.smc', '.sfc', '.fig', '.gb', '.gbc', '.sms', '.gg', '.chf'])
-
-// Bundled menu background images; a random one is shown while a ROM is selected.
-const BACKGROUNDS = Object.values(
-  import.meta.glob('../assets/backgrounds/*.{png,jpg,jpeg,webp}', { eager: true, import: 'default' })
-) as string[]
 
 const MONO = "'ui-monospace','SFMono-Regular','Menlo','Consolas',monospace"
 

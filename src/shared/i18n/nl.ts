@@ -22,6 +22,10 @@ const nl = {
   'theme.ocean': 'Oceaan',
   'theme.forest': 'Bos',
   'theme.sunset': 'Zonsondergang',
+  'theme.gallery': 'Galerij',
+  'theme.royal': 'Koninklijk',
+  'theme.candy': 'Snoep',
+  'theme.paper': 'Papier',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

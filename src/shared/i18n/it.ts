@@ -22,6 +22,10 @@ const it = {
   'theme.ocean': 'Oceano',
   'theme.forest': 'Foresta',
   'theme.sunset': 'Tramonto',
+  'theme.gallery': 'Galleria',
+  'theme.royal': 'Regale',
+  'theme.candy': 'Caramella',
+  'theme.paper': 'Carta',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

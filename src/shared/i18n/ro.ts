@@ -22,6 +22,10 @@ const ro = {
   'theme.ocean': 'Ocean',
   'theme.forest': 'Pădure',
   'theme.sunset': 'Apus',
+  'theme.gallery': 'Galerie',
+  'theme.royal': 'Regal',
+  'theme.candy': 'Bomboane',
+  'theme.paper': 'Hârtie',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

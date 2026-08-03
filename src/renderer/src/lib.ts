@@ -118,6 +118,82 @@ export const THEMES: Record<ThemeId, { name: string; vars: ThemeVars }> = {
       '--sc64-text': '#fce7f3',
       '--sc64-glow': '0 0 24px rgba(251, 113, 133, 0.25)'
     }
+  },
+  gallery: {
+    name: 'Gallery',
+    vars: {
+      '--sc64-bg': '#0b1020',
+      '--sc64-panel': '#111a30',
+      '--sc64-panel2': '#0e1526',
+      '--sc64-deep': '#070b16',
+      '--sc64-border': '#223052',
+      '--sc64-borderlight': '#2e3f6b',
+      '--sc64-accent': '#38bdf8',
+      '--sc64-accent2': '#a78bfa',
+      '--sc64-good': '#34d399',
+      '--sc64-warn': '#fbbf24',
+      '--sc64-bad': '#f87171',
+      '--sc64-muted': '#8b98b8',
+      '--sc64-text': '#e2e8f0',
+      '--sc64-glow': '0 0 24px rgba(56, 189, 248, 0.25)'
+    }
+  },
+  royal: {
+    name: 'Royal',
+    vars: {
+      '--sc64-bg': '#0d0b21',
+      '--sc64-panel': '#171436',
+      '--sc64-panel2': '#13102c',
+      '--sc64-deep': '#08071a',
+      '--sc64-border': '#2a2652',
+      '--sc64-borderlight': '#3d3780',
+      '--sc64-accent': '#818cf8',
+      '--sc64-accent2': '#c084fc',
+      '--sc64-good': '#34d399',
+      '--sc64-warn': '#fbbf24',
+      '--sc64-bad': '#f87171',
+      '--sc64-muted': '#9aa3d8',
+      '--sc64-text': '#e6e7f5',
+      '--sc64-glow': '0 0 24px rgba(129, 140, 248, 0.25)'
+    }
+  },
+  candy: {
+    name: 'Candy',
+    vars: {
+      '--sc64-bg': '#1a0b2e',
+      '--sc64-panel': '#261040',
+      '--sc64-panel2': '#1f0c36',
+      '--sc64-deep': '#120623',
+      '--sc64-border': '#3d1d63',
+      '--sc64-borderlight': '#5b2f8f',
+      '--sc64-accent': '#f472b6',
+      '--sc64-accent2': '#22d3ee',
+      '--sc64-good': '#4ade80',
+      '--sc64-warn': '#fbbf24',
+      '--sc64-bad': '#fb7185',
+      '--sc64-muted': '#c39bd8',
+      '--sc64-text': '#fae8ff',
+      '--sc64-glow': '0 0 24px rgba(244, 114, 182, 0.28)'
+    }
+  },
+  paper: {
+    name: 'Paper',
+    vars: {
+      '--sc64-bg': '#f1f5f9',
+      '--sc64-panel': '#ffffff',
+      '--sc64-panel2': '#e2e8f0',
+      '--sc64-deep': '#cbd5e1',
+      '--sc64-border': '#cbd5e1',
+      '--sc64-borderlight': '#94a3b8',
+      '--sc64-accent': '#2563eb',
+      '--sc64-accent2': '#7c3aed',
+      '--sc64-good': '#16a34a',
+      '--sc64-warn': '#d97706',
+      '--sc64-bad': '#dc2626',
+      '--sc64-muted': '#64748b',
+      '--sc64-text': '#1e293b',
+      '--sc64-glow': '0 0 24px rgba(37, 99, 235, 0.18)'
+    }
   }
 }
 

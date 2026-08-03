@@ -22,6 +22,10 @@ const sv = {
   'theme.ocean': 'Hav',
   'theme.forest': 'Skog',
   'theme.sunset': 'Solnedgång',
+  'theme.gallery': 'Galleri',
+  'theme.royal': 'Kunglig',
+  'theme.candy': 'Godis',
+  'theme.paper': 'Papper',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

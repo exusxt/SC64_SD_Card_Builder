@@ -22,6 +22,10 @@ const da = {
   'theme.ocean': 'Hav',
   'theme.forest': 'Skov',
   'theme.sunset': 'Solnedgang',
+  'theme.gallery': 'Galleri',
+  'theme.royal': 'Kongelig',
+  'theme.candy': 'Slik',
+  'theme.paper': 'Papir',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

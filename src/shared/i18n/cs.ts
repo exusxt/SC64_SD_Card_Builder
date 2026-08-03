@@ -22,6 +22,10 @@ const cs = {
   'theme.ocean': 'Oceán',
   'theme.forest': 'Les',
   'theme.sunset': 'Západ slunce',
+  'theme.gallery': 'Galerie',
+  'theme.royal': 'Královský',
+  'theme.candy': 'Bonbón',
+  'theme.paper': 'Papír',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',

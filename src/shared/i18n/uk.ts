@@ -22,6 +22,10 @@ const uk = {
   'theme.ocean': 'Океан',
   'theme.forest': 'Ліс',
   'theme.sunset': 'Захід сонця',
+  'theme.gallery': 'Галерея',
+  'theme.royal': 'Королівський',
+  'theme.candy': 'Цукерки',
+  'theme.paper': 'Папір',
 
   'lang.en': 'English',
   'lang.de': 'Deutsch',
