@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
 import type {
   AppEvent,
   AppSettings,
+  CardInspection,
   DriveInfo,
   EmulatorsInfo,
   FormatOptions,
@@ -31,6 +32,7 @@ const api = {
   cancelPrepare: (): void => ipcRenderer.send('prepare:cancel'),
   countPreparedFolder: (path: string): Promise<{ files: number; bytes: number } | null> =>
     ipcRenderer.invoke('prepare:countPrepared', path),
+  inspectCard: (path: string): Promise<CardInspection | null> => ipcRenderer.invoke('inspect:card', path),
   format: (options: FormatOptions): Promise<FormatResult> => ipcRenderer.invoke('format:run', options),
   cancelFormat: (): void => ipcRenderer.send('format:cancel'),
   windowMinimize: (): Promise<void> => ipcRenderer.invoke('win:minimize'),

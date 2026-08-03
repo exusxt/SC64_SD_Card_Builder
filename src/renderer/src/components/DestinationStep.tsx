@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, CheckCircle2, FolderOpen, HardDrive, RefreshCw, ShieldAlert, Eye, XCircle, X, PackageOpen } from 'lucide-react'
-import type { AppSettings, DriveInfo, FormatResult } from '../../../shared/types'
+import { AlertTriangle, CheckCircle2, FolderOpen, HardDrive, RefreshCw, ShieldAlert, Eye, XCircle, X, PackageOpen, Database } from 'lucide-react'
+import type { AppSettings, CardInspection, DriveInfo, FormatResult } from '../../../shared/types'
 import type { T } from '../i18n'
 import { Button, Checkbox, Field, Input, ProgressBar, Select } from './ui'
 import { cn, formatBytes } from '../lib'
@@ -12,6 +12,9 @@ export function DestinationStep({
   drivesLoading,
   destination,
   preparedCount,
+  inspection,
+  inspectionLoading,
+  latestMenuTag,
   onSettingsChange,
   onRefreshDrives,
   onChoosePreparedFolder,
@@ -28,6 +31,9 @@ export function DestinationStep({
   drivesLoading: boolean
   destination: string
   preparedCount: { files: number; bytes: number } | null
+  inspection: CardInspection | null
+  inspectionLoading: boolean
+  latestMenuTag: string | null
   onSettingsChange: (patch: Partial<AppSettings>) => void
   onRefreshDrives: () => void
   onChoosePreparedFolder: () => void
@@ -54,6 +60,21 @@ export function DestinationStep({
   const mountpointKey = (selected?.mountpoint ?? '').trim().replace(/[\\/]+$/, '').toLowerCase()
   const formatConfirmValid = mountpointKey.length > 0 && formatConfirm.trim().toLowerCase() === mountpointKey
   const folderDraftPending = folderDraft !== (settings.folder ?? '')
+
+  const menuStatus: { label: string; kind: 'none' | 'preview' | 'version' } = (() => {
+    const m = inspection?.menu
+    if (!m?.present) return { label: t('inspect.menuNone'), kind: 'none' }
+    if (!m.version) return { label: t('inspect.menuCorrupt'), kind: 'none' }
+    if (m.version === 'Preview release') return { label: t('inspect.menuPreview'), kind: 'preview' }
+    return { label: m.version, kind: 'version' }
+  })()
+
+  let menuUpdate: 'none' | 'up-to-date' | 'update' = 'none'
+  if (menuStatus.kind !== 'none' && latestMenuTag) {
+    const installed = menuStatus.label.replace(/^[vV]/, '')
+    const latest = latestMenuTag.replace(/^[vV]/, '')
+    menuUpdate = installed === latest ? 'up-to-date' : 'update'
+  }
 
   return (
     <div className="space-y-4">
@@ -349,6 +370,70 @@ export function DestinationStep({
             <Button variant="ghost" size="sm" onClick={onReveal}>
               <Eye className="h-3.5 w-3.5" /> {t('common.show')}
             </Button>
+          </div>
+        ) : null}
+
+        {hasDest ? (
+          <div className="mt-4 rounded-xl border border-sc64-border bg-sc64-panel2/60 p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <Database className="h-4 w-4 text-sc64-accent" />
+              <div className="text-sm font-semibold text-sc64-text">{t('inspect.title')}</div>
+            </div>
+            {inspectionLoading ? (
+              <p className="text-xs text-sc64-muted">{t('inspect.loading')}</p>
+            ) : inspection ? (
+              inspection.files > 0 ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 rounded-xl border border-sc64-border bg-sc64-panel/60 p-3 text-sm sm:grid-cols-3">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.menu')}</div>
+                      <div className="font-medium">{menuStatus.label}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.roms')}</div>
+                      <div className="font-medium">{inspection.roms.n64}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.other')}</div>
+                      <div className="font-medium">{inspection.roms.other}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.saves')}</div>
+                      <div className="font-medium">{inspection.saves}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.files')}</div>
+                      <div className="font-medium">{inspection.files}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.free')}</div>
+                      <div className="font-medium">{formatBytes(inspection.freeBytes)}</div>
+                    </div>
+                  </div>
+                  {menuStatus.kind === 'none' ? (
+                    <p className="flex items-start gap-1.5 text-xs text-sc64-warn">
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>{t('inspect.menuNoneHint')}</span>
+                    </p>
+                  ) : menuUpdate === 'update' ? (
+                    <p className="flex items-start gap-1.5 text-xs text-sc64-warn">
+                      <RefreshCw className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>{t('inspect.updateAvailable', { current: menuStatus.label, latest: latestMenuTag ?? '' })}</span>
+                    </p>
+                  ) : menuUpdate === 'up-to-date' ? (
+                    <p className="flex items-start gap-1.5 text-xs text-sc64-good">
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>{t('inspect.upToDate', { version: menuStatus.label })}</span>
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="flex items-start gap-1.5 text-xs text-sc64-muted">
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sc64-good" />
+                  <span>{t('inspect.empty')}</span>
+                </p>
+              )
+            ) : null}
           </div>
         ) : null}
       </div>

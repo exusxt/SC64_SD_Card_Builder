@@ -19,6 +19,7 @@ All artifacts are published to the [Releases page](https://github.com/exusxt/SC6
 - Install the latest N64FlashcartMenu, boxart/metadata pack and emulators onto the card
 - Copy your own ROMs while preserving folder structure (optional save folders, file-type filter)
 - **N64 ROM validation**: detects byte order (.z64/.v64/.n64), flags mismatched extensions and bad-dump sizes, shows the region breakdown, and skips duplicate dumps of the same game
+- **Existing-card inspection**: pick a destination and instantly see the installed N64FlashcartMenu version (compared against the latest release), N64/other game counts, save folders, files and free space — with an in-place upgrade hint when the menu is outdated
 - **Prepared-folder flow**: stage a build or copy an already-prepared folder (e.g. from a friend) to the card with an animated transfer view
 - **Byte-for-byte verification** of every copied file (optional)
 - Auto-updates via GitHub Releases
@@ -70,7 +71,7 @@ npm test             # run unit tests (Vitest)
 npm run build        # build to out/
 ```
 
-Tests live in `tests/` and cover the shared i18n helpers, the path-guard utility, renderer utils and the changelog classifier. A CI gate (`.github/workflows/ci.yml`) runs typecheck + tests on every push/PR; the release workflow runs them too before packaging.
+Tests live in `tests/` and cover the shared i18n helpers, the path-guard utility, N64 ROM validation, card inspection, renderer utils and the changelog classifier. A CI gate (`.github/workflows/ci.yml`) runs typecheck + tests on every push/PR; the release workflow runs them too before packaging.
 
 ## Building & packaging
 

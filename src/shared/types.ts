@@ -11,6 +11,21 @@ export interface DriveInfo {
   isSystem: boolean
 }
 
+export interface InspectMenuInfo {
+  present: boolean
+  version: string | null
+  size: number | null
+}
+
+export interface CardInspection {
+  menu: InspectMenuInfo
+  roms: { n64: number; other: number }
+  saves: number
+  files: number
+  bytes: number
+  freeBytes: number | null
+}
+
 export interface MenuReleaseInfo {
   tag: string
   name: string

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type {
   AppEvent,
   AppSettings,
+  CardInspection,
   DriveInfo,
   EmulatorsInfo,
   FormatResult,
@@ -35,6 +36,8 @@ export default function App(): React.JSX.Element {
   const [version, setVersion] = useState('')
   const [maximized, setMaximized] = useState(false)
   const [preparedCount, setPreparedCount] = useState<{ files: number; bytes: number } | null>(null)
+  const [inspection, setInspection] = useState<CardInspection | null>(null)
+  const [inspectionLoading, setInspectionLoading] = useState(false)
   const [running, setRunning] = useState<'prepare' | 'format' | null>(null)
   const [progress, setProgress] = useState<{ value: number; max: number; label?: string } | null>(null)
   const [steps, setSteps] = useState<StepState[]>([])
@@ -148,6 +151,32 @@ export default function App(): React.JSX.Element {
 
   const selectedDrive = drives.find((d) => d.id === settings.driveId) ?? null
   const destination = settings.destinationMode === 'drive' ? (selectedDrive?.mountpoint ?? '') : (settings.folder ?? '')
+
+  useEffect(() => {
+    if (!destination) {
+      setInspection(null)
+      setInspectionLoading(false)
+      return
+    }
+    let mounted = true
+    setInspectionLoading(true)
+    void window.api
+      .inspectCard(destination)
+      .then((res) => {
+        if (!mounted) return
+        setInspection(res)
+        setInspectionLoading(false)
+      })
+      .catch(() => {
+        if (mounted) {
+          setInspection(null)
+          setInspectionLoading(false)
+        }
+      })
+    return () => {
+      mounted = false
+    }
+  }, [destination])
 
   const hasAnyAction =
     settings.downloadMenu ||
@@ -270,6 +299,9 @@ export default function App(): React.JSX.Element {
               drivesLoading={drivesLoading}
               destination={destination}
               preparedCount={preparedCount}
+              inspection={inspection}
+              inspectionLoading={inspectionLoading}
+              latestMenuTag={menu?.tag ?? null}
               onSettingsChange={patchSettings}
               onRefreshDrives={() => void refreshDrives()}
               onChoosePreparedFolder={() => void choosePreparedFolder()}
