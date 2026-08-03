@@ -34,6 +34,7 @@ export default function App(): React.JSX.Element {
   const [metadata, setMetadata] = useState<MetadataReleaseInfo | null>(null)
   const [emulators, setEmulators] = useState<EmulatorsInfo | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [adminRequesting, setAdminRequesting] = useState(false)
   const [version, setVersion] = useState('')
   const [maximized, setMaximized] = useState(false)
   const [preparedCount, setPreparedCount] = useState<{ files: number; bytes: number } | null>(null)
@@ -235,6 +236,16 @@ export default function App(): React.JSX.Element {
     setRunning(null)
   }
 
+  const requestAdmin = async (): Promise<void> => {
+    if (isAdmin || adminRequesting) return
+    setAdminRequesting(true)
+    try {
+      await window.api.relaunchAdmin()
+    } finally {
+      setAdminRequesting(false)
+    }
+  }
+
   const runPrepare = async (): Promise<void> => {
     if (!destination) return
     const mode: PrepareMode = settings.preparedSource ? 'fromPrepared' : settings.stage ? 'staged' : 'direct'
@@ -316,7 +327,7 @@ export default function App(): React.JSX.Element {
       />
 
       <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-y-auto px-6 pb-6 pt-5">
-        <Header t={t} menu={menu} metadata={metadata} isAdmin={isAdmin} />
+        <Header t={t} menu={menu} metadata={metadata} isAdmin={isAdmin} onRequestAdmin={() => void requestAdmin()} adminRequesting={adminRequesting} />
         <Stepper t={t} step={step} onNavigate={setStep} locked={running !== null} />
 
         <main className="flex-1">

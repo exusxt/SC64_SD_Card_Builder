@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { dialog } from 'electron'
+import { app, dialog } from 'electron'
 import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
@@ -52,12 +52,20 @@ export async function relaunchElevated(): Promise<{ ok: boolean; message: string
   }
 }
 
-export async function showAdminPrompt(): Promise<void> {
-  const { message } = await relaunchElevated()
+export async function showAdminPrompt(): Promise<{ ok: boolean; message: string }> {
+  const res = await relaunchElevated()
+  if (res.ok) {
+    // The elevated instance is starting (UAC / macOS / pkexec prompt was
+    // approved) — hand over and close this instance so the user ends up with a
+    // single admin window instead of two copies of the app.
+    setTimeout(() => app.quit(), 2000)
+    return { ok: true, message: 'The app is restarting as administrator.' }
+  }
   await dialog.showMessageBox({
-    type: 'info',
+    type: 'error',
     title: 'Administrator privileges required',
-    message: 'Formatting a physical drive requires administrator privileges.',
-    detail: `${message}\n\nAlternatively, close this app and run it as administrator, then try again.`
+    message: 'Could not restart the app as administrator.',
+    detail: `${res.message}\n\nAlternatively, close this app and run it as administrator, then try again.`
   })
+  return res
 }
