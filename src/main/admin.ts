@@ -25,9 +25,11 @@ export async function relaunchElevated(): Promise<{ ok: boolean; message: string
   const exe = process.execPath
   try {
     if (process.platform === 'win32') {
-      const args = process.argv.slice(1).join(' ')
+      const portableExe = process.env.PORTABLE_EXECUTABLE_FILE
+      const target = portableExe ?? exe
+      const args = portableExe ? '' : process.argv.slice(1).join(' ')
       const command = [
-        `Start-Process -FilePath '${exe.replace(/'/g, "''")}'`,
+        `Start-Process -FilePath '${target.replace(/'/g, "''")}'`,
         args ? `-ArgumentList '${args.replace(/'/g, "''")}'` : '',
         '-Verb RunAs'
       ]
