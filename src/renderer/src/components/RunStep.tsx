@@ -170,7 +170,7 @@ export function RunStep({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-sc64-border bg-sc64-log">
+      <div className="overflow-hidden rounded-2xl border border-sc64-border bg-sc64-panel">
         <div className="flex items-center gap-2 border-b border-sc64-border px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-sc64-muted">
           <ListChecks className="h-3.5 w-3.5" /> {t('run.log')}
         </div>

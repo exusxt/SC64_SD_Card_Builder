@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Shuffle } from 'lucide-react'
 import type {
   AppEvent,
   AppSettings,
@@ -12,7 +13,7 @@ import type {
   PrepareMode,
   StepState
 } from '../../shared/types'
-import { DEFAULT_SETTINGS, applyTheme } from './lib'
+import { DEFAULT_SETTINGS, applyTheme, isGalleryTheme, THEMES } from './lib'
 import { BACKGROUNDS } from './backgrounds'
 import { useT } from './i18n'
 import { Header } from './components/Header'
@@ -125,10 +126,10 @@ export default function App(): React.JSX.Element {
     applyTheme(settings.theme)
   }, [settings.theme])
 
-  // Gallery theme: pick a fresh random background on startup and whenever the
+  // Gallery themes: pick a fresh random background on startup and whenever the
   // theme is (re)selected.
   useEffect(() => {
-    if (settings.theme !== 'gallery') {
+    if (!isGalleryTheme(settings.theme)) {
       setGalleryBg(null)
       return
     }
@@ -323,9 +324,21 @@ export default function App(): React.JSX.Element {
     setSettings((s) => ({ ...s, ...patch }))
   }
 
+  const shuffleBg = (): void => {
+    setGalleryBg((prev) => {
+      if (BACKGROUNDS.length === 0) return prev
+      if (BACKGROUNDS.length === 1) return BACKGROUNDS[0]
+      let next = prev
+      while (next === prev) {
+        next = BACKGROUNDS[Math.floor(Math.random() * BACKGROUNDS.length)]
+      }
+      return next
+    })
+  }
+
   return (
     <div className="relative flex h-screen flex-col overflow-hidden">
-      {settings.theme === 'gallery' && galleryBg ? (
+      {isGalleryTheme(settings.theme) && galleryBg ? (
         <>
           <img
             src={galleryBg}
@@ -334,7 +347,7 @@ export default function App(): React.JSX.Element {
           />
           <div
             className="pointer-events-none absolute inset-0 z-0"
-            style={{ background: 'rgba(7, 11, 22, 0.55)' }}
+            style={{ background: THEMES[settings.theme].vars['--sc64-gallery-overlay'] }}
           />
         </>
       ) : null}
@@ -424,6 +437,11 @@ export default function App(): React.JSX.Element {
             <span className="font-mono text-sc64-accent">{destination || t('dest.notSelected')}</span>
           </div>
           <div className="flex items-center gap-2">
+            {isGalleryTheme(settings.theme) ? (
+              <Button variant="outline" size="sm" onClick={shuffleBg} title={t('theme.shuffleBg')}>
+                <Shuffle className="h-3.5 w-3.5" /> {t('theme.shuffleBg')}
+              </Button>
+            ) : null}
             {step === 2 ? (
               <Button variant="ghost" onClick={() => setStep(1)} disabled={running !== null}>
                 ← {t('common.back')}
