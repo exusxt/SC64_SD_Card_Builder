@@ -5,6 +5,14 @@ All notable changes to SC64 SD Card Builder.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.6.8] - 2026-08-03
+
+### Added
+
+- Themes - Gallery Glass family (Black, Green, Blue, Red, Orange, Purple) with glassmorphism on all surfaces and a shuffle-background button
+
+[Compare v0.6.7...v0.6.8](https://github.com/exusxt/SC64_SD_Card_Builder/compare/v0.6.7...v0.6.8)
+
 ## [v0.6.7] - 2026-08-03
 
 ### Fixed
