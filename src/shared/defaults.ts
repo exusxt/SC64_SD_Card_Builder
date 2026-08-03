@@ -1,0 +1,28 @@
+import type { AppSettings } from './types'
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  destinationMode: 'drive',
+  driveId: null,
+  folder: null,
+  volumeLabel: 'SUMMERCART',
+  language: 'en',
+  theme: 'gallery',
+  downloadMenu: true,
+  downloadMetadata: true,
+  createFolders: true,
+  downloadEmulators: true,
+  emulators: { nes: true, snes: true, gb: true, sms: true, chf: true },
+  installDDIPL: false,
+  ddiplSource: null,
+  copyRoms: true,
+  romSources: [],
+  copyAllTypes: true,
+  romTypes: { n64: true, nes: true, snes: true, gb: true, sms: true, chf: true, ndd: true },
+  createSaves: true,
+  includeSubdirs: true,
+  overwrite: false,
+  stage: false,
+  verify: true,
+  preparedSource: null,
+  formatOptions: { fullFormat: false }
+}

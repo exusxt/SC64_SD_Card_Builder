@@ -1,32 +1,8 @@
-import type { AppSettings, EmulatorKey } from '../../shared/types'
+import type { EmulatorKey } from '../../shared/types'
 import type { ThemeId } from '../../shared/i18n'
+import { DEFAULT_SETTINGS } from '../../shared/defaults'
 
-export const DEFAULT_SETTINGS: AppSettings = {
-  destinationMode: 'drive',
-  driveId: null,
-  folder: null,
-  volumeLabel: 'SUMMERCART',
-  language: 'en',
-  theme: 'gallery',
-  downloadMenu: true,
-  downloadMetadata: true,
-  createFolders: true,
-  downloadEmulators: true,
-  emulators: { nes: true, snes: true, gb: true, sms: true, chf: true },
-  installDDIPL: false,
-  ddiplSource: null,
-  copyRoms: true,
-  romSources: [],
-  copyAllTypes: true,
-  romTypes: { n64: true, nes: true, snes: true, gb: true, sms: true, chf: true, ndd: true },
-  createSaves: true,
-  includeSubdirs: true,
-  overwrite: false,
-  stage: false,
-  verify: true,
-  preparedSource: null,
-  formatOptions: { fullFormat: false }
-}
+export { DEFAULT_SETTINGS }
 
 export function formatBytes(bytes: number | null | undefined, decimals = 1): string {
   if (bytes === null || bytes === undefined || !Number.isFinite(bytes) || bytes <= 0) return '—'

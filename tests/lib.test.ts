@@ -32,4 +32,8 @@ describe('DEFAULT_SETTINGS', () => {
     expect(DEFAULT_SETTINGS.verify).toBe(true)
     expect(DEFAULT_SETTINGS.volumeLabel).toBe('SUMMERCART')
   })
+
+  it('defaults to the Gallery Glass theme', () => {
+    expect(DEFAULT_SETTINGS.theme).toBe('gallery')
+  })
 })

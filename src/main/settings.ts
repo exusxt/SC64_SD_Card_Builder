@@ -2,33 +2,9 @@ import { app } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AppSettings } from '../shared/types'
+import { DEFAULT_SETTINGS } from '../shared/defaults'
 
-export const defaultSettings: AppSettings = {
-  destinationMode: 'drive',
-  driveId: null,
-  folder: null,
-  volumeLabel: 'SUMMERCART',
-  language: 'en',
-  theme: 'midnight',
-  downloadMenu: true,
-  downloadMetadata: true,
-  createFolders: true,
-  downloadEmulators: true,
-  emulators: { nes: true, snes: true, gb: true, sms: true, chf: true },
-  installDDIPL: false,
-  ddiplSource: null,
-  copyRoms: true,
-  romSources: [],
-  copyAllTypes: true,
-  romTypes: { n64: true, nes: true, snes: true, gb: true, sms: true, chf: true, ndd: true },
-  createSaves: true,
-  includeSubdirs: true,
-  overwrite: false,
-  stage: false,
-  verify: true,
-  preparedSource: null,
-  formatOptions: { fullFormat: false }
-}
+export const defaultSettings: AppSettings = DEFAULT_SETTINGS
 
 let cached: AppSettings | null = null
 
