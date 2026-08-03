@@ -183,6 +183,11 @@ const el = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Ο προετοιμασμένος φάκελος δεν υπάρχει: {path}',
   'log.copyingRoms': 'Αντιγραφή ROM…',
+  'n64.notN64': 'Το "{file}" δεν μοιάζει με έγκυρη ROM N64.',
+  'n64.extMismatch': 'Το "{file}" έχει ανεστραμμένα byte ({actual}) αλλά ονομάζεται .{ext}.',
+  'n64.badSize': 'Το "{file}" έχει ασυνήθιστο μέγεθος ({size} MB) — πιθανώς κακό dump.',
+  'n64.duplicate': 'Παράλειψη αντιγράφου του "{first}": {file}',
+  'n64.summary': '{roms} ROM N64 ελέγχθηκαν: {regions} · {warnings} προειδοποίηση(εις), {dupes} αντίγραφο(α) παραλείφθηκαν.',
 
   'format.start': 'Μορφοποίηση {device} ως FAT32 ({size} GiB)...',
   'format.structures': 'Εγγραφή δομών FAT32 στη {device}...',

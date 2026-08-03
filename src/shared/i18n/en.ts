@@ -184,6 +184,12 @@ const en = {
   'log.preparedMissing': 'Prepared folder does not exist: {path}',
   'log.copyingRoms': 'Copying ROMs…',
 
+  'n64.notN64': '"{file}" does not look like a valid N64 ROM.',
+  'n64.extMismatch': '"{file}" is byte-swapped ({actual}) but named .{ext}.',
+  'n64.badSize': '"{file}" has an unusual size ({size} MB) — may be a bad dump.',
+  'n64.duplicate': 'Skipping duplicate of "{first}": {file}',
+  'n64.summary': '{roms} N64 ROM(s) checked: {regions} · {warnings} warning(s), {dupes} duplicate(s) skipped.',
+
   'format.start': 'Formatting {device} as FAT32 ({size} GiB)...',
   'format.structures': 'Writing FAT32 structures to {device}...',
   'format.partitionTable': 'Writing partition table',

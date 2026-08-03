@@ -183,6 +183,11 @@ const da = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Den forberedte mappe findes ikke: {path}',
   'log.copyingRoms': 'Kopierer ROM…',
+  'n64.notN64': '"{file}" ligner ikke en gyldig N64-ROM.',
+  'n64.extMismatch': '"{file}" er byte-byttet ({actual}) men hedder .{ext}.',
+  'n64.badSize': '"{file}" har en usædvanlig størrelse ({size} MB) — kan være en dårlig dump.',
+  'n64.duplicate': 'Springer duplikat af "{first}" over: {file}',
+  'n64.summary': '{roms} N64-ROM(er) kontrolleret: {regions} · {warnings} advarsel(er), {dupes} duplikat(er) sprunget over.',
 
   'format.start': 'Formaterer {device} som FAT32 ({size} GiB)...',
   'format.structures': 'Skriver FAT32-strukturer til {device}...',

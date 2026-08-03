@@ -183,6 +183,11 @@ const ro = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Folderul pregătit nu există: {path}',
   'log.copyingRoms': 'Se copiază ROM-urile…',
+  'n64.notN64': '„{file}" nu arată ca o ROM N64 validă.',
+  'n64.extMismatch': '„{file}" are ordinea octeților inversată ({actual}), dar se numește .{ext}.',
+  'n64.badSize': '„{file}" are o dimensiune neobișnuită ({size} MB) — posibil un dump defect.',
+  'n64.duplicate': 'Se omite duplicatul „{first}": {file}',
+  'n64.summary': '{roms} ROM N64 verificate: {regions} · {warnings} avertisment(e), {dupes} duplicat(e) omise.',
 
   'format.start': 'Formatare {device} ca FAT32 ({size} GiB)...',
   'format.structures': 'Se scriu structurile FAT32 pe {device}...',

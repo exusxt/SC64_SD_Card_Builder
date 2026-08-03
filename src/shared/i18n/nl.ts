@@ -183,6 +183,11 @@ const nl = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Voorbereide map bestaat niet: {path}',
   'log.copyingRoms': 'ROM’s kopiëren…',
+  'n64.notN64': '"{file}" ziet er niet uit als een geldige N64-ROM.',
+  'n64.extMismatch': '"{file}" is byte-geswapped ({actual}) maar heet .{ext}.',
+  'n64.badSize': '"{file}" heeft een ongebruikelijke grootte ({size} MB) — mogelijk een slechte dump.',
+  'n64.duplicate': 'Duplicaat van "{first}" overgeslagen: {file}',
+  'n64.summary': '{roms} N64-ROM(s) gecontroleerd: {regions} · {warnings} waarschuwing(en), {dupes} duplicaat/duplicaten overgeslagen.',
 
   'format.start': '{device} formatteren als FAT32 ({size} GiB)...',
   'format.structures': 'FAT32-structuren schrijven naar {device}...',

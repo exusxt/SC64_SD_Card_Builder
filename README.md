@@ -18,6 +18,7 @@ All artifacts are published to the [Releases page](https://github.com/exusxt/SC6
 - **Pre-flight safety**: formatting requires typing the drive letter to confirm, and the destination must be confirmed when typed by hand; overlapping source/destination folders are rejected before anything is written
 - Install the latest N64FlashcartMenu, boxart/metadata pack and emulators onto the card
 - Copy your own ROMs while preserving folder structure (optional save folders, file-type filter)
+- **N64 ROM validation**: detects byte order (.z64/.v64/.n64), flags mismatched extensions and bad-dump sizes, shows the region breakdown, and skips duplicate dumps of the same game
 - **Prepared-folder flow**: stage a build or copy an already-prepared folder (e.g. from a friend) to the card with an animated transfer view
 - **Byte-for-byte verification** of every copied file (optional)
 - Auto-updates via GitHub Releases

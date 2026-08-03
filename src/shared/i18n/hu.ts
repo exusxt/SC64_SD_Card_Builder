@@ -183,6 +183,11 @@ const hu = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Az előkészített mappa nem létezik: {path}',
   'log.copyingRoms': 'ROM-ok másolása…',
+  'n64.notN64': 'A(z) „{file}" nem úgy néz ki, mint egy érvényes N64 ROM.',
+  'n64.extMismatch': 'A(z) „{file}" byte-sorrendje felcserélt ({actual}), de a neve .{ext}.',
+  'n64.badSize': 'A(z) „{file}" szokatlan méretű ({size} MB) — valószínűleg rossz dump.',
+  'n64.duplicate': 'A(z) „{first}" másolatának átugrása: {file}',
+  'n64.summary': '{roms} N64 ROM ellenőrizve: {regions} · {warnings} figyelmeztetés, {dupes} másolat átugorva.',
 
   'format.start': 'Formázás: {device}, FAT32 ({size} GiB)...',
   'format.structures': 'FAT32-struktúrák írása ide: {device}...',

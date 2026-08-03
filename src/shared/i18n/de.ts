@@ -183,6 +183,11 @@ const de = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Vorbereiteter Ordner existiert nicht: {path}',
   'log.copyingRoms': 'Kopiere ROMs…',
+  'n64.notN64': '„{file}" sieht nicht wie eine gültige N64-ROM aus.',
+  'n64.extMismatch': '„{file}" ist bytevertauscht ({actual}), heißt aber .{ext}.',
+  'n64.badSize': '„{file}" hat eine ungewöhnliche Größe ({size} MB) — möglicherweise ein schlechter Dump.',
+  'n64.duplicate': 'Überspringe Duplikat von „{first}": {file}',
+  'n64.summary': '{roms} N64-ROM(s) geprüft: {regions} · {warnings} Warnung(en), {dupes} Duplikat(e) übersprungen.',
 
   'format.start': 'Formatiere {device} als FAT32 ({size} GiB)...',
   'format.structures': 'Schreibe FAT32-Strukturen auf {device}...',

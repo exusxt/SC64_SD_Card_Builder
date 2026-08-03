@@ -183,6 +183,11 @@ const cs = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Připravená složka neexistuje: {path}',
   'log.copyingRoms': 'Kopírování ROM…',
+  'n64.notN64': '„{file}" nevypadá jako platná ROM N64.',
+  'n64.extMismatch': '„{file}" je byte-přeházený ({actual}), ale jmenuje se .{ext}.',
+  'n64.badSize': '„{file}" má nezvyklou velikost ({size} MB) — může jít o špatný dump.',
+  'n64.duplicate': 'Přeskakuji duplikát souboru „{first}": {file}',
+  'n64.summary': 'Zkontrolováno {roms} ROM N64: {regions} · {warnings} varování, přeskočeno {dupes} duplikátů.',
 
   'format.start': 'Formátování {device} jako FAT32 ({size} GiB)...',
   'format.structures': 'Zápis struktur FAT32 na {device}...',

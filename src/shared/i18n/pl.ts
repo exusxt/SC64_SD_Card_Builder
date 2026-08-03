@@ -183,6 +183,11 @@ const pl = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Przygotowany folder nie istnieje: {path}',
   'log.copyingRoms': 'Kopiowanie ROM-ów…',
+  'n64.notN64': '„{file}" nie wygląda na prawidłową ROM N64.',
+  'n64.extMismatch': '„{file}" ma odwróconą kolejność bajtów ({actual}), ale nazywa się .{ext}.',
+  'n64.badSize': '„{file}" ma nietypowy rozmiar ({size} MB) — może być uszkodzonym dumpem.',
+  'n64.duplicate': 'Pomijanie duplikatu „{first}": {file}',
+  'n64.summary': 'Sprawdzono {roms} ROM N64: {regions} · {warnings} ostrzeżeń, pominięto {dupes} duplikatów.',
 
   'format.start': 'Formatowanie {device} jako FAT32 ({size} GiB)...',
   'format.structures': 'Zapisywanie struktury FAT32 na {device}...',

@@ -9,6 +9,7 @@ import { getMenuRelease, getMetadataRelease, latestReleaseAssets, GB64_TEMPLATE_
 import { extractZip, findEntriesInZip, extractEntryTo, copyDirContents, rmTree, listDirDeep } from './unzip'
 import { verifyFile } from './verify'
 import { pathContains } from './pathguard'
+import { inspectN64File, isN64Ext, romIdentity, N64_REGION_LABELS, N64Header, N64Issue, N64Region } from './n64validate'
 
 export interface PrepareCallbacks {
   emit: (ev: AppEvent) => void
@@ -101,6 +102,17 @@ class Runner {
 
   checkCancel(): void {
     if (this.cb.cancel?.cancelled) throw new Error(this.t('log.cancelled'))
+  }
+
+  n64IssueMessage(issue: N64Issue, header: N64Header, rel: string): string {
+    switch (issue.code) {
+      case 'ext-mismatch':
+        return this.t('n64.extMismatch', { file: rel, actual: header.byteOrder, ext: extOf(rel).slice(1) })
+      case 'bad-size':
+        return this.t('n64.badSize', { file: rel, size: Math.round(header.size / (1024 * 1024)) })
+      case 'not-n64':
+        return this.t('n64.notN64', { file: rel })
+    }
   }
 
   async createFolders(destination: string, enabled: boolean): Promise<void> {
@@ -288,6 +300,12 @@ class Runner {
     const destNorm = destRoot.replace(/\//g, sep).toLowerCase()
     const label = this.t('log.copyingRoms')
 
+    const seen = new Map<string, string>()
+    let n64Count = 0
+    let warningCount = 0
+    let duplicateCount = 0
+    const regionCounts: Partial<Record<N64Region, number>> = {}
+
     if (options.verify) this.step('verify', 'running')
     else this.markSkipped('verify')
 
@@ -305,6 +323,30 @@ class Runner {
         const rel = options.includeSubdirs ? file.slice(source.length).replace(/^[/\\]/, '') : baseNameOf(file)
         const target = join(destRoot, rel)
         if (existsSync(target) && !options.overwrite) continue
+
+        if (isN64Ext(file)) {
+          const v = await inspectN64File(file)
+          if (v.header) {
+            const id = romIdentity(v.header)
+            const first = seen.get(id)
+            if (first) {
+              duplicateCount++
+              this.log('warn', this.t('n64.duplicate', { first, file: rel }))
+              continue
+            }
+            seen.set(id, rel)
+            n64Count++
+            regionCounts[v.header.region] = (regionCounts[v.header.region] ?? 0) + 1
+            for (const issue of v.issues) {
+              warningCount++
+              this.log('warn', this.n64IssueMessage(issue, v.header, rel))
+            }
+          } else {
+            warningCount++
+            this.log('warn', this.t('n64.notN64', { file: rel }))
+          }
+        }
+
         await mkdir(dirname(target), { recursive: true })
         await copyFile(file, target)
         roms++
@@ -320,6 +362,14 @@ class Runner {
         }
         if (roms % 50 === 0) this.progress(roms, matches.length, label)
       }
+    }
+
+    if (n64Count > 0) {
+      const regions = (Object.entries(regionCounts) as Array<[N64Region, number]>)
+        .filter(([, c]) => c > 0)
+        .map(([r, c]) => `${N64_REGION_LABELS[r]} ${c}`)
+        .join(' · ')
+      this.log('info', this.t('n64.summary', { roms: String(n64Count), regions, warnings: String(warningCount), dupes: String(duplicateCount) }))
     }
 
     let saves = 0

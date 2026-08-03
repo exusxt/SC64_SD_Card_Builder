@@ -183,6 +183,11 @@ const ru = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Подготовленная папка не существует: {path}',
   'log.copyingRoms': 'Копирование ROM…',
+  'n64.notN64': '«{file}» не похож на валидную ROM N64.',
+  'n64.extMismatch': '«{file}» имеет обратный порядок байтов ({actual}), но называется .{ext}.',
+  'n64.badSize': '«{file}» имеет необычный размер ({size} МБ) — возможно, повреждённый дамп.',
+  'n64.duplicate': 'Пропуск дубликата «{first}»: {file}',
+  'n64.summary': 'Проверено ROM N64: {roms} · {regions} · предупреждений: {warnings}, пропущено дубликатов: {dupes}.',
 
   'format.start': 'Форматирование {device} как FAT32 ({size} ГиБ)...',
   'format.structures': 'Запись структур FAT32 на {device}...',

@@ -183,6 +183,11 @@ const fi = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Valmisteltua kansiota ei ole olemassa: {path}',
   'log.copyingRoms': 'Kopioidaan ROM-levyjä…',
+  'n64.notN64': '"{file}" ei näytä kelvolliselta N64-ROMilta.',
+  'n64.extMismatch': '"{file}" on tavuvaihdettu ({actual}), mutta sen nimi on .{ext}.',
+  'n64.badSize': '"{file}" on epätavallisen kokoinen ({size} MB) — saattaa olla viallinen dump.',
+  'n64.duplicate': 'Ohitetaan "{first}"-pelin kaksoiskappale: {file}',
+  'n64.summary': '{roms} N64-ROMia tarkistettu: {regions} · {warnings} varoitusta, {dupes} kaksoiskappaletta ohitettu.',
 
   'format.start': 'Alustetaan {device} FAT32-muotoon ({size} GiB)...',
   'format.structures': 'Kirjoitetaan FAT32-rakenteita laitteelle {device}...',

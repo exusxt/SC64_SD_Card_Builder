@@ -183,6 +183,11 @@ const uk = {
   'log.emulatorError': '{label}: {message}',
   'log.preparedMissing': 'Підготовленої папки не існує: {path}',
   'log.copyingRoms': 'Копіювання ROM…',
+  'n64.notN64': '«{file}» не схожий на дійсну ROM N64.',
+  'n64.extMismatch': '«{file}» має обернений порядок байтів ({actual}), але називається .{ext}.',
+  'n64.badSize': '«{file}» має незвичний розмір ({size} МБ) — можливо, пошкоджений дамп.',
+  'n64.duplicate': 'Пропуск дубліката «{first}»: {file}',
+  'n64.summary': 'Перевірено ROM N64: {roms} · {regions} · попереджень: {warnings}, пропущено дублікатів: {dupes}.',
 
   'format.start': 'Форматування {device} як FAT32 ({size} ГіБ)...',
   'format.structures': 'Запис структур FAT32 на {device}...',
