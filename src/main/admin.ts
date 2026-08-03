@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import { app, dialog } from 'electron'
 import { promisify } from 'node:util'
 
@@ -44,9 +44,27 @@ export async function relaunchElevated(): Promise<{ ok: boolean; message: string
       })
       return { ok: true, message: 'A macOS prompt may ask for administrator access.' }
     }
-    // Linux
-    await execFileAsync('pkexec', [exe], { windowsHide: true })
-    return { ok: true, message: 'Elevated instance started via pkexec.' }
+    // Linux: pkexec drops Chromium's sandbox for the root process, so the
+    // elevated instance must start with --no-sandbox or it aborts immediately
+    // with "Running as root without --no-sandbox is not supported". pkexec
+    // exec()s the program and waits for it, so spawn detached to avoid
+    // blocking this instance; if pkexec exits within the grace window the
+    // user dismissed the authorization prompt.
+    return await new Promise((resolve) => {
+      const child = spawn('pkexec', [exe, '--no-sandbox'], { detached: true, stdio: 'ignore' })
+      child.unref()
+      let settled = false
+      const settle = (res: { ok: boolean; message: string }): void => {
+        if (settled) return
+        settled = true
+        resolve(res)
+      }
+      child.on('error', (e) => settle({ ok: false, message: `pkexec failed: ${e.message}` }))
+      child.on('exit', (code) =>
+        settle({ ok: false, message: `Authorization declined (pkexec exited with code ${code}).` })
+      )
+      setTimeout(() => settle({ ok: true, message: 'Elevated instance started via pkexec.' }), 3000)
+    })
   } catch (e: any) {
     return { ok: false, message: `Could not relaunch as administrator: ${e?.message ?? e}` }
   }
