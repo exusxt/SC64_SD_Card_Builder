@@ -20,6 +20,11 @@ const BOXART_DD = { x: 456, y: 264, w: 129, h: 112 }
 
 const EMULATOR_EXTS = new Set(['.nes', '.smc', '.sfc', '.fig', '.gb', '.gbc', '.sms', '.gg', '.chf'])
 
+// Bundled menu background images; a random one is shown while a ROM is selected.
+const BACKGROUNDS = Object.values(
+  import.meta.glob('../assets/backgrounds/*.{png,jpg,jpeg,webp}', { eager: true, import: 'default' })
+) as string[]
+
 const MONO = "'ui-monospace','SFMono-Regular','Menlo','Consolas',monospace"
 
 function menuSize(size: number): string {
@@ -47,27 +52,9 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
   const [sel, setSel] = useState(0)
   const [boxart, setBoxart] = useState<string | null>(null)
   const [scale, setScale] = useState(1)
-  const [bg, setBg] = useState<{ width: number; height: number } | null>(null)
-  const bgCanvasRef = useRef<HTMLCanvasElement | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    setBg(null)
-    void window.api.loadPreviewBackground(root).then((b) => {
-      if (!b || cancelled) return
-      const canvas = bgCanvasRef.current
-      const ctx = canvas?.getContext('2d')
-      if (!canvas || !ctx) return
-      canvas.width = b.width
-      canvas.height = b.height
-      const bytes = Uint8Array.from(atob(b.data))
-      ctx.putImageData(new ImageData(new Uint8ClampedArray(bytes.buffer), b.width, b.height), 0, 0)
-      if (!cancelled) setBg({ width: b.width, height: b.height })
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [root])
+  const [bgUrl, setBgUrl] = useState<string | null>(null)
+  const prevSelectedRef = useRef<string | null>(null)
+  const bgIdxRef = useRef(-1)
 
   const loadDir = useCallback(
     async (rel: string) => {
@@ -94,6 +81,31 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
   }, [loadDir])
 
   const selected = entries && entries.length > 0 ? entries[Math.min(sel, entries.length - 1)] : null
+
+  // Show a fresh random bundled background whenever a different ROM gets selected.
+  const selectedKey = selected && !selected.isDir ? `${dirRel}\u0000${selected.name}` : null
+  useEffect(() => {
+    if (!selectedKey) {
+      setBgUrl(null)
+      prevSelectedRef.current = null
+      bgIdxRef.current = -1
+      return
+    }
+    if (prevSelectedRef.current === selectedKey) return
+    prevSelectedRef.current = selectedKey
+    const n = BACKGROUNDS.length
+    if (n === 0) {
+      setBgUrl(null)
+      bgIdxRef.current = -1
+      return
+    }
+    let idx = Math.floor(Math.random() * n)
+    if (n > 1) {
+      while (idx === bgIdxRef.current) idx = Math.floor(Math.random() * n)
+    }
+    bgIdxRef.current = idx
+    setBgUrl(BACKGROUNDS[idx])
+  }, [selectedKey])
 
   useEffect(() => {
     if (!selected?.boxart) {
@@ -204,18 +216,16 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
           className="relative bg-black"
           style={{ width: SCREEN_W, height: SCREEN_H, transform: `scale(${scale})`, transformOrigin: 'top left', fontFamily: MONO }}
         >
-          {/* Background (menu/cache/background.data), centered and darkened like the console menu */}
-          <canvas
-            ref={bgCanvasRef}
-            style={{
-              position: 'absolute',
-              left: bg ? (SCREEN_W - bg.width) / 2 : 0,
-              top: bg ? (SCREEN_H - bg.height) / 2 : 0,
-              display: bg ? 'block' : 'none',
-              imageRendering: 'pixelated'
-            }}
-          />
-          {bg ? (
+          {/* Random bundled background while a ROM is selected, darkened like the console menu */}
+          {bgUrl ? (
+            <img
+              src={bgUrl}
+              alt=""
+              className="pointer-events-none"
+              style={{ position: 'absolute', left: 0, top: 0, width: SCREEN_W, height: SCREEN_H, objectFit: 'cover', zIndex: 0 }}
+            />
+          ) : null}
+          {bgUrl ? (
             <div
               className="pointer-events-none"
               style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.37)', zIndex: 0 }}

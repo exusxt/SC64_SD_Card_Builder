@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, afterEach } from 'vitest'
-import { listPreviewDir, loadPreviewBoxart, loadPreviewBackground } from '../src/main/preview'
+import { listPreviewDir, loadPreviewBoxart } from '../src/main/preview'
 
 let roots: string[] = []
 
@@ -127,53 +127,5 @@ describe('loadPreviewBoxart', () => {
     writeFileSync(outside, Buffer.alloc(16))
     expect(loadPreviewBoxart(root, outside)).toBeNull()
     expect(loadPreviewBoxart(root, join(root, '..', 'x.png'))).toBeNull()
-  })
-})
-
-describe('loadPreviewBackground', () => {
-  function makeCache(width: number, height: number, pixels: number[][]): string {
-    const stride = width * 2
-    const buf = Buffer.alloc(16 + stride * height)
-    buf.write('BKG1', 0, 'ascii')
-    buf.writeUInt32BE(width, 4)
-    buf.writeUInt32BE(height, 8)
-    buf.writeUInt32BE(stride * height, 12)
-    pixels.forEach((row, y) => {
-      row.forEach((px, x) => buf.writeUInt16BE(px, 16 + y * stride + x * 2))
-    })
-    return buf.toString('base64')
-  }
-
-  function rootWithCache(cacheB64: string): string {
-    const root = makeRoot()
-    const dir = join(root, 'menu', 'cache')
-    mkdirSync(dir, { recursive: true })
-    writeFileSync(join(dir, 'background.data'), Buffer.from(cacheB64, 'base64'))
-    return root
-  }
-
-  it('decodes a BKG1 RGBA16 cache into RGBA8888', () => {
-    const b64 = makeCache(2, 2, [
-      [0xf801, 0x07c1],
-      [0x003f, 0x4210]
-    ])
-    const bg = loadPreviewBackground(rootWithCache(b64))
-    expect(bg).not.toBeNull()
-    expect(bg!.width).toBe(2)
-    expect(bg!.height).toBe(2)
-    const px = Uint8Array.from(Buffer.from(bg!.data, 'base64'))
-    expect([...px]).toEqual([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 66, 66, 66, 255])
-  })
-
-  it('returns null when no background cache exists', () => {
-    expect(loadPreviewBackground(makeRoot())).toBeNull()
-  })
-
-  it('rejects a corrupt cache', () => {
-    const root = makeRoot()
-    const dir = join(root, 'menu', 'cache')
-    mkdirSync(dir, { recursive: true })
-    writeFileSync(join(dir, 'background.data'), 'garbage')
-    expect(loadPreviewBackground(root)).toBeNull()
   })
 })

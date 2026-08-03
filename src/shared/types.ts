@@ -191,14 +191,6 @@ export interface PreviewEntry {
   description: string | null
 }
 
-// Decoded N64FlashcartMenu background cache (menu/cache/background.data).
-// data is base64-encoded RGBA8888 pixels (width * height * 4 bytes).
-export interface PreviewBackground {
-  width: number
-  height: number
-  data: string
-}
-
 export interface FormatResult {
   ok: boolean
   message: string
