@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AlertTriangle, CheckCircle2, FolderOpen, HardDrive, RefreshCw, ShieldAlert, Eye, XCircle, X, PackageOpen } from 'lucide-react'
 import type { AppSettings, DriveInfo, FormatResult } from '../../../shared/types'
 import type { T } from '../i18n'
@@ -41,6 +41,10 @@ export function DestinationStep({
   const [showFormat, setShowFormat] = useState(false)
   const [formatConfirm, setFormatConfirm] = useState('')
   const [folderDraft, setFolderDraft] = useState(settings.folder ?? '')
+
+  useEffect(() => {
+    setFolderDraft(settings.folder ?? '')
+  }, [settings.folder])
   const removableDrives = drives.filter((d) => d.removable)
   const selected = drives.find((d) => d.id === settings.driveId) ?? null
   const hasDest = destination.trim().length > 0
