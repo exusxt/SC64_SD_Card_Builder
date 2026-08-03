@@ -142,6 +142,11 @@ export function initUpdater(w: BrowserWindow): void {
 
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
+  // On Linux .deb the updater installs synchronously while the app is still
+  // running, then auto-relaunches — the overlapping old+new instances make
+  // GNOME report "application was not closed properly" after an update. Quit
+  // cleanly instead and let the user relaunch from the launcher.
+  autoUpdater.autoRunAppAfterInstall = false
   autoUpdater.allowPrerelease = false
 
   autoUpdater.on('checking-for-update', () => {
