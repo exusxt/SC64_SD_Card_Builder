@@ -1,8 +1,66 @@
 import { FolderPlus, Trash2, FolderOpen } from 'lucide-react'
-import type { AppSettings, EmulatorsInfo, EmulatorKey, MenuReleaseInfo, MetadataReleaseInfo } from '../../../shared/types'
+import type { AppSettings, DdIplFileInfo, DdIplValidation, EmulatorsInfo, EmulatorKey, MenuReleaseInfo, MetadataReleaseInfo } from '../../../shared/types'
+import { DD_IPL_SIZE } from '../../../shared/types'
 import type { T } from '../i18n'
 import { Badge, Button, Checkbox, Field } from './ui'
 import { cn, EMULATOR_LABELS, ROM_TYPE_LABELS } from '../lib'
+
+function ddiplReason(t: T, f: DdIplFileInfo): string {
+  if (f.size !== DD_IPL_SIZE) return t('opt.ddiplReasonSize', { size: String(f.size ?? 0), expected: String(DD_IPL_SIZE) })
+  if (f.byteOrder === 'swapped') return t('opt.ddiplReasonSwap')
+  if (f.byteOrder === null) return t('opt.ddiplReasonHeader')
+  if (!f.idOk) return t('opt.ddiplReasonId')
+  return f.id
+}
+
+function DDIPLStatus({ t, validation }: { t: T; validation: DdIplValidation }): React.JSX.Element {
+  const validCount = validation.files.filter((f) => f.valid).length
+  const invalid = validation.files.filter((f) => f.present && !f.valid)
+  const missing = validation.files.filter((f) => !f.present)
+
+  let summary: string
+  if (validCount === 0) {
+    summary = t('opt.ddiplNone')
+  } else if (missing.length === 0 && invalid.length === 0) {
+    summary = t('opt.ddiplComplete')
+  } else {
+    summary = t('opt.ddiplPartial', { missing: [...invalid.map((f) => f.id), ...missing.map((f) => f.id)].join(', ') })
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {validation.files.map((f) => (
+          <span
+            key={f.id}
+            title={f.valid ? t('opt.ddiplValid') : f.present ? ddiplReason(t, f) : t('opt.ddiplMissing')}
+            className={cn(
+              'rounded-md px-2 py-1 font-mono text-[11px]',
+              f.valid && 'border border-sc64-good/40 bg-sc64-good/10 text-sc64-good',
+              f.present && !f.valid && 'border border-sc64-bad/40 bg-sc64-bad/10 text-sc64-bad',
+              !f.present && 'border border-sc64-border bg-sc64-panel/50 text-sc64-muted'
+            )}
+          >
+            {f.id}
+          </span>
+        ))}
+      </div>
+      <p className={cn('text-xs', validCount === 0 ? 'text-sc64-warn' : 'text-sc64-muted')}>{summary}</p>
+      {invalid.length > 0 ? (
+        <ul className="space-y-0.5">
+          {invalid.map((f) => (
+            <li key={f.id} className="text-xs text-sc64-bad">
+              {f.id}: {ddiplReason(t, f)}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {validation.unrecognized.length > 0 ? (
+        <p className="text-[11px] text-sc64-muted">{t('opt.ddiplExtra', { files: validation.unrecognized.join(', ') })}</p>
+      ) : null}
+    </div>
+  )
+}
 
 export function OptionsStep({
   t,
@@ -10,24 +68,29 @@ export function OptionsStep({
   menu,
   metadata,
   emulators,
+  ddiplValidation,
   onSettingsChange,
   onAddSources,
-  onRemoveSource
+  onRemoveSource,
+  onChooseDDIPL
 }: {
   t: T
   settings: AppSettings
   menu: MenuReleaseInfo | null
   metadata: MetadataReleaseInfo | null
   emulators: EmulatorsInfo | null
+  ddiplValidation: DdIplValidation | null
   onSettingsChange: (patch: Partial<AppSettings>) => void
   onAddSources: () => void
   onRemoveSource: (path: string) => void
+  onChooseDDIPL: () => void
 }): React.JSX.Element {
   const hasAnyAction =
     settings.downloadMenu ||
     settings.downloadMetadata ||
     settings.createFolders ||
     settings.downloadEmulators ||
+    (settings.installDDIPL && settings.ddiplSource !== null) ||
     (settings.copyRoms && settings.romSources.length > 0 && (settings.copyAllTypes || Object.values(settings.romTypes).some(Boolean)))
 
   return (
@@ -101,6 +164,35 @@ export function OptionsStep({
             )
           })}
         </div>
+      </div>
+
+      <Checkbox
+        label={t('opt.ddipl')}
+        hint={t('opt.ddiplHint')}
+        checked={settings.installDDIPL}
+        onChange={(v) => onSettingsChange({ installDDIPL: v })}
+      />
+
+      <div className={cn('space-y-3 rounded-xl border border-sc64-border bg-sc64-panel2/40 p-4 transition-opacity', !settings.installDDIPL && 'pointer-events-none opacity-40')}>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-sc64-muted">{t('opt.ddiplSource')}</span>
+          <Button variant="outline" size="sm" onClick={onChooseDDIPL}>
+            <FolderPlus className="h-3.5 w-3.5" /> {t('opt.ddiplChoose')}
+          </Button>
+        </div>
+
+        {settings.ddiplSource ? (
+          <div className="flex items-center gap-2 rounded-lg border border-sc64-border bg-sc64-panel px-3 py-2">
+            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-sc64-accent" />
+            <span className="min-w-0 flex-1 truncate font-mono text-xs">{settings.ddiplSource}</span>
+          </div>
+        ) : (
+          <p className="rounded-lg border border-dashed border-sc64-border px-3 py-4 text-center text-xs text-sc64-muted">
+            {t('opt.ddiplNoFolder')}
+          </p>
+        )}
+
+        {ddiplValidation ? <DDIPLStatus t={t} validation={ddiplValidation} /> : null}
       </div>
 
       <Checkbox

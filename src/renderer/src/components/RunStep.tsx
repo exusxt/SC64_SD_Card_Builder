@@ -53,6 +53,7 @@ export function RunStep({
     { label: t('opt.menu'), active: settings.downloadMenu },
     { label: t('opt.metadata'), active: settings.downloadMetadata },
     { label: `${t('opt.emulators')} (${emulatorCount})`, active: settings.downloadEmulators },
+    { label: t('opt.ddipl'), active: settings.installDDIPL && settings.ddiplSource !== null },
     { label: t('opt.roms'), active: settings.copyRoms && settings.romSources.length > 0 }
   ].filter((s) => s.active)
 

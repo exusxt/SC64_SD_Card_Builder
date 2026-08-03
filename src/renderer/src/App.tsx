@@ -3,6 +3,7 @@ import type {
   AppEvent,
   AppSettings,
   CardInspection,
+  DdIplValidation,
   DriveInfo,
   EmulatorsInfo,
   FormatResult,
@@ -38,6 +39,7 @@ export default function App(): React.JSX.Element {
   const [preparedCount, setPreparedCount] = useState<{ files: number; bytes: number } | null>(null)
   const [inspection, setInspection] = useState<CardInspection | null>(null)
   const [inspectionLoading, setInspectionLoading] = useState(false)
+  const [ddiplValidation, setDdiplValidation] = useState<DdIplValidation | null>(null)
   const [running, setRunning] = useState<'prepare' | 'format' | null>(null)
   const [progress, setProgress] = useState<{ value: number; max: number; label?: string } | null>(null)
   const [steps, setSteps] = useState<StepState[]>([])
@@ -178,11 +180,31 @@ export default function App(): React.JSX.Element {
     }
   }, [destination])
 
+  useEffect(() => {
+    if (!settings.ddiplSource) {
+      setDdiplValidation(null)
+      return
+    }
+    let mounted = true
+    void window.api
+      .validateDDIPL(settings.ddiplSource)
+      .then((res) => {
+        if (mounted) setDdiplValidation(res)
+      })
+      .catch(() => {
+        if (mounted) setDdiplValidation(null)
+      })
+    return () => {
+      mounted = false
+    }
+  }, [settings.ddiplSource])
+
   const hasAnyAction =
     settings.downloadMenu ||
     settings.downloadMetadata ||
     settings.createFolders ||
     settings.downloadEmulators ||
+    (settings.installDDIPL && settings.ddiplSource !== null) ||
     (settings.copyRoms && settings.romSources.length > 0 && (settings.copyAllTypes || Object.values(settings.romTypes).some(Boolean)))
 
   const canProceedTo2 = destination.trim().length > 0
@@ -234,6 +256,8 @@ export default function App(): React.JSX.Element {
       createFolders: settings.createFolders,
       downloadEmulators: settings.downloadEmulators,
       emulators: settings.emulators,
+      installDDIPL: settings.installDDIPL,
+      ddiplSource: settings.ddiplSource ?? undefined,
       copyRoms: settings.copyRoms,
       romSources: settings.romSources,
       romTypes,
@@ -263,6 +287,11 @@ export default function App(): React.JSX.Element {
   const choosePreparedFolder = async (): Promise<void> => {
     const dir = await window.api.chooseFolder()
     if (dir) setSettings((s) => ({ ...s, preparedSource: dir }))
+  }
+
+  const chooseDDIPLFolder = async (): Promise<void> => {
+    const dir = await window.api.chooseFolder()
+    if (dir) setSettings((s) => ({ ...s, ddiplSource: dir }))
   }
 
   const patchSettings = (patch: Partial<AppSettings>): void => {
@@ -321,9 +350,11 @@ export default function App(): React.JSX.Element {
               menu={menu}
               metadata={metadata}
               emulators={emulators}
+              ddiplValidation={ddiplValidation}
               onSettingsChange={patchSettings}
               onAddSources={() => void addRomSources()}
               onRemoveSource={(p) => setSettings((s) => ({ ...s, romSources: s.romSources.filter((x) => x !== p) }))}
+              onChooseDDIPL={() => void chooseDDIPLFolder()}
             />
           ) : null}
 

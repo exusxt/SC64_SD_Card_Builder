@@ -7,6 +7,7 @@ import { getSettings, saveSettings } from './settings'
 import { getMenuRelease, getMetadataRelease, getEmulatorsInfo } from './releases'
 import { prepare } from './prepare'
 import { inspectCard } from './inspect'
+import { scanDDIPLFolder } from './ddipl'
 import { formatDisk, FormatRequest } from './format'
 import { isElevated, showAdminPrompt } from './admin'
 import { checkForUpdates, installUpdate } from './updater'
@@ -98,6 +99,11 @@ export function registerIpc(): void {
   ipcMain.handle('inspect:card', async (_e, path: string) => {
     if (!path || !existsSync(path)) return null
     return inspectCard(path)
+  })
+
+  ipcMain.handle('ddipl:validate', async (_e, dir: string) => {
+    if (!dir || !existsSync(dir)) return null
+    return scanDDIPLFolder(dir)
   })
 
   ipcMain.handle('prepare:countPrepared', async (_e, path: string) => {

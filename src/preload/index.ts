@@ -3,6 +3,7 @@ import type {
   AppEvent,
   AppSettings,
   CardInspection,
+  DdIplValidation,
   DriveInfo,
   EmulatorsInfo,
   FormatOptions,
@@ -33,6 +34,7 @@ const api = {
   countPreparedFolder: (path: string): Promise<{ files: number; bytes: number } | null> =>
     ipcRenderer.invoke('prepare:countPrepared', path),
   inspectCard: (path: string): Promise<CardInspection | null> => ipcRenderer.invoke('inspect:card', path),
+  validateDDIPL: (dir: string): Promise<DdIplValidation | null> => ipcRenderer.invoke('ddipl:validate', dir),
   format: (options: FormatOptions): Promise<FormatResult> => ipcRenderer.invoke('format:run', options),
   cancelFormat: (): void => ipcRenderer.send('format:cancel'),
   windowMinimize: (): Promise<void> => ipcRenderer.invoke('win:minimize'),

@@ -10,6 +10,7 @@ import { extractZip, findEntriesInZip, extractEntryTo, copyDirContents, rmTree, 
 import { verifyFile } from './verify'
 import { pathContains } from './pathguard'
 import { inspectN64File, isN64Ext, romIdentity, N64_REGION_LABELS, N64Header, N64Issue, N64Region } from './n64validate'
+import { installDDIPL } from './ddipl'
 
 export interface PrepareCallbacks {
   emit: (ev: AppEvent) => void
@@ -26,7 +27,7 @@ const EXTENSIONS: Record<string, string[]> = {
   ndd: ['.ndd', '.d64']
 }
 
-const STEP_IDS: StepId[] = ['folders', 'menu', 'metadata', 'emulators', 'roms', 'format', 'verify', 'copy']
+const STEP_IDS: StepId[] = ['folders', 'menu', 'metadata', 'emulators', 'ddipl', 'roms', 'format', 'verify', 'copy']
 
 function baseNameOf(p: string): string {
   return p.split(/[/\\]/).pop() ?? p
@@ -278,6 +279,31 @@ class Runner {
     this.step('emulators', 'done', anyError ? this.t('log.someFailed') : undefined)
   }
 
+  async installDDIPLStep(destination: string, enabled: boolean, source: string | null): Promise<void> {
+    if (!enabled) {
+      this.markSkipped('ddipl')
+      return
+    }
+    this.step('ddipl', 'running')
+    if (!source) {
+      this.log('warn', this.t('log.ddiplNoSource'))
+      this.step('ddipl', 'done')
+      return
+    }
+    const dest = join(destination, 'menu', '64ddipl')
+    const res = await installDDIPL(source, dest)
+    if (res.installed.length > 0) {
+      this.log('success', this.t('log.ddiplInstalled', { count: String(res.installed.length), names: res.installed.join(', ') }))
+    }
+    for (const id of res.invalid) {
+      this.log('warn', this.t('log.ddiplInvalid', { name: id }))
+    }
+    if (res.missing.length > 0) {
+      this.log('warn', this.t('log.ddiplMissing', { missing: res.missing.join(', ') }))
+    }
+    this.step('ddipl', 'done')
+  }
+
   async copyRoms(options: PrepareOptions): Promise<{ roms: number; saves: number }> {
     if (!options.copyRoms || options.romSources.length === 0) {
       this.markSkipped('roms')
@@ -495,6 +521,7 @@ export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Pr
       await runner.downloadMenu(target, options.downloadMenu, options.overwrite)
       await runner.downloadMetadata(target, options.downloadMetadata)
       await runner.downloadEmulators(target, options.downloadEmulators, options.emulators)
+      await runner.installDDIPLStep(target, options.installDDIPL, options.ddiplSource ?? null)
       const { roms, saves } = await runner.copyRoms({ ...options, destination: target })
 
       let summary: string

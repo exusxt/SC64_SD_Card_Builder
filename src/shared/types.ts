@@ -1,3 +1,22 @@
+// A 64DD IPL ROM dump is exactly 4 MiB big-endian; smaller/corrupt files
+// are rejected so the cart menu does not hang on a bad IPL.
+export const DD_IPL_SIZE = 4194304
+
+export interface DdIplFileInfo {
+  id: string
+  name: string | null
+  present: boolean
+  valid: boolean
+  size: number | null
+  byteOrder: 'be' | 'swapped' | null
+  idOk: boolean
+}
+
+export interface DdIplValidation {
+  files: DdIplFileInfo[]
+  unrecognized: string[]
+}
+
 export interface DriveInfo {
   id: string
   name: string
@@ -71,6 +90,8 @@ export interface AppSettings {
   createFolders: boolean
   downloadEmulators: boolean
   emulators: Record<EmulatorKey, boolean>
+  installDDIPL: boolean
+  ddiplSource: string | null
   copyRoms: boolean
   romSources: string[]
   copyAllTypes: boolean
@@ -98,6 +119,8 @@ export interface PrepareOptions {
   createFolders: boolean
   downloadEmulators: boolean
   emulators: Record<EmulatorKey, boolean>
+  installDDIPL: boolean
+  ddiplSource?: string | null
   copyRoms: boolean
   romSources: string[]
   romTypes: string[]
@@ -121,6 +144,7 @@ export type StepId =
   | 'menu'
   | 'metadata'
   | 'emulators'
+  | 'ddipl'
   | 'roms'
   | 'format'
   | 'verify'

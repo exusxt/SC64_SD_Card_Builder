@@ -15,6 +15,8 @@ export const defaultSettings: AppSettings = {
   createFolders: true,
   downloadEmulators: true,
   emulators: { nes: true, snes: true, gb: true, sms: true, chf: true },
+  installDDIPL: false,
+  ddiplSource: null,
   copyRoms: true,
   romSources: [],
   copyAllTypes: true,
