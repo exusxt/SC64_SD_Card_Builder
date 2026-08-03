@@ -1,22 +1,46 @@
 # SC64 SD Card Builder
 
-Prepare an SD card for the SummerCart64 (N64FlashcartMenu). Cross-platform Electron app for Windows, macOS and Linux, with 18 languages and 4 themes.
+Prepare an SD card for the [SummerCart64](https://github.com/Polprzewodnikowy/SummerCart64) running [N64FlashcartMenu](https://github.com/Polprzewodnikowy/N64FlashcartMenu). Cross-platform Electron app for Windows, macOS and Linux, with 18 languages and 14 themes.
 
-## Supported platforms
+## Supported operating systems
 
-| Platform | Architectures | Installers | Update channel |
-|----------|---------------|------------|----------------|
-| Windows | x64, arm64 | NSIS installer + portable `.exe` | `latest.yml` (installed) / in-app portable replace |
-| macOS | x64, arm64 | `.dmg` + `.zip` | `latest-mac.yml` |
-| Linux | x64, arm64 | AppImage, `.deb`, `.rpm`, `.pacman` | `latest-linux.yml` |
+The executables below are the actual artifacts shipped with the current release (v0.6.8). All of them are published to the [Releases page](https://github.com/exusxt/SC64_SD_Card_Builder/releases).
 
-All artifacts are published to the [Releases page](https://github.com/exusxt/SC64_SD_Card_Builder/releases).
+### Windows
+
+| Architecture | Executable | Type | Update channel |
+|--------------|------------|------|----------------|
+| x64 / arm64 | `SC64-SD-Card-Builder-Setup-0.6.8.exe` | NSIS installer | `latest.yml` |
+| x64 | `SC64-SD-Card-Builder-0.6.8-x64.exe` | Portable (no install) | `latest.yml` |
+| arm64 | `SC64-SD-Card-Builder-0.6.8-arm64.exe` | Portable (no install) | `latest.yml` |
+
+### macOS
+
+| Architecture | Executable | Type | Update channel |
+|--------------|------------|------|----------------|
+| x64 (Intel) | `SC64-SD-Card-Builder-0.6.8.dmg` | DMG installer | `latest-mac.yml` |
+| x64 (Intel) | `SC64-SD-Card-Builder-0.6.8-mac.zip` | ZIP (updates) | `latest-mac.yml` |
+| arm64 (Apple Silicon) | `SC64-SD-Card-Builder-0.6.8-arm64.dmg` | DMG installer | `latest-mac.yml` |
+| arm64 (Apple Silicon) | `SC64-SD-Card-Builder-0.6.8-arm64-mac.zip` | ZIP (updates) | `latest-mac.yml` |
+
+### Linux
+
+| Architecture | Executable | Type | Update channel |
+|--------------|------------|------|----------------|
+| x64 | `SC64-SD-Card-Builder-0.6.8.AppImage` | AppImage (run without install) | `latest-linux.yml` |
+| x64 | `sc64-sd-card-builder_0.6.8_amd64.deb` | Debian / Ubuntu / Mint | `latest-linux.yml` |
+| x64 | `sc64-sd-card-builder-0.6.8.x86_64.rpm` | Fedora / RHEL / openSUSE | `latest-linux.yml` |
+| x64 | `sc64-sd-card-builder-0.6.8.pacman` | Arch Linux / Manjaro | `latest-linux.yml` |
+| arm64 | `SC64-SD-Card-Builder-0.6.8-arm64.AppImage` | AppImage (run without install) | `latest-linux-arm64.yml` |
+| arm64 | `sc64-sd-card-builder_0.6.8_arm64.deb` | Debian / Ubuntu / Mint | `latest-linux-arm64.yml` |
+| arm64 | `sc64-sd-card-builder-0.6.8.aarch64.rpm` | Fedora / RHEL / openSUSE | `latest-linux-arm64.yml` |
+| arm64 | `sc64-sd-card-builder-0.6.8.aarch64.pacman` | Arch Linux / Manjaro | `latest-linux-arm64.yml` |
 
 ## Features
 
 - Detect SD cards, verify FAT32, format large cards (>32 GB) as FAT32 (requires admin)
 - **Pre-flight safety**: formatting requires typing the drive letter to confirm, and the destination must be confirmed when typed by hand; overlapping source/destination folders are rejected before anything is written
-- Install the latest N64FlashcartMenu, boxart/metadata pack and emulators onto the card
+- Install the latest [N64FlashcartMenu](https://github.com/Polprzewodnikowy/N64FlashcartMenu), boxart/metadata pack and emulators onto the card
 - Copy your own ROMs while preserving folder structure (optional save folders, file-type filter)
 - **N64 ROM validation**: detects byte order (.z64/.v64/.n64), flags mismatched extensions and bad-dump sizes, shows the region breakdown, and skips duplicate dumps of the same game
 - **Existing-card inspection**: pick a destination and instantly see the installed N64FlashcartMenu version (compared against the latest release), N64/other game counts, save folders, files and free space — with an in-place upgrade hint when the menu is outdated
@@ -24,7 +48,7 @@ All artifacts are published to the [Releases page](https://github.com/exusxt/SC6
 - **Prepared-folder flow**: stage a build or copy an already-prepared folder (e.g. from a friend) to the card with an animated transfer view
 - **Byte-for-byte verification** of every copied file (optional)
 - Auto-updates via GitHub Releases
-- 18 languages · 4 themes · custom frameless title bar
+- 18 languages · 14 themes · custom frameless title bar
 
 ## Languages
 
@@ -53,7 +77,7 @@ The UI is fully translated into 18 languages — choose one from the menu bar:
 
 Grab the matching artifact from the [Releases page](https://github.com/exusxt/SC64_SD_Card_Builder/releases):
 
-- **Windows**: the NSIS installer (auto-updates) or the portable `.exe` (no install, self-updates by downloading the newer portable). Both are available for x64 and arm64.
+- **Windows**: the NSIS installer (auto-updates) or the portable `.exe` (no install, self-updates by downloading the newer portable). The portable is published for x64 and arm64.
 - **macOS**: the `.dmg` (drag the app to Applications) or the `.zip`. See the macOS note below — builds are unsigned.
 - **Linux**: the AppImage (most distros), or the `.deb` / `.rpm` / `.pacman` matching your package manager.
 
@@ -124,12 +148,12 @@ Auto-updates use GitHub Releases (`github.com/exusxt/SC64_SD_Card_Builder`).
 **All platforms (recommended):** push a `v*` tag and the GitHub Actions workflow (`.github/workflows/release.yml`) builds each platform on its native runner and publishes the artifacts to the release — no local mac/Linux machine needed:
 
 ```bash
-git tag v0.2.1 && git push origin main --tags
+git tag v0.6.8 && git push origin main --tags
 ```
 
-Each runner creates/updates the release (notes come from the `## [vX.Y.Z]` section of `CHANGELOG.md`) and uploads its artifacts: NSIS + portable exe, dmg + zip, AppImage + deb/rpm/pacman, plus `latest.yml` / `latest-mac.yml` / `latest-linux.yml` for auto-updates. This is the single publisher — don't also publish locally to the same tag.
+Each runner creates/updates the release (notes come from the `## [vX.Y.Z]` section of `CHANGELOG.md`) and uploads its artifacts: NSIS + portable exe, dmg + zip, AppImage + deb/rpm/pacman, plus `latest.yml` / `latest-mac.yml` / `latest-linux.yml` (and `latest-linux-arm64.yml`) for auto-updates. This is the single publisher — don't also publish locally to the same tag.
 
-**From this machine (bump + tag only):** `npm run release` runs `scripts/release.mjs` — bumps the patch version (or pass one explicitly: `npm run release -- 0.2.1`), generates categorized release notes (Added/Changed/Fixed/Infra from your commit messages) into `CHANGELOG.md`, commits and tags (`v0.2.1`), then pushes — which triggers the CI release above. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
+**From this machine (bump + tag only):** `npm run release` runs `scripts/release.mjs` — bumps the patch version (or pass one explicitly: `npm run release -- 0.6.8`), generates categorized release notes (Added/Changed/Fixed/Infra from your commit messages) into `CHANGELOG.md`, commits and tags (`v0.6.8`), then pushes — which triggers the CI release above. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
 
 ```bash
 $env:GH_TOKEN="ghp_..."   # PowerShell: a GitHub token with repo scope
