@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cn, formatBytes, DEFAULT_SETTINGS } from '../src/renderer/src/lib'
+import { cn, formatBytes, moveSelection, DEFAULT_SETTINGS } from '../src/renderer/src/lib'
 
 describe('formatBytes', () => {
   it('handles empty values', () => {
@@ -22,6 +22,23 @@ describe('cn', () => {
     expect(cn('a', 'b')).toBe('a b')
     expect(cn('a', false, null, undefined, 'b')).toBe('a b')
     expect(cn()).toBe('')
+  })
+})
+
+describe('moveSelection', () => {
+  it('steps up and down', () => {
+    expect(moveSelection(2, 5, 'up')).toBe(1)
+    expect(moveSelection(2, 5, 'down')).toBe(3)
+  })
+
+  it('wraps around the ends', () => {
+    expect(moveSelection(0, 5, 'up')).toBe(4)
+    expect(moveSelection(4, 5, 'down')).toBe(0)
+  })
+
+  it('handles empty lists', () => {
+    expect(moveSelection(0, 0, 'up')).toBe(0)
+    expect(moveSelection(0, 0, 'down')).toBe(0)
   })
 })
 

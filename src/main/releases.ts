@@ -1,8 +1,8 @@
-import { app } from 'electron'
 import * as https from 'node:https'
 import { join } from 'node:path'
 import { existsSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs'
 import type { EmulatorsInfo, MenuReleaseInfo, MetadataReleaseInfo, EmulatorKey, EmulatorInfo } from '../shared/types'
+import { dataDir } from './portable'
 
 const USER_AGENT = 'sc64-sd-card-builder'
 const GITHUB_WEB = 'https://github.com'
@@ -15,7 +15,7 @@ interface CacheEntry {
 }
 
 function cacheFile(): string {
-  return join(app.getPath('userData'), 'releases-cache.json')
+  return join(dataDir(), 'releases-cache.json')
 }
 
 function readCache(): Record<string, CacheEntry> {
@@ -29,7 +29,7 @@ function readCache(): Record<string, CacheEntry> {
 
 function writeCache(cache: Record<string, CacheEntry>): void {
   try {
-    mkdirSync(app.getPath('userData'), { recursive: true })
+    mkdirSync(dataDir(), { recursive: true })
     writeFileSync(cacheFile(), JSON.stringify(cache), 'utf-8')
   } catch {
     // ignore

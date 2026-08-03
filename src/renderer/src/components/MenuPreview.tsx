@@ -4,6 +4,7 @@ import type { PreviewEntry } from '../../../shared/types'
 import type { T } from '../i18n'
 import { BACKGROUNDS } from '../backgrounds'
 import { Button } from './ui'
+import { moveSelection } from '../lib'
 
 const SCREEN_W = 640
 const SCREEN_H = 480
@@ -131,11 +132,11 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault()
-          setSel((s) => (entries ? Math.min(s + 1, entries.length - 1) : s))
+          setSel((s) => (entries ? moveSelection(s, entries.length, 'down') : s))
           break
         case 'ArrowUp':
           e.preventDefault()
-          setSel((s) => Math.max(s - 1, 0))
+          setSel((s) => (entries ? moveSelection(s, entries.length, 'up') : s))
           break
         case 'Enter':
         case 'ArrowRight':

@@ -346,3 +346,10 @@ export const ROM_TYPE_LABELS: Record<string, string> = {
 export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ')
 }
+
+// Moves a list cursor one step, wrapping around the ends (bottom → top, top → bottom).
+export function moveSelection(sel: number, length: number, dir: 'up' | 'down'): number {
+  if (length <= 0) return sel
+  if (dir === 'down') return sel >= length - 1 ? 0 : sel + 1
+  return sel <= 0 ? length - 1 : sel - 1
+}

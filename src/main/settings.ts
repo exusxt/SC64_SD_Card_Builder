@@ -1,15 +1,15 @@
-import { app } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AppSettings } from '../shared/types'
 import { DEFAULT_SETTINGS } from '../shared/defaults'
+import { dataDir } from './portable'
 
 export const defaultSettings: AppSettings = DEFAULT_SETTINGS
 
 let cached: AppSettings | null = null
 
 function settingsFile(): string {
-  return join(app.getPath('userData'), 'settings.json')
+  return join(dataDir(), 'settings.json')
 }
 
 export function getSettings(): AppSettings {
@@ -33,7 +33,7 @@ export function saveSettings(patch: Partial<AppSettings>): AppSettings {
   cached = { ...current, ...patch }
   try {
     const file = settingsFile()
-    mkdirSync(join(app.getPath('userData')), { recursive: true })
+    mkdirSync(dataDir(), { recursive: true })
     writeFileSync(file, JSON.stringify(cached, null, 2), 'utf-8')
   } catch {
     // ignore persistence errors
