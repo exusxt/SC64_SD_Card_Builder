@@ -82,7 +82,7 @@ export function registerIpc(): void {
   ipcMain.handle('app:getVersion', () => app.getVersion())
   ipcMain.handle('app:relaunchAdmin', () => showAdminPrompt())
   ipcMain.handle('app:openDocs', () => {
-    void shell.openExternal('https://menu.summercart64.dev/docs/00_index.html')
+    void shell.openExternal('https://github.com/exusxt/SC64_SD_Card_Builder')
   })
 
   ipcMain.handle('prepare:run', async (e, options: PrepareOptions) => {
