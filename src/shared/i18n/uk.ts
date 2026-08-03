@@ -254,7 +254,11 @@ const uk = {
 
   'summary.done': 'Готово. {menu}скопійовано ROM: {roms}, папок збережень: {saves}.',
   'summary.doneCopy': 'Готово. На SD-картку скопійовано файлів: {count}.',
-  'summary.verifyFail': 'Перевірку не пройдено для {count} файлів.'
+  'summary.verifyFail': 'Перевірку не пройдено для {count} файлів.',
+  'preview.open': 'Попередній перегляд меню',
+  'preview.title': 'Попередній перегляд меню',
+  'preview.close': 'Закрити попередній перегляд',
+  'preview.hint': '↑/↓ Переміщення · Enter Відкрити · Backspace Вгору · Esc Закрити'
 } as const
 
 export default uk

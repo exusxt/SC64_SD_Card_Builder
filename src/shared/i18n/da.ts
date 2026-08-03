@@ -254,7 +254,11 @@ const da = {
 
   'summary.done': 'Færdig. {menu}{roms} ROM kopieret, {saves} gemmemappe(r).',
   'summary.doneCopy': 'Færdig. {count} fil(er) kopieret til SD-kortet.',
-  'summary.verifyFail': 'Verifikation mislykkedes for {count} fil(er).'
+  'summary.verifyFail': 'Verifikation mislykkedes for {count} fil(er).',
+  'preview.open': 'Menuforhåndsvisning',
+  'preview.title': 'Menuforhåndsvisning',
+  'preview.close': 'Luk forhåndsvisning',
+  'preview.hint': '↑/↓ Flyt · Enter Åbn · Backspace Op · Esc Lukk'
 } as const
 
 export default da

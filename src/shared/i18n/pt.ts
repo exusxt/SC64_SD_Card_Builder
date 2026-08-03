@@ -254,7 +254,11 @@ const pt = {
 
   'summary.done': 'Concluído. {menu}{roms} ROM(s) copiada(s), {saves} pasta(s) de guardar.',
   'summary.doneCopy': 'Concluído. {count} ficheiro(s) copiado(s) para o cartão SD.',
-  'summary.verifyFail': 'Verificação falhou para {count} ficheiro(s).'
+  'summary.verifyFail': 'Verificação falhou para {count} ficheiro(s).',
+  'preview.open': 'Pré-visualizar menu',
+  'preview.title': 'Pré-visualização do menu',
+  'preview.close': 'Fechar pré-visualização',
+  'preview.hint': '↑/↓ Mover · Enter Abrir · Retroceder Acima · Esc Fechar'
 } as const
 
 export default pt

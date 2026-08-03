@@ -254,7 +254,11 @@ const sv = {
 
   'summary.done': 'Klart. {menu}{roms} ROM kopierade, {saves} sparmapp(ar).',
   'summary.doneCopy': 'Klart. {count} fil(er) kopierade till SD-kortet.',
-  'summary.verifyFail': 'Verifieringen misslyckades för {count} fil(er).'
+  'summary.verifyFail': 'Verifieringen misslyckades för {count} fil(er).',
+  'preview.open': 'Förhandsvisa meny',
+  'preview.title': 'Menyförhandsvisning',
+  'preview.close': 'Stäng förhandsvisning',
+  'preview.hint': '↑/↓ Flytta · Enter Öppna · Backspace Upp · Esc Stäng'
 } as const
 
 export default sv

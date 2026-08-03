@@ -254,7 +254,11 @@ const ru = {
 
   'summary.done': 'Готово. {menu}скопировано ROM: {roms}, папок сохранений: {saves}.',
   'summary.doneCopy': 'Готово. На SD-карту скопировано файлов: {count}.',
-  'summary.verifyFail': 'Проверка не удалась для {count} файлов.'
+  'summary.verifyFail': 'Проверка не удалась для {count} файлов.',
+  'preview.open': 'Предпросмотр меню',
+  'preview.title': 'Предпросмотр меню',
+  'preview.close': 'Закрыть предпросмотр',
+  'preview.hint': '↑/↓ Перемещение · Enter Открыть · Backspace Вверх · Esc Закрыть'
 } as const
 
 export default ru

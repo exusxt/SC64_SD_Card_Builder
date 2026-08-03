@@ -21,6 +21,7 @@ import { DestinationStep } from './components/DestinationStep'
 import { OptionsStep } from './components/OptionsStep'
 import { RunStep, LogEntry } from './components/RunStep'
 import { UpdateToast, UpdateState } from './components/UpdateToast'
+import { MenuPreview } from './components/MenuPreview'
 import { Button } from './components/ui'
 
 let logId = 0
@@ -47,6 +48,7 @@ export default function App(): React.JSX.Element {
   const [log, setLog] = useState<LogEntry[]>([])
   const [result, setResult] = useState<{ kind: 'prepare' | 'format'; ok: boolean; message: string } | null>(null)
   const [formatResult, setFormatResult] = useState<FormatResult | null>(null)
+  const [previewRoot, setPreviewRoot] = useState<string | null>(null)
   const [update, setUpdate] = useState<UpdateState | null>(null)
   const updateTimer = useRef<number | null>(null)
   const loadedRef = useRef(false)
@@ -327,7 +329,7 @@ export default function App(): React.JSX.Element {
       />
 
       <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col overflow-y-auto px-6 pb-6 pt-5">
-        <Header t={t} menu={menu} metadata={metadata} isAdmin={isAdmin} onRequestAdmin={() => void requestAdmin()} adminRequesting={adminRequesting} />
+        <Header t={t} menu={menu} metadata={metadata} isAdmin={isAdmin} onRequestAdmin={() => void requestAdmin()} adminRequesting={adminRequesting} onPreview={() => destination && setPreviewRoot(destination)} canPreview={destination.trim().length > 0} />
         <Stepper t={t} step={step} onNavigate={setStep} locked={running !== null} />
 
         <main className="flex-1">
@@ -383,6 +385,7 @@ export default function App(): React.JSX.Element {
               onRun={() => void runPrepare()}
               onCancel={cancelRun}
               onGoBack={() => setStep(2)}
+              onPreview={() => destination && setPreviewRoot(destination)}
             />
           ) : null}
         </main>
@@ -420,6 +423,8 @@ export default function App(): React.JSX.Element {
           onInstall={() => void window.api.installUpdate()}
         />
       ) : null}
+
+      {previewRoot ? <MenuPreview t={t} root={previewRoot} onClose={() => setPreviewRoot(null)} /> : null}
     </div>
   )
 }

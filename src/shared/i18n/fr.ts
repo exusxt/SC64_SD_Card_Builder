@@ -254,7 +254,11 @@ const fr = {
 
   'summary.done': 'Terminé. {menu}{roms} ROM copiée(s), {saves} dossier(s) de sauvegarde.',
   'summary.doneCopy': 'Terminé. {count} fichier(s) copié(s) sur la carte SD.',
-  'summary.verifyFail': 'Vérification échouée pour {count} fichier(s).'
+  'summary.verifyFail': 'Vérification échouée pour {count} fichier(s).',
+  'preview.open': 'Aperçu du menu',
+  'preview.title': 'Aperçu du menu',
+  'preview.close': 'Fermer l’aperçu',
+  'preview.hint': '↑/↓ Déplacer · Entrée Ouvrir · Retour arrière Monter · Échap Fermer'
 } as const
 
 export default fr

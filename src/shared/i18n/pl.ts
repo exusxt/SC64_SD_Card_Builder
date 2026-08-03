@@ -254,7 +254,11 @@ const pl = {
 
   'summary.done': 'Gotowe. {menu}skopiowano {roms} ROM-ów, utworzono {saves} folder(ów) zapisów.',
   'summary.doneCopy': 'Gotowe. Skopiowano {count} plik(ów) na kartę SD.',
-  'summary.verifyFail': 'Weryfikacja nie powiodła się dla {count} plik(ów).'
+  'summary.verifyFail': 'Weryfikacja nie powiodła się dla {count} plik(ów).',
+  'preview.open': 'Podgląd menu',
+  'preview.title': 'Podgląd menu',
+  'preview.close': 'Zamknij podgląd',
+  'preview.hint': '↑/↓ Ruch · Enter Otwórz · Backspace Góra · Esc Zamknij'
 } as const
 
 export default pl

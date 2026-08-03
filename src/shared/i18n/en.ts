@@ -255,7 +255,11 @@ const en = {
 
   'summary.done': 'Done. {menu}{roms} ROM(s) copied, {saves} saves folder(s).',
   'summary.doneCopy': 'Done. {count} file(s) copied to the SD card.',
-  'summary.verifyFail': 'Verification failed for {count} file(s).'
+  'summary.verifyFail': 'Verification failed for {count} file(s).',
+  'preview.open': 'Preview menu',
+  'preview.title': 'Menu preview',
+  'preview.close': 'Close preview',
+  'preview.hint': '↑/↓ Move · Enter Open · Backspace Up · Esc Close'
 } as const
 
 export default en

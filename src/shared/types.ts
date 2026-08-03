@@ -177,6 +177,20 @@ export interface PrepareResult {
   summary: string
 }
 
+export type PreviewKind = 'n64' | 'dd' | 'other'
+
+export interface PreviewEntry {
+  name: string
+  isDir: boolean
+  size: number
+  kind: PreviewKind
+  title: string | null
+  gameCode: string | null
+  region: string | null
+  boxart: string | null
+  description: string | null
+}
+
 export interface FormatResult {
   ok: boolean
   message: string

@@ -254,7 +254,11 @@ const hu = {
 
   'summary.done': 'Kész. {menu}{roms} ROM másolva, {saves} mentésmappa.',
   'summary.doneCopy': 'Kész. {count} fájl másolva az SD-kártyára.',
-  'summary.verifyFail': 'Az ellenőrzés {count} fájl esetén sikertelen.'
+  'summary.verifyFail': 'Az ellenőrzés {count} fájl esetén sikertelen.',
+  'preview.open': 'Menü előnézet',
+  'preview.title': 'Menü előnézet',
+  'preview.close': 'Előnézet bezárása',
+  'preview.hint': '↑/↓ Mozgatás · Enter Megnyitás · Backspace Fel · Esc Bezárás'
 } as const
 
 export default hu

@@ -254,7 +254,11 @@ const es = {
 
   'summary.done': 'Listo. {menu}{roms} ROM copiada(s), {saves} carpeta(s) de guardado.',
   'summary.doneCopy': 'Listo. {count} archivo(s) copiado(s) a la tarjeta SD.',
-  'summary.verifyFail': 'La verificación falló para {count} archivo(s).'
+  'summary.verifyFail': 'La verificación falló para {count} archivo(s).',
+  'preview.open': 'Vista previa del menú',
+  'preview.title': 'Vista previa del menú',
+  'preview.close': 'Cerrar vista previa',
+  'preview.hint': '↑/↓ Mover · Intro Abrir · Retroceso Subir · Esc Cerrar'
 } as const
 
 export default es

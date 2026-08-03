@@ -254,7 +254,11 @@ const fi = {
 
   'summary.done': 'Valmis. {menu}{roms} ROM-tiedostoa kopioitu, {saves} tallennuskansiota.',
   'summary.doneCopy': 'Valmis. {count} tiedostoa kopioitu SD-kortille.',
-  'summary.verifyFail': 'Varmistus epäonnistui {count} tiedoston kohdalla.'
+  'summary.verifyFail': 'Varmistus epäonnistui {count} tiedoston kohdalla.',
+  'preview.open': 'Valikon esikatselu',
+  'preview.title': 'Valikon esikatselu',
+  'preview.close': 'Sulje esikatselu',
+  'preview.hint': '↑/↓ Siirrä · Enter Avaa · Backspace Ylös · Esc Sulje'
 } as const
 
 export default fi

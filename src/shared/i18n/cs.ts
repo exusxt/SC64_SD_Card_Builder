@@ -254,7 +254,11 @@ const cs = {
 
   'summary.done': 'Hotovo. {menu}zkopírováno {roms} ROM, {saves} složek pro uložení.',
   'summary.doneCopy': 'Hotovo. Na SD kartu zkopírováno {count} soubor(ů).',
-  'summary.verifyFail': 'Ověření selhalo u {count} soubor(ů).'
+  'summary.verifyFail': 'Ověření selhalo u {count} soubor(ů).',
+  'preview.open': 'Náhled nabídky',
+  'preview.title': 'Náhled nabídky',
+  'preview.close': 'Zavřít náhled',
+  'preview.hint': '↑/↓ Pohyb · Enter Otevřít · Backspace Nahoru · Esc Zavřít'
 } as const
 
 export default cs

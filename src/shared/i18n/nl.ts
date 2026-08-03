@@ -254,7 +254,11 @@ const nl = {
 
   'summary.done': 'Klaar. {menu}{roms} ROM(s) gekopieerd, {saves} opslagmap(pen).',
   'summary.doneCopy': 'Klaar. {count} bestand(en) naar de SD-kaart gekopieerd.',
-  'summary.verifyFail': 'Verificatie mislukt voor {count} bestand(en).'
+  'summary.verifyFail': 'Verificatie mislukt voor {count} bestand(en).',
+  'preview.open': 'Menuvoorbeeld',
+  'preview.title': 'Menuvoorbeeld',
+  'preview.close': 'Voorbeeld sluiten',
+  'preview.hint': '↑/↓ Verplaatsen · Enter Openen · Backspace Omhoog · Esc Sluiten'
 } as const
 
 export default nl

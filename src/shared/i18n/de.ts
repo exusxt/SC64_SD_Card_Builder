@@ -254,7 +254,11 @@ const de = {
 
   'summary.done': 'Fertig. {menu}{roms} ROM(s) kopiert, {saves} Speicherordner.',
   'summary.doneCopy': 'Fertig. {count} Datei(en) auf die SD-Karte kopiert.',
-  'summary.verifyFail': 'Prüfung fehlgeschlagen für {count} Datei(en).'
+  'summary.verifyFail': 'Prüfung fehlgeschlagen für {count} Datei(en).',
+  'preview.open': 'Menü-Vorschau',
+  'preview.title': 'Menü-Vorschau',
+  'preview.close': 'Vorschau schließen',
+  'preview.hint': '↑/↓ Bewegen · Enter Öffnen · Rücktaste Auf · Esc Schließen'
 } as const
 
 export default de

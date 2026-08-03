@@ -254,7 +254,11 @@ const ro = {
 
   'summary.done': 'Gata. {menu}{roms} ROM copiate, {saves} folder(e) de salvare.',
   'summary.doneCopy': 'Gata. {count} fișier(e) copiat(e) pe cardul SD.',
-  'summary.verifyFail': 'Verificarea a eșuat pentru {count} fișier(e).'
+  'summary.verifyFail': 'Verificarea a eșuat pentru {count} fișier(e).',
+  'preview.open': 'Previzualizare meniu',
+  'preview.title': 'Previzualizare meniu',
+  'preview.close': 'Închide previzualizarea',
+  'preview.hint': '↑/↓ Mutare · Enter Deschidere · Backspace Sus · Esc Închidere'
 } as const
 
 export default ro

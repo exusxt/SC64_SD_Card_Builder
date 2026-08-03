@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { CheckCircle2, Play, Square, XCircle, ListChecks, Check, Copy } from 'lucide-react'
+import { CheckCircle2, Play, Square, XCircle, ListChecks, Check, Copy, MonitorPlay } from 'lucide-react'
 import type { AppSettings, StepState } from '../../../shared/types'
 import type { T } from '../i18n'
 import { Button, ProgressBar, Spinner } from './ui'
@@ -23,7 +23,8 @@ export function RunStep({
   result,
   onRun,
   onCancel,
-  onGoBack
+  onGoBack,
+  onPreview
 }: {
   t: T
   settings: AppSettings
@@ -37,6 +38,7 @@ export function RunStep({
   onRun: () => void
   onCancel: () => void
   onGoBack: () => void
+  onPreview: () => void
 }): React.JSX.Element {
   const logRef = useRef<HTMLDivElement>(null)
 
@@ -160,6 +162,11 @@ export function RunStep({
         >
           {result.ok ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" /> : <XCircle className="mt-0.5 h-5 w-5 shrink-0" />}
           <span className="whitespace-pre-wrap">{result.message}</span>
+          {result.ok && result.kind === 'prepare' ? (
+            <Button variant="outline" size="sm" className="ml-auto shrink-0" onClick={onPreview}>
+              <MonitorPlay className="h-4 w-4" /> {t('preview.open')}
+            </Button>
+          ) : null}
         </div>
       ) : null}
 

@@ -254,7 +254,11 @@ const el = {
 
   'summary.done': 'Ολοκληρώθηκε. {menu}{roms} ROM αντιγράφηκαν, {saves} φάκελοι αποθήκευσης.',
   'summary.doneCopy': 'Ολοκληρώθηκε. {count} αρχείο(α) αντιγράφηκαν στην κάρτα SD.',
-  'summary.verifyFail': 'Ο έλεγχος απέτυχε για {count} αρχείο(α).'
+  'summary.verifyFail': 'Ο έλεγχος απέτυχε για {count} αρχείο(α).',
+  'preview.open': 'Προεπισκόπηση μενού',
+  'preview.title': 'Προεπισκόπηση μενού',
+  'preview.close': 'Κλείσιμο προεπισκόπησης',
+  'preview.hint': '↑/↓ Μετακίνηση · Enter Άνοιγμα · Backspace Πάνω · Esc Κλείσιμο'
 } as const
 
 export default el

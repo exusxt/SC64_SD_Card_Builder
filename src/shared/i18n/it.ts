@@ -254,7 +254,11 @@ const it = {
 
   'summary.done': 'Fatto. {menu}{roms} ROM copiate, {saves} cartelle di salvataggio.',
   'summary.doneCopy': 'Fatto. {count} file copiati sulla scheda SD.',
-  'summary.verifyFail': 'Verifica fallita per {count} file.'
+  'summary.verifyFail': 'Verifica fallita per {count} file.',
+  'preview.open': 'Anteprima menu',
+  'preview.title': 'Anteprima menu',
+  'preview.close': 'Chiudi anteprima',
+  'preview.hint': '↑/↓ Sposta · Invio Apri · Backspace Su · Esc Chiudi'
 } as const
 
 export default it

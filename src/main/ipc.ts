@@ -12,6 +12,7 @@ import { formatDisk, FormatRequest } from './format'
 import { isElevated, showAdminPrompt } from './admin'
 import { checkForUpdates, installUpdate } from './updater'
 import { listDirDeep } from './unzip'
+import { listPreviewDir, loadPreviewBoxart } from './preview'
 import { translate } from '../shared/i18n'
 
 interface CancelToken {
@@ -158,5 +159,14 @@ export function registerIpc(): void {
   })
   ipcMain.handle('updates:install', () => {
     installUpdate()
+  })
+
+  ipcMain.handle('preview:list', async (_e, root: string, dir: string) => {
+    if (!root || !existsSync(root)) return null
+    return listPreviewDir(root, dir ?? '')
+  })
+  ipcMain.handle('preview:boxart', (_e, root: string, path: string) => {
+    if (!root || !existsSync(root)) return null
+    return loadPreviewBoxart(root, path)
   })
 }

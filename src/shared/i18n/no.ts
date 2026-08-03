@@ -254,7 +254,11 @@ const no = {
 
   'summary.done': 'Ferdig. {menu}{roms} ROM-er kopiert, {saves} lagringsmappe(r).',
   'summary.doneCopy': 'Ferdig. {count} fil(er) kopiert til SD-kortet.',
-  'summary.verifyFail': 'Verifisering mislyktes for {count} fil(er).'
+  'summary.verifyFail': 'Verifisering mislyktes for {count} fil(er).',
+  'preview.open': 'Forhåndsvis meny',
+  'preview.title': 'Menyforhåndsvisning',
+  'preview.close': 'Lukk forhåndsvisning',
+  'preview.hint': '↑/↓ Flytt · Enter Åpne · Backspace Opp · Esc Lukk'
 } as const
 
 export default no

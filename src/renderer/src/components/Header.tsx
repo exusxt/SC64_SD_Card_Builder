@@ -1,7 +1,7 @@
-import { ShieldAlert, ShieldCheck } from 'lucide-react'
+import { MonitorPlay, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type { MenuReleaseInfo, MetadataReleaseInfo } from '../../../shared/types'
 import type { T } from '../i18n'
-import { Badge, Spinner } from './ui'
+import { Badge, Button, Spinner } from './ui'
 import { cn } from '../lib'
 import appIcon from '../assets/app-icon.png'
 
@@ -11,7 +11,9 @@ export function Header({
   metadata,
   isAdmin,
   onRequestAdmin,
-  adminRequesting
+  adminRequesting,
+  onPreview,
+  canPreview
 }: {
   t: T
   menu: MenuReleaseInfo | null
@@ -19,6 +21,8 @@ export function Header({
   isAdmin: boolean
   onRequestAdmin: () => void
   adminRequesting: boolean
+  onPreview: () => void
+  canPreview: boolean
 }): React.JSX.Element {
   return (
     <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -35,6 +39,10 @@ export function Header({
       <div className="flex flex-wrap items-center gap-2">
         {menu ? <Badge tone="accent">{t('header.menu', { tag: menu.tag })}</Badge> : null}
         {metadata ? <Badge tone="default">{t('header.art', { tag: metadata.tag })}</Badge> : null}
+        <Button variant="outline" size="sm" onClick={onPreview} disabled={!canPreview} title={t('preview.open')}>
+          <MonitorPlay className="h-3.5 w-3.5" />
+          {t('preview.open')}
+        </Button>
         {isAdmin ? (
           <Badge tone="good">
             <ShieldCheck className="h-3 w-3" />
