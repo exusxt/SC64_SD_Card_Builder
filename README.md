@@ -26,6 +26,29 @@ All artifacts are published to the [Releases page](https://github.com/exusxt/SC6
 - Auto-updates via GitHub Releases
 - 18 languages · 4 themes · custom frameless title bar
 
+## Languages
+
+The UI is fully translated into 18 languages — choose one from the menu bar:
+
+- English
+- Deutsch
+- Français
+- Español
+- Italiano
+- Português
+- Polski
+- Nederlands
+- Svenska
+- Norsk
+- Dansk
+- Suomi
+- Čeština
+- Magyar
+- Română
+- Ελληνικά
+- Русский
+- Українська
+
 ## Installing
 
 Grab the matching artifact from the [Releases page](https://github.com/exusxt/SC64_SD_Card_Builder/releases):
