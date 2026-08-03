@@ -12,7 +12,7 @@ import { formatDisk, FormatRequest } from './format'
 import { isElevated, showAdminPrompt } from './admin'
 import { checkForUpdates, installUpdate } from './updater'
 import { listDirDeep } from './unzip'
-import { listPreviewDir, loadPreviewBoxart } from './preview'
+import { listPreviewDir, loadPreviewBoxart, loadPreviewBackground } from './preview'
 import { translate } from '../shared/i18n'
 
 interface CancelToken {
@@ -168,5 +168,9 @@ export function registerIpc(): void {
   ipcMain.handle('preview:boxart', (_e, root: string, path: string) => {
     if (!root || !existsSync(root)) return null
     return loadPreviewBoxart(root, path)
+  })
+  ipcMain.handle('preview:background', (_e, root: string) => {
+    if (!root || !existsSync(root)) return null
+    return loadPreviewBackground(root)
   })
 }

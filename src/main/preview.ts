@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync, Dirent } from 'node:fs'
 import { existsSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
-import type { PreviewEntry } from '../shared/types'
+import type { PreviewBackground, PreviewEntry } from '../shared/types'
 import { inspectN64File, isN64Ext, N64_REGION_LABELS } from './n64validate'
 
 const DD_EXTS = new Set(['.ndd', '.d64'])
@@ -149,6 +149,50 @@ export function loadPreviewBoxart(root: string, path: string): string | null {
   if (!existsSync(target)) return null
   try {
     return `data:image/png;base64,${readFileSync(target).toString('base64')}`
+  } catch {
+    return null
+  }
+}
+
+// The menu caches the user-set background image at menu/cache/background.data
+// (see N64FlashcartMenu src/menu/menu.c). Layout: magic "BKG1", uint32 BE
+// width/height/size, then the raw RGBA16 surface (stride = size / height).
+function decodeBackground(raw: Buffer): PreviewBackground | null {
+  if (raw.length < 16) return null
+  if (!raw.subarray(0, 4).equals(Buffer.from('BKG1', 'ascii'))) return null
+  const width = raw.readUInt32BE(4)
+  const height = raw.readUInt32BE(8)
+  const size = raw.readUInt32BE(12)
+  if (width === 0 || height === 0 || width > 640 || height > 480) return null
+  if (size < width * 2 * height) return null
+  if (raw.length < 16 + size) return null
+  const stride = Math.floor(size / height)
+  if (stride < width * 2 || stride > width * 2 + 64) return null
+
+  const out = Buffer.alloc(width * height * 4)
+  let o = 0
+  for (let y = 0; y < height; y++) {
+    const row = 16 + y * stride
+    for (let x = 0; x < width; x++) {
+      const p = raw.readUInt16BE(row + x * 2)
+      const r = (p >> 11) & 0x1f
+      const g = (p >> 6) & 0x1f
+      const b = (p >> 1) & 0x1f
+      out[o++] = (r << 3) | (r >> 2)
+      out[o++] = (g << 3) | (g >> 2)
+      out[o++] = (b << 3) | (b >> 2)
+      out[o++] = 0xff
+    }
+  }
+  return { width, height, data: out.toString('base64') }
+}
+
+export function loadPreviewBackground(root: string): PreviewBackground | null {
+  const base = resolve(root)
+  const target = resolve(join(base, 'menu', 'cache', 'background.data'))
+  if (!isInside(base, target)) return null
+  try {
+    return decodeBackground(readFileSync(target))
   } catch {
     return null
   }

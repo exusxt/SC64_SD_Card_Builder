@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import type { PreviewEntry } from '../../../shared/types'
 import type { T } from '../i18n'
@@ -47,6 +47,27 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
   const [sel, setSel] = useState(0)
   const [boxart, setBoxart] = useState<string | null>(null)
   const [scale, setScale] = useState(1)
+  const [bg, setBg] = useState<{ width: number; height: number } | null>(null)
+  const bgCanvasRef = useRef<HTMLCanvasElement | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setBg(null)
+    void window.api.loadPreviewBackground(root).then((b) => {
+      if (!b || cancelled) return
+      const canvas = bgCanvasRef.current
+      const ctx = canvas?.getContext('2d')
+      if (!canvas || !ctx) return
+      canvas.width = b.width
+      canvas.height = b.height
+      const bytes = Uint8Array.from(atob(b.data))
+      ctx.putImageData(new ImageData(new Uint8ClampedArray(bytes.buffer), b.width, b.height), 0, 0)
+      if (!cancelled) setBg({ width: b.width, height: b.height })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [root])
 
   const loadDir = useCallback(
     async (rel: string) => {
@@ -183,6 +204,24 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
           className="relative bg-black"
           style={{ width: SCREEN_W, height: SCREEN_H, transform: `scale(${scale})`, transformOrigin: 'top left', fontFamily: MONO }}
         >
+          {/* Background (menu/cache/background.data), centered and darkened like the console menu */}
+          <canvas
+            ref={bgCanvasRef}
+            style={{
+              position: 'absolute',
+              left: bg ? (SCREEN_W - bg.width) / 2 : 0,
+              top: bg ? (SCREEN_H - bg.height) / 2 : 0,
+              display: bg ? 'block' : 'none',
+              imageRendering: 'pixelated'
+            }}
+          />
+          {bg ? (
+            <div
+              className="pointer-events-none"
+              style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.37)', zIndex: 0 }}
+            />
+          ) : null}
+
           {/* Tabs */}
           <div style={{ position: 'absolute', left: VISIBLE_X0, top: TAB_Y0, right: SCREEN_W - VISIBLE_X1, height: TAB_H, display: 'flex', gap: 4 }}>
             {[
@@ -235,11 +274,6 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
                     {isDir ? '[DIR] ' : ''}
                     {entry.name}
                   </div>
-                  {!isDir ? (
-                    <div style={{ position: 'absolute', right: VISIBLE_X1 - 10, top: 0, height: ROW_H, lineHeight: `${ROW_H}px`, fontSize: 12, color: '#8a8a8a' }}>
-                      {menuSize(entry.size)}
-                    </div>
-                  ) : null}
                 </div>
               )
             })}

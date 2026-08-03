@@ -12,9 +12,9 @@ import type {
   MetadataReleaseInfo,
   PrepareOptions,
   PrepareResult,
+  PreviewBackground,
   PreviewEntry
 } from '../shared/types'
-
 const api = {
   listDrives: (): Promise<DriveInfo[]> => ipcRenderer.invoke('drives:list'),
   chooseFolder: (): Promise<string | null> => ipcRenderer.invoke('dialog:chooseFolder'),
@@ -37,6 +37,7 @@ const api = {
   inspectCard: (path: string): Promise<CardInspection | null> => ipcRenderer.invoke('inspect:card', path),
   listPreviewDir: (root: string, dir: string): Promise<PreviewEntry[] | null> => ipcRenderer.invoke('preview:list', root, dir),
   loadPreviewBoxart: (root: string, path: string): Promise<string | null> => ipcRenderer.invoke('preview:boxart', root, path),
+  loadPreviewBackground: (root: string): Promise<PreviewBackground | null> => ipcRenderer.invoke('preview:background', root),
   validateDDIPL: (dir: string): Promise<DdIplValidation | null> => ipcRenderer.invoke('ddipl:validate', dir),
   format: (options: FormatOptions): Promise<FormatResult> => ipcRenderer.invoke('format:run', options),
   cancelFormat: (): void => ipcRenderer.send('format:cancel'),
