@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   folder: null,
   volumeLabel: 'SUMMERCART',
   language: 'en',
-  theme: 'midnight',
+  theme: 'gallery',
   downloadMenu: true,
   downloadMetadata: true,
   createFolders: true,
@@ -342,7 +342,7 @@ export const THEMES: Record<ThemeId, { name: string; vars: ThemeVars }> = {
 }
 
 export function applyTheme(id: ThemeId): void {
-  const theme = THEMES[id] ?? THEMES.midnight
+  const theme = THEMES[id] ?? THEMES.gallery
   for (const [key, value] of Object.entries(theme.vars)) {
     document.documentElement.style.setProperty(key, value)
   }

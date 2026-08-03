@@ -2,7 +2,7 @@ import en from './en'
 
 export const LOCALES = ['en', 'de', 'fr', 'es', 'it', 'pt', 'pl', 'nl', 'sv', 'no', 'da', 'fi', 'cs', 'hu', 'ro', 'el', 'ru', 'uk'] as const
 export type Locale = (typeof LOCALES)[number]
-export const THEME_IDS = ['midnight', 'ocean', 'forest', 'sunset', 'gallery', 'galleryblack', 'gallerygreen', 'galleryblue', 'galleryred', 'galleryorange', 'gallerypurple', 'royal', 'candy', 'paper'] as const
+export const THEME_IDS = ['gallery', 'galleryblack', 'gallerygreen', 'galleryblue', 'galleryred', 'galleryorange', 'gallerypurple', 'midnight', 'ocean', 'forest', 'sunset', 'royal', 'candy', 'paper'] as const
 export type ThemeId = (typeof THEME_IDS)[number]
 export type TranslationKey = keyof typeof en
 export type TranslationVars = Record<string, string | number>

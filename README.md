@@ -73,6 +73,28 @@ The UI is fully translated into 18 languages — choose one from the menu bar:
 - Русский
 - Українська
 
+## Themes
+
+14 themes, switchable from the menu bar (Theme → …). **Gallery Glass** is the default — frosted-glass panels over a rotating photo background, available in 7 variants:
+
+- Gallery Glass (default)
+- Gallery Black Glass
+- Gallery Green Glass
+- Gallery Blue Glass
+- Gallery Red Glass
+- Gallery Orange Glass
+- Gallery Purple Glass
+
+The glass themes shuffle the background image (button in the footer); solid themes follow:
+
+- Midnight
+- Ocean
+- Forest
+- Sunset
+- Royal
+- Candy
+- Paper
+
 ## Installing
 
 Grab the matching artifact from the [Releases page](https://github.com/exusxt/SC64_SD_Card_Builder/releases):
