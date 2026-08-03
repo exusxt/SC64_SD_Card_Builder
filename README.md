@@ -44,6 +44,7 @@ The executables below are the actual artifacts shipped with the current release 
 - Copy your own ROMs while preserving folder structure (optional save folders, file-type filter)
 - **N64 ROM validation**: detects byte order (.z64/.v64/.n64), flags mismatched extensions and bad-dump sizes, shows the region breakdown, and skips duplicate dumps of the same game
 - **Existing-card inspection**: pick a destination and instantly see the installed N64FlashcartMenu version (compared against the latest release), N64/other game counts, save folders, files and free space — with an in-place upgrade hint when the menu is outdated
+- **N64FlashcartMenu preview**: open any folder and browse it in an on-screen emulation of the menu's file browser — cursor-key navigation (wrapping at the top/bottom), folders, ROM titles/codes/regions, boxart and descriptions from the metadata pack, file sizes, and a CRT-styled view
 - **64DD IPL installer**: add your own IPL dumps (NDDJ0/NDDJ1/NDDJ2/NDDE0/NDXJ0) from a folder — each is validated (size, byte order, disk ID) and copied into `menu/64ddipl/` so 64DD games run without a real drive
 - **Prepared-folder flow**: stage a build or copy an already-prepared folder (e.g. from a friend) to the card with an animated transfer view
 - **Byte-for-byte verification** of every copied file (optional)
