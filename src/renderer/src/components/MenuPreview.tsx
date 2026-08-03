@@ -289,10 +289,10 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
             })}
 
             {entries === null && !loadError ? (
-              <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: TEXT_Y0, fontSize: 13, color: '#8a8a8a' }}>** loading **</div>
+              <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: TEXT_Y0, fontSize: 13, color: '#fff' }}>** loading **</div>
             ) : null}
             {entries !== null && entries.length === 0 ? (
-              <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: TEXT_Y0, fontSize: 13, color: '#8a8a8a' }}>** empty directory **</div>
+              <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: TEXT_Y0, fontSize: 13, color: '#fff' }}>** empty directory **</div>
             ) : null}
             {loadError ? (
               <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: TEXT_Y0, fontSize: 13, color: '#ff6b6b' }}>** cannot read directory **</div>
@@ -329,10 +329,10 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
                 overflow: 'hidden'
               }}
             >
-              {boxart ? (
+                  {boxart ? (
                 <img src={boxart} alt="" style={{ width: box.w, height: box.h, objectFit: 'contain', imageRendering: 'pixelated' }} />
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#3f3f3f', fontSize: 12 }}>NO ART</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#fff', fontSize: 12 }}>NO ART</div>
               )}
             </div>
           ) : null}
@@ -351,7 +351,7 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
                 overflow: 'hidden',
                 whiteSpace: 'nowrap',
                 textOverflow: 'ellipsis',
-                color: '#a0a0a0'
+                color: '#fff'
               }}
             >
               {selected.description}
@@ -369,19 +369,19 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
                 </div>
                 {!selected.isDir ? (
                   <>
-                    <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 34, right: VISIBLE_X0 + 10, fontSize: 12, color: '#cfcfcf', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 34, right: VISIBLE_X0 + 10, fontSize: 12, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {selected.kind === 'n64'
                         ? `Title: ${selected.title ?? '?'}   Code: ${selected.gameCode ?? '?'}   Region: ${selected.region ?? '?'}`
                         : `Type: ${entryType(selected)}`}
                     </div>
-                    <div style={{ position: 'absolute', right: VISIBLE_X0 + 10, top: 10, fontSize: 12, color: '#8a8a8a' }}>{menuSize(selected.size)}</div>
+                    <div style={{ position: 'absolute', right: VISIBLE_X0 + 10, top: 10, fontSize: 12, color: '#fff' }}>{menuSize(selected.size)}</div>
                   </>
                 ) : (
-                  <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 34, fontSize: 12, color: '#8a8a8a' }}>A / Enter: open</div>
+                  <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 34, fontSize: 12, color: '#fff' }}>A / Enter: open</div>
                 )}
               </>
             ) : (
-              <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 10, fontSize: 12, color: '#8a8a8a' }}>A / Enter: open   B / Backspace: up</div>
+              <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 10, fontSize: 12, color: '#fff' }}>A / Enter: open   B / Backspace: up</div>
             )}
           </div>
 
