@@ -363,7 +363,7 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
             <div style={{ position: 'absolute', left: VISIBLE_X0, right: VISIBLE_X0, top: 0, height: 1, background: '#3f3f3f' }} />
             {selected ? (
               <>
-                <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 10, right: VISIBLE_X0 + 10, fontSize: 14, fontWeight: 700, color: selected.isDir ? '#ffd866' : '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 10, right: selected.isDir ? VISIBLE_X0 + 10 : VISIBLE_X0 + 96, fontSize: 14, fontWeight: 700, color: selected.isDir ? '#ffd866' : '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {selected.name}
                   {selected.isDir ? '  (Directory)' : ''}
                 </div>
