@@ -339,7 +339,7 @@ export default function App(): React.JSX.Element {
         </>
       ) : null}
 
-      <div className="relative z-10 shrink-0">
+      <div className="relative z-40 shrink-0">
         <TitleBar
           t={t}
           version={version}
