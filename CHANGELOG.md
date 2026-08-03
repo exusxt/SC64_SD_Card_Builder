@@ -5,6 +5,14 @@ All notable changes to SC64 SD Card Builder.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.6.7] - 2026-08-03
+
+### Fixed
+
+- Keep the title bar menus above the content so dropdowns are not clipped
+
+[Compare v0.6.6...v0.6.7](https://github.com/exusxt/SC64_SD_Card_Builder/compare/v0.6.6...v0.6.7)
+
 ## [v0.6.6] - 2026-08-03
 
 ### Added
