@@ -1,6 +1,6 @@
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 import { describe, expect, it, afterEach } from 'vitest'
 import { listPreviewDir, loadPreviewBoxart, isInside } from '../src/main/preview'
 
@@ -131,13 +131,16 @@ describe('listPreviewDir', () => {
 })
 
 describe('isInside', () => {
+  const root = join(sep, 'Users', 'foo', 'prepared')
+
   it('matches subpaths of a normal folder root', () => {
-    expect(isInside('C:\\Users\\foo\\prepared', 'C:\\Users\\foo\\prepared\\Games')).toBe(true)
-    expect(isInside('C:\\Users\\foo\\prepared', 'C:\\Users\\foo\\prepared')).toBe(true)
-    expect(isInside('C:\\Users\\foo\\prepared', 'C:\\Users\\foo\\prepared2')).toBe(false)
+    expect(isInside(root, join(root, 'Games'))).toBe(true)
+    expect(isInside(root, root)).toBe(true)
+    expect(isInside(root, `${root}2`)).toBe(false)
   })
 
   it('matches subpaths of a drive root that has a trailing separator', () => {
+    if (process.platform !== 'win32') return
     expect(isInside('E:\\', 'E:\\menu\\metadata\\boxart_front.png')).toBe(true)
     expect(isInside('E:\\', 'E:\\')).toBe(true)
     expect(isInside('E:\\', 'F:\\other')).toBe(false)
