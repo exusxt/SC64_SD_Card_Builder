@@ -36,23 +36,6 @@ function diskNumberFromWindowsDevice(device: string): number | null {
   return m ? Number(m[1]) : null
 }
 
-async function unmountWindows(mountpoint: string | null): Promise<void> {
-  if (!mountpoint) return
-  const letter = mountpoint.trim().replace(/\\+$/, '')
-  if (!/^[a-zA-Z]:$/.test(letter)) return
-  try {
-    await run('mountvol.exe', [letter, '/p'])
-    await run('powershell.exe', [
-      '-NoProfile',
-      '-NonInteractive',
-      '-Command',
-      'Update-HostStorageCache; Start-Sleep -Milliseconds 600'
-    ])
-  } catch {
-    // best-effort
-  }
-}
-
 async function remountWindows(device: string): Promise<void> {
   const diskNumber = diskNumberFromWindowsDevice(device)
   if (diskNumber === null) return
@@ -112,9 +95,7 @@ export async function formatDisk(req: FormatRequest, cb: FormatCallbacks): Promi
   try {
     cb.log('info', t('format.start', { device, size: (req.size / 1024 / 1024 / 1024).toFixed(2) }))
 
-    if (platform === 'win32') {
-      await unmountWindows(req.mountpoint)
-    } else if (platform === 'darwin') {
+    if (platform === 'darwin') {
       await unmountMacos(device)
       writeDevice = device.replace(/^\/dev\/disk/, '/dev/rdisk')
     } else {
