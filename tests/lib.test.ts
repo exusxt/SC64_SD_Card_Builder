@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { cn, formatBytes, moveSelection, restoreSelection, SelectionHistory, DEFAULT_SETTINGS } from '../src/renderer/src/lib'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cn, formatBytes, moveSelection, restoreSelection, SelectionHistory, nextBackgroundIndex, DEFAULT_SETTINGS } from '../src/renderer/src/lib'
 
 describe('formatBytes', () => {
   it('handles empty values', () => {
@@ -65,6 +65,32 @@ describe('SelectionHistory', () => {
     expect(h.leave()).toBe(7)
     expect(h.leave()).toBe(3)
     expect(h.leave()).toBeUndefined()
+  })
+})
+
+describe('nextBackgroundIndex', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('returns null when there are no backgrounds', () => {
+    expect(nextBackgroundIndex(null, 0)).toBeNull()
+    expect(nextBackgroundIndex(3, 0)).toBeNull()
+  })
+
+  it('always picks index 0 when there is exactly one background', () => {
+    expect(nextBackgroundIndex(null, 1)).toBe(0)
+    expect(nextBackgroundIndex(0, 1)).toBe(0)
+  })
+
+  it('picks a random index when there was no previous background', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+    expect(nextBackgroundIndex(null, 5)).toBe(2)
+  })
+
+  it('avoids repeating the previously shown background', () => {
+    vi.spyOn(Math, 'random').mockReturnValueOnce(0.5).mockReturnValueOnce(0.0)
+    expect(nextBackgroundIndex(2, 5)).toBe(0)
   })
 })
 

@@ -4,7 +4,7 @@ import type { PreviewEntry } from '../../../shared/types'
 import type { T } from '../i18n'
 import { BACKGROUNDS } from '../backgrounds'
 import { Button } from './ui'
-import { moveSelection, restoreSelection, SelectionHistory } from '../lib'
+import { moveSelection, restoreSelection, SelectionHistory, nextBackgroundIndex } from '../lib'
 
 const SCREEN_W = 640
 const SCREEN_H = 480
@@ -80,8 +80,8 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
 
   const selected = entries && entries.length > 0 ? entries[Math.min(sel, entries.length - 1)] : null
 
-  // Show a fresh random bundled background whenever a different ROM gets selected.
-  const selectedKey = selected && !selected.isDir ? `${dirRel}\u0000${selected.name}` : null
+  // Show a fresh random bundled background whenever a different entry (folder or ROM) gets selected.
+  const selectedKey = selected ? `${dirRel}\u0000${selected.isDir ? 'dir' : 'file'}\u0000${selected.name}` : null
   useEffect(() => {
     if (!selectedKey) {
       setBgUrl(null)
@@ -91,18 +91,14 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
     }
     if (prevSelectedRef.current === selectedKey) return
     prevSelectedRef.current = selectedKey
-    const n = BACKGROUNDS.length
-    if (n === 0) {
+    const idx = nextBackgroundIndex(bgIdxRef.current, BACKGROUNDS.length)
+    if (idx === null) {
       setBgUrl(null)
       bgIdxRef.current = -1
-      return
+    } else {
+      bgIdxRef.current = idx
+      setBgUrl(BACKGROUNDS[idx])
     }
-    let idx = Math.floor(Math.random() * n)
-    if (n > 1) {
-      while (idx === bgIdxRef.current) idx = Math.floor(Math.random() * n)
-    }
-    bgIdxRef.current = idx
-    setBgUrl(BACKGROUNDS[idx])
   }, [selectedKey])
 
   useEffect(() => {

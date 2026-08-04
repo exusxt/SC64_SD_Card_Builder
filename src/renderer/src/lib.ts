@@ -375,3 +375,13 @@ export class SelectionHistory {
     return this.stack.pop()
   }
 }
+
+// Picks a random index in [0, count), avoiding the previously shown one when
+// possible. Returns null when there is nothing to show.
+export function nextBackgroundIndex(previous: number | null, count: number): number | null {
+  if (count <= 0) return null
+  if (count === 1) return 0
+  let idx = Math.floor(Math.random() * count)
+  while (previous !== null && idx === previous) idx = Math.floor(Math.random() * count)
+  return idx
+}
