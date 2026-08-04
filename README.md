@@ -4,48 +4,51 @@ Prepare an SD card for the [SummerCart64](https://github.com/Polprzewodnikowy/Su
 
 ## Supported operating systems
 
-The executables below are the actual artifacts shipped with the current release (v0.6.8). All of them are published to the [Releases page](https://github.com/exusxt/SC64_SD_Card_Builder/releases).
+The executables below are the actual artifacts shipped with the current release (v0.11.2). All of them are published to the [Releases page](https://github.com/exusxt/SC64_SD_Card_Builder/releases).
 
 ### Windows
 
 | Architecture | Executable | Type | Update channel |
 |--------------|------------|------|----------------|
-| x64 / arm64 | `SC64-SD-Card-Builder-Setup-0.6.8.exe` | NSIS installer | `latest.yml` |
-| x64 | `SC64-SD-Card-Builder-0.6.8-x64.exe` | Portable (no install) | `latest.yml` |
-| arm64 | `SC64-SD-Card-Builder-0.6.8-arm64.exe` | Portable (no install) | `latest.yml` |
+| x64 / arm64 | `SC64-SD-Card-Builder-Setup-0.11.2.exe` | NSIS installer | `latest.yml` |
+| x64 | `SC64-SD-Card-Builder-0.11.2-x64.exe` | Portable (no install) | `latest.yml` |
+| arm64 | `SC64-SD-Card-Builder-0.11.2-arm64.exe` | Portable (no install) | `latest.yml` |
 
 ### macOS
 
 | Architecture | Executable | Type | Update channel |
 |--------------|------------|------|----------------|
-| x64 (Intel) | `SC64-SD-Card-Builder-0.6.8.dmg` | DMG installer | `latest-mac.yml` |
-| x64 (Intel) | `SC64-SD-Card-Builder-0.6.8-mac.zip` | ZIP (updates) | `latest-mac.yml` |
-| arm64 (Apple Silicon) | `SC64-SD-Card-Builder-0.6.8-arm64.dmg` | DMG installer | `latest-mac.yml` |
-| arm64 (Apple Silicon) | `SC64-SD-Card-Builder-0.6.8-arm64-mac.zip` | ZIP (updates) | `latest-mac.yml` |
+| x64 (Intel) | `SC64-SD-Card-Builder-0.11.2.dmg` | DMG installer | `latest-mac.yml` |
+| x64 (Intel) | `SC64-SD-Card-Builder-0.11.2-mac.zip` | ZIP (updates) | `latest-mac.yml` |
+| arm64 (Apple Silicon) | `SC64-SD-Card-Builder-0.11.2-arm64.dmg` | DMG installer | `latest-mac.yml` |
+| arm64 (Apple Silicon) | `SC64-SD-Card-Builder-0.11.2-arm64-mac.zip` | ZIP (updates) | `latest-mac.yml` |
 
 ### Linux
 
 | Architecture | Executable | Type | Update channel |
 |--------------|------------|------|----------------|
-| x64 | `SC64-SD-Card-Builder-0.6.8.AppImage` | AppImage (run without install) | `latest-linux.yml` |
-| x64 | `sc64-sd-card-builder_0.6.8_amd64.deb` | Debian / Ubuntu / Mint | `latest-linux.yml` |
-| x64 | `sc64-sd-card-builder-0.6.8.x86_64.rpm` | Fedora / RHEL / openSUSE | `latest-linux.yml` |
-| x64 | `sc64-sd-card-builder-0.6.8.pacman` | Arch Linux / Manjaro | `latest-linux.yml` |
-| arm64 | `SC64-SD-Card-Builder-0.6.8-arm64.AppImage` | AppImage (run without install) | `latest-linux-arm64.yml` |
-| arm64 | `sc64-sd-card-builder_0.6.8_arm64.deb` | Debian / Ubuntu / Mint | `latest-linux-arm64.yml` |
-| arm64 | `sc64-sd-card-builder-0.6.8.aarch64.rpm` | Fedora / RHEL / openSUSE | `latest-linux-arm64.yml` |
-| arm64 | `sc64-sd-card-builder-0.6.8.aarch64.pacman` | Arch Linux / Manjaro | `latest-linux-arm64.yml` |
+| x64 | `SC64-SD-Card-Builder-0.11.2.AppImage` | AppImage (run without install) | `latest-linux.yml` |
+| x64 | `sc64-sd-card-builder_0.11.2_amd64.deb` | Debian / Ubuntu / Mint | `latest-linux.yml` |
+| x64 | `sc64-sd-card-builder-0.11.2.x86_64.rpm` | Fedora / RHEL / openSUSE | `latest-linux.yml` |
+| x64 | `sc64-sd-card-builder-0.11.2.pacman` | Arch Linux / Manjaro | `latest-linux.yml` |
+| arm64 | `SC64-SD-Card-Builder-0.11.2-arm64.AppImage` | AppImage (run without install) | `latest-linux-arm64.yml` |
+| arm64 | `sc64-sd-card-builder_0.11.2_arm64.deb` | Debian / Ubuntu / Mint | `latest-linux-arm64.yml` |
+| arm64 | `sc64-sd-card-builder-0.11.2.aarch64.rpm` | Fedora / RHEL / openSUSE | `latest-linux-arm64.yml` |
+| arm64 | `sc64-sd-card-builder-0.11.2.aarch64.pacman` | Arch Linux / Manjaro | `latest-linux-arm64.yml` |
 
 ## Features
 
-- Detect SD cards, verify FAT32, format large cards (>32 GB) as FAT32 (requires admin)
+- Detect SD cards, verify FAT32, format large cards (>32 GB) as FAT32 or exFAT (requires admin)
 - **Pre-flight safety**: formatting requires typing the drive letter to confirm, and the destination must be confirmed when typed by hand; overlapping source/destination folders are rejected before anything is written
-- Install the latest [N64FlashcartMenu](https://github.com/Polprzewodnikowy/N64FlashcartMenu), boxart/metadata pack and emulators onto the card
-- Copy your own ROMs while preserving folder structure (optional save folders, file-type filter)
+- Install the latest [N64FlashcartMenu](https://github.com/Polprzewodnikowy/N64FlashcartMenu), the boxart/metadata pack and emulators onto the card
+- **Emulators**: install NES (Neon64), SNES (Sodium64), Game Boy/Color (GB64), SMS/Game Gear (SMSPlus64) and Channel F (Press-F Ultra) into `menu/emulators/`
+- Copy your own ROMs while preserving folder structure (optional save folders, file-type filter) — N64, NES, SNES, Game Boy/Color, SMS/Game Gear, Channel F and 64DD
+- **Stock-card layout**: Game Boy/Color games go to `GBC/`, SNES to `snes_rom/` and SMS/Game Gear to `smsPlus64/`, matching the official card, each with a `saves/` folder per game
 - **Clean collection**: rename N64 ROMs to `<Title> (Region)` and place each one in its own folder (collision-safe, e.g. `Super Mario 64 (USA) (2)`), and optionally copy a sibling `.cht` cheat file next to each ROM
-- **N64 ROM validation**: detects byte order (.z64/.v64/.n64), flags mismatched extensions and bad-dump sizes, shows the region breakdown, and skips duplicate dumps of the same game
-- **Existing-card inspection**: pick a destination and instantly see the installed N64FlashcartMenu version (compared against the latest release), N64/other game counts, save folders, files and free space — with an in-place upgrade hint when the menu is outdated
-- **N64FlashcartMenu preview**: open any folder and browse it in an on-screen emulation of the menu's file browser — cursor-key navigation (wrapping at the top/bottom), folders, ROM titles/codes/regions, boxart and descriptions from the metadata pack, file sizes, and a CRT-styled view
+- **ROM validation**: N64 byte order (.z64/.v64/.n64), bad-dump sizes and mismatched extensions; GB/GBC/SNES/SMS/GG headers checked for validity and byte-swapping; duplicate dumps of the same game are skipped — with a region/console breakdown after copying
+- **Archives & report**: extract `.zip`/`.7z` archives straight onto the card and write a validation report (`sc64-report.html` / `.csv`) with a per-file status table
+- **Existing-card inspection**: pick a destination and instantly see the installed N64FlashcartMenu version (compared against the latest release), game counts per console, save folders, files and free space — with an in-place upgrade hint when the menu is outdated
+- **N64FlashcartMenu preview**: open any folder and browse it in an on-screen emulation of the menu's file browser — cursor-key and mouse-wheel navigation (wrapping at the top/bottom), folders, ROM titles/codes/regions, boxart and descriptions from the metadata pack, file sizes, and a CRT-styled view (descriptions show in the footer; they are N64-only in the metadata pack)
 - **64DD IPL installer**: add your own IPL dumps (NDDJ0/NDDJ1/NDDJ2/NDDE0/NDXJ0) from a folder — each is validated (size, byte order, disk ID) and copied into `menu/64ddipl/` so 64DD games run without a real drive
 - **Prepared-folder flow**: stage a build or copy an already-prepared folder (e.g. from a friend) to the card with an animated transfer view
 - **Byte-for-byte verification** of every copied file (optional)
@@ -115,7 +118,7 @@ Grab the matching artifact from the [Releases page](https://github.com/exusxt/SC
 
 Formatting a physical drive requires elevated privileges, which the app requests on your behalf:
 
-- **Windows:** the app relaunches itself as administrator (UAC prompt). USB/SD cards are detected and large cards (>32 GB) are formatted as FAT32.
+- **Windows:** the app relaunches itself as administrator (UAC prompt). USB/SD cards are detected and large cards (>32 GB) are formatted as FAT32 or exFAT.
 - **macOS:** an administrator password prompt is shown. Internal disks are filtered out; only removable media is listed.
 - **Linux:** `pkexec` asks for root. Detection uses `lsblk`; internal disks are hidden.
 
@@ -172,12 +175,12 @@ Auto-updates use GitHub Releases (`github.com/exusxt/SC64_SD_Card_Builder`).
 **All platforms (recommended):** push a `v*` tag and the GitHub Actions workflow (`.github/workflows/release.yml`) builds each platform on its native runner and publishes the artifacts to the release — no local mac/Linux machine needed:
 
 ```bash
-git tag v0.6.8 && git push origin main --tags
+git tag v0.11.2 && git push origin main --tags
 ```
 
 Each runner creates/updates the release (notes come from the `## [vX.Y.Z]` section of `CHANGELOG.md`) and uploads its artifacts: NSIS + portable exe, dmg + zip, AppImage + deb/rpm/pacman, plus `latest.yml` / `latest-mac.yml` / `latest-linux.yml` (and `latest-linux-arm64.yml`) for auto-updates. This is the single publisher — don't also publish locally to the same tag.
 
-**From this machine (bump + tag only):** `npm run release` runs `scripts/release.mjs` — bumps the patch version (or pass one explicitly: `npm run release -- 0.6.8`), generates categorized release notes (Added/Changed/Fixed/Infra from your commit messages) into `CHANGELOG.md`, commits and tags (`v0.6.8`), then pushes — which triggers the CI release above. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
+**From this machine (bump + tag only):** `npm run release` runs `scripts/release.mjs` — bumps the patch version (or pass one explicitly: `npm run release -- 0.11.2`), generates categorized release notes (Added/Changed/Fixed/Infra from your commit messages) into `CHANGELOG.md`, commits and tags (`v0.11.2`), then pushes — which triggers the CI release above. If git is not on PATH, it falls back to the GitHub Desktop git — override with the `SC64_GIT` env var if needed.
 
 ```bash
 $env:GH_TOKEN="ghp_..."   # PowerShell: a GitHub token with repo scope
