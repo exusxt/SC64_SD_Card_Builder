@@ -4,20 +4,17 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { CancelToken, FormatProgress } from './fat32'
 
-// Streams a prebuilt structure (and optionally zeroes the rest of the disk)
-// into a physical drive through an exclusively opened handle.
+// Streams zeros over a physical drive through an exclusively opened handle.
 //
-// Node's fs.open opens with shared access, and Windows (KB 942448) refuses raw
-// writes into a mounted file system. Every volume on the target disk must be
-// locked + dismounted via FSCTL on its drive letter, and those volume handles
-// are kept open (locked) for the whole write: closing them would release the
-// lock and let Windows remount the volume, which blocks the physical write
-// with ERROR_ACCESS_DENIED. The physical drive handle is then opened
-// exclusively and written. Opening exclusively can briefly fail with a
-// sharing violation while the storage stack or antivirus still hold the
-// drive, so the exclusive open is retried with backoff. The drive letter is
-// deliberately left in place (format.ts does not run mountvol /p, which would
-// remove the letter the writer needs to address the volume).
+// This is only used on Windows for the optional full-format zero pass, and it
+// runs right after Clear-Disk has removed every volume from the disk. With no
+// mounted file system the kernel allows direct writes to the physical device
+// (KB 942448 only restricts writes into a mounted file system), so the volume
+// locking/FSCTL section below is a no-op in practice but is kept as a safety
+// net in case a volume lingers. Opening the device exclusively can briefly
+// fail with a sharing violation while the storage stack or antivirus still
+// hold the drive, so the open is retried with backoff. The FAT32 layout on
+// Windows is created by Format-Volume afterwards, not by this helper.
 const RAW_WRITE_SCRIPT = [
   'param(',
   '  [string]$Device,',

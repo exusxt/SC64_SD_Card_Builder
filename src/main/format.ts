@@ -1,8 +1,9 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { formatDevice, CancelToken, FormatProgress } from './fat32'
+import { formatDevice, sanitizeLabel, CancelToken, FormatProgress } from './fat32'
+import { formatWindows } from './winraw'
 import type { FormatResult, Locale } from '../shared/types'
-import { translate } from '../shared/i18n'
+import { translate, TranslationKey, TranslationVars } from '../shared/i18n'
 
 const execFileAsync = promisify(execFile)
 
@@ -59,6 +60,60 @@ async function remountWindows(device: string): Promise<void> {
   }
 }
 
+// Windows formatting goes through the Storage module (the same stack Windows
+// Disk Management uses) so the OS itself handles locking/dismounting volumes.
+// This avoids the raw-write restrictions of KB 942448 entirely. The only raw
+// device write left is the optional full-format zero pass, which runs right
+// after Clear-Disk removes every volume - with no mounted file system the
+// kernel allows the physical drive write and we keep byte-level progress and
+// cancellation for the slow part. The FAT32 layout itself is created by
+// Windows' own Format-Volume rather than by our byte-level structure builder.
+async function formatWindowsDisk(
+  req: FormatRequest,
+  cb: FormatCallbacks,
+  t: (key: TranslationKey, vars?: TranslationVars) => string
+): Promise<void> {
+  const diskNumber = diskNumberFromWindowsDevice(req.device)
+  if (diskNumber === null) {
+    throw new Error(`Cannot determine Windows disk number from ${req.device}`)
+  }
+  const label = sanitizeLabel(req.label).replace(/'/g, "''")
+
+  cb.log('info', t('format.partitionTable'))
+  cb.progress({ stage: t('format.partitionTable'), bytesWritten: 0, totalBytes: 0 })
+  await run('powershell.exe', [
+    '-NoProfile',
+    '-NonInteractive',
+    '-Command',
+    `$ErrorActionPreference = 'Stop'; Clear-Disk -Number ${diskNumber} -RemoveData -RemoveOEM -Confirm:$false`
+  ])
+
+  if (req.fullFormat) {
+    cb.log('info', t('format.full'))
+    await formatWindows({
+      device: req.device,
+      structure: Buffer.alloc(0),
+      totalBytes: req.size,
+      fullFormat: true,
+      letter: null,
+      cancel: cb.cancel,
+      onProgress: (p) =>
+        cb.progress({ stage: t('format.full'), bytesWritten: p.bytesWritten, totalBytes: p.totalBytes })
+    })
+  }
+
+  cb.log('info', t('format.fats'))
+  cb.progress({ stage: t('format.fats'), bytesWritten: 0, totalBytes: 0 })
+  const ps = [
+    "$ErrorActionPreference = 'Stop'",
+    `$d = Get-Disk -Number ${diskNumber}`,
+    `if ($d.PartitionStyle -eq 'RAW') { Initialize-Disk -Number ${diskNumber} -PartitionStyle MBR }`,
+    `$p = New-Partition -DiskNumber ${diskNumber} -UseMaximumSize -AssignDriveLetter`,
+    `Format-Volume -Partition $p -FileSystem FAT32 -NewFileSystemLabel '${label}' -Confirm:$false`
+  ].join('; ')
+  await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps])
+}
+
 async function unmountLinux(device: string): Promise<void> {
   // unmount any mounted partitions of the disk
   const out = await run('lsblk', ['-n', '-o', 'MOUNTPOINT', device]).catch(() => '')
@@ -88,44 +143,46 @@ export async function formatDisk(req: FormatRequest, cb: FormatCallbacks): Promi
   const device = req.device
   const platform = process.platform
   const locale = req.locale ?? 'en'
-  const t = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>): string =>
-    translate(locale, key, vars)
+  const t = (key: TranslationKey, vars?: TranslationVars): string => translate(locale, key, vars)
   let writeDevice = device
 
   try {
     cb.log('info', t('format.start', { device, size: (req.size / 1024 / 1024 / 1024).toFixed(2) }))
 
-    if (platform === 'darwin') {
-      await unmountMacos(device)
-      writeDevice = device.replace(/^\/dev\/disk/, '/dev/rdisk')
+    if (platform === 'win32') {
+      await formatWindowsDisk(req, cb, t)
     } else {
-      await unmountLinux(device)
-    }
-
-    let lastStage = ''
-    cb.log('info', t('format.structures', { device: writeDevice }))
-    await formatDevice(writeDevice, req.size, {
-      label: req.label,
-      fullFormat: req.fullFormat,
-      mountpoint: req.mountpoint,
-      cancel: req.fullFormat ? cb.cancel : undefined,
-      onProgress: (p) => {
-        const stageKey =
-          p.stage === 'Writing partition table'
-            ? 'format.partitionTable'
-            : p.stage === 'Writing file allocation tables'
-              ? 'format.fats'
-              : p.stage === 'Root directory created'
-                ? 'format.root'
-                : 'format.full'
-        const stage = t(stageKey)
-        if (p.stage !== lastStage) {
-          cb.log('info', stage)
-          lastStage = p.stage
-        }
-        cb.progress({ ...p, stage })
+      if (platform === 'darwin') {
+        await unmountMacos(device)
+        writeDevice = device.replace(/^\/dev\/disk/, '/dev/rdisk')
+      } else {
+        await unmountLinux(device)
       }
-    })
+
+      let lastStage = ''
+      cb.log('info', t('format.structures', { device: writeDevice }))
+      await formatDevice(writeDevice, req.size, {
+        label: req.label,
+        fullFormat: req.fullFormat,
+        cancel: req.fullFormat ? cb.cancel : undefined,
+        onProgress: (p) => {
+          const stageKey =
+            p.stage === 'Writing partition table'
+              ? 'format.partitionTable'
+              : p.stage === 'Writing file allocation tables'
+                ? 'format.fats'
+                : p.stage === 'Root directory created'
+                  ? 'format.root'
+                  : 'format.full'
+          const stage = t(stageKey)
+          if (p.stage !== lastStage) {
+            cb.log('info', stage)
+            lastStage = p.stage
+          }
+          cb.progress({ ...p, stage })
+        }
+      })
+    }
 
     cb.log('info', t('format.refresh'))
     if (platform === 'win32') {

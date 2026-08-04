@@ -1,5 +1,4 @@
 import { open } from 'node:fs/promises'
-import { formatWindows } from './winraw'
 
 const SECTOR_SIZE = 512
 const PARTITION_START = 2048
@@ -56,7 +55,7 @@ export function computeLayout(sizeBytes: number): Fat32Layout {
   }
 }
 
-function sanitizeLabel(label: string): string {
+export function sanitizeLabel(label: string): string {
   const cleaned = (label || 'SUMMERCART').toUpperCase().replace(/[^\x20-\x7E]/g, '').trim()
   return (cleaned || 'SUMMERCART').padEnd(11, ' ').slice(0, 11)
 }
@@ -143,7 +142,6 @@ export interface CancelToken {
 export interface FormatDeviceOptions {
   label: string
   fullFormat: boolean
-  mountpoint?: string | null
   onProgress?: (p: FormatProgress) => void
   cancel?: CancelToken
 }
@@ -214,22 +212,6 @@ export async function formatDevice(device: string, sizeBytes: number, opts: Form
   const emit = (stage: string, bytesWritten: number, totalBytes: number): void =>
     opts.onProgress?.({ stage, bytesWritten, totalBytes })
   const structure = buildStructure(layout, label)
-
-  if (process.platform === 'win32') {
-    // Node's fs.open opens physical drives with shared access, which Windows
-    // refuses for writes past the MBR (KB 942448). On Windows the structure is
-    // streamed to the device by a PowerShell helper that opens it exclusively.
-    await formatWindows({
-      device,
-      structure,
-      totalBytes: sizeBytes,
-      fullFormat: opts.fullFormat,
-      letter: opts.mountpoint,
-      cancel: opts.fullFormat ? opts.cancel : undefined,
-      onProgress: (p) => emit(p.stage, p.bytesWritten, p.totalBytes)
-    })
-    return
-  }
 
   await formatDevicePosix(device, layout, structure, opts, emit)
 }
