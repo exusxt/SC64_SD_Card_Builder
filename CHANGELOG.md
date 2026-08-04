@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Reflect the card's actual filesystem in the format status and refresh it after formatting
 - Menu preview boxart on drive roots, hide system folders and report files
 - Tolerate Windows drive roots in mkdir calls (EPERM on E:\\)
 - Hold volume lock across physical drive writes on Windows
