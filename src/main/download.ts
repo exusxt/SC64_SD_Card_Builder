@@ -1,8 +1,9 @@
 import { createWriteStream } from 'node:fs'
-import { mkdir, rename } from 'node:fs/promises'
+import { rename } from 'node:fs/promises'
 import { dirname, basename } from 'node:path'
 import * as https from 'node:https'
 import * as http from 'node:http'
+import { ensureDir } from './fspaths'
 
 export interface DownloadProgress {
   received: number
@@ -52,7 +53,7 @@ export async function downloadFile(url: string, destPath: string, opts: Download
   const { res } = await request(url, MAX_REDIRECTS, headers)
   const total = Number(res.headers['content-length'] ?? 0)
   let received = 0
-  await mkdir(dirname(destPath), { recursive: true })
+  await ensureDir(dirname(destPath))
   const tmp = `${destPath}.part`
   const stream = createWriteStream(tmp)
   await new Promise<void>((resolve, reject) => {

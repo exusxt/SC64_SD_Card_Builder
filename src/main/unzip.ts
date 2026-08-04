@@ -1,8 +1,9 @@
 import AdmZip from 'adm-zip'
 import { readdirSync, statSync } from 'node:fs'
-import { access, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, copyFile, readFile, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
 import SevenZip, { type SevenZipModule } from '7z-wasm'
+import { ensureDir } from './fspaths'
 
 async function openZip(zipPath: string): Promise<AdmZip> {
   return new AdmZip(await readFile(zipPath))
@@ -27,13 +28,13 @@ function safeJoin(base: string, name: string): string | null {
 
 export async function extractZip(zipPath: string, destDir: string, onEntry?: (done: number, total: number) => void): Promise<number> {
   const zip = await openZip(zipPath)
-  await mkdir(destDir, { recursive: true })
+  await ensureDir(destDir)
   const entries = zip.getEntries().filter((e) => !e.isDirectory)
   let done = 0
   for (const entry of entries) {
     const target = safeJoin(destDir, entry.entryName)
     if (target) {
-      await mkdir(dirname(target), { recursive: true })
+      await ensureDir(dirname(target))
       await writeFile(target, await entryData(entry))
     }
     done++
@@ -54,7 +55,7 @@ export async function extractEntryTo(zipPath: string, entryName: string, destFil
   const zip = await openZip(zipPath)
   const entry = zip.getEntry(entryName)
   if (!entry) throw new Error(`Entry not found in archive: ${entryName}`)
-  await mkdir(dirname(destFile), { recursive: true })
+  await ensureDir(dirname(destFile))
   await writeFile(destFile, await entryData(entry))
 }
 
@@ -96,7 +97,7 @@ export async function copyDirContents(srcDir: string, destDir: string, overwrite
         // file does not exist — proceed with copy
       }
     }
-    await mkdir(dirname(dest), { recursive: true })
+    await ensureDir(dirname(dest))
     await copyFile(file, dest)
     copied++
     onProgress?.(copied, files.length)
@@ -127,7 +128,7 @@ function fsMkdirP(fs: SevenZipModule['FS'], path: string): void {
 }
 
 export async function extract7z(archivePath: string, destDir: string): Promise<number> {
-  await mkdir(destDir, { recursive: true })
+  await ensureDir(destDir)
   const sz = await szModule()
   const arcParent = dirname(archivePath)
   const arcName = basename(archivePath)

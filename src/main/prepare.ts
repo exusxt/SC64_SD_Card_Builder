@@ -1,10 +1,11 @@
-import { mkdir, mkdtemp, copyFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, copyFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync, statSync, readdirSync } from 'node:fs'
 import { join, dirname, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import type { AppEvent, Locale, PrepareMode, PrepareOptions, PrepareResult, StepId, StepState, EmulatorKey } from '../shared/types'
 import { translate } from '../shared/i18n'
 import { downloadFile } from './download'
+import { ensureDir } from './fspaths'
 import { getMenuRelease, getMetadataRelease, latestReleaseAssets, GB64_TEMPLATE_URL } from './releases'
 import { extractZip, findEntriesInZip, extractEntryTo, copyDirContents, rmTree, listDirDeep, extractArchive } from './unzip'
 import { verifyFile } from './verify'
@@ -150,7 +151,7 @@ class Runner {
     }
     this.step('folders', 'running')
     const dirs = ['menu', join('menu', 'metadata'), join('menu', '64ddipl'), join('menu', 'emulators')]
-    for (const d of dirs) await mkdir(join(destination, d), { recursive: true })
+    for (const d of dirs) await ensureDir(join(destination, d))
     this.log('info', this.t('log.createdFolders'))
     this.step('folders', 'done')
   }
@@ -206,7 +207,7 @@ class Runner {
       await extractZip(zipPath, extractDir, onProgress)
       const source = this.findMetadataSource(extractDir)
       const target = join(destination, 'menu', 'metadata')
-      await mkdir(target, { recursive: true })
+      await ensureDir(target)
       const count = await copyDirContents(source, target, true, onProgress)
       this.counts.metadataTag = rel.tag
       this.log('success', this.t('log.metaExtracted', { count: String(count) }))
@@ -229,7 +230,7 @@ class Runner {
     }
     this.step('emulators', 'running')
     const emuDir = join(destination, 'menu', 'emulators')
-    await mkdir(emuDir, { recursive: true })
+    await ensureDir(emuDir)
     let anyError = false
 
     const guard = async (label: string, fn: () => Promise<void>): Promise<void> => {
@@ -433,7 +434,7 @@ class Runner {
           target = join(destRoot, base, `${base}${extOf(file)}`)
         }
 
-        await mkdir(dirname(target), { recursive: true })
+        await ensureDir(dirname(target))
         await copyFile(file, target)
         roms++
         if (options.createSaves) saveDirs.add(dirname(target))
@@ -443,7 +444,7 @@ class Runner {
           if (cht) {
             const chtTarget = chtNameOf(target)
             if (!existsSync(chtTarget) || options.overwrite) {
-              await mkdir(dirname(chtTarget), { recursive: true })
+              await ensureDir(dirname(chtTarget))
               await copyFile(cht, chtTarget)
               cheatsCopied++
             }
@@ -482,7 +483,7 @@ class Runner {
     let saves = 0
     if (options.createSaves) {
       for (const d of saveDirs) {
-        await mkdir(join(d, 'saves'), { recursive: true })
+        await ensureDir(join(d, 'saves'))
         saves++
       }
     }
@@ -526,7 +527,7 @@ class Runner {
       this.checkCancel()
       const rel = file.slice(source.length).replace(/^[/\\]/, '')
       const target = join(dest, rel)
-      await mkdir(dirname(target), { recursive: true })
+      await ensureDir(dirname(target))
       const size = fileSize(file)
       await copyFile(file, target)
       doneBytes += size

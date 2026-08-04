@@ -1,7 +1,8 @@
-﻿import { mkdir, writeFile } from 'node:fs/promises'
+﻿import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { PrepareMode } from '../shared/types'
 import { translate, type Locale, type TranslationKey } from '../shared/i18n'
+import { ensureDir } from './fspaths'
 
 export type ReportRowStatus = 'copied' | 'skipped' | 'duplicate' | 'verify-fail' | 'not-n64' | 'other'
 
@@ -223,7 +224,7 @@ export function buildReportHtml(data: ReportData): string {
 export async function writeReport(data: ReportData, destRoot: string): Promise<{ html: string; csv: string } | null> {
   if (!destRoot) return null
   try {
-    await mkdir(destRoot, { recursive: true })
+    await ensureDir(destRoot)
     const htmlPath = join(destRoot, 'sc64-report.html')
     const csvPath = join(destRoot, 'sc64-report.csv')
     await writeFile(htmlPath, buildReportHtml(data), 'utf-8')
