@@ -5,6 +5,26 @@ All notable changes to SC64 SD Card Builder.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.9.0] - 2026-08-04
+
+### Added
+
+- Add exFAT as an optional card format
+
+### Changed
+
+- Format Windows disks via Storage module, keep raw zeroing for full format
+
+### Fixed
+
+- Menu preview boxart on drive roots, hide system folders and report files
+- Tolerate Windows drive roots in mkdir calls (EPERM on E:\\)
+- Hold volume lock across physical drive writes on Windows
+- Lock and dismount volume via drive letter before physical drive writes
+- Lock volume and retry exclusive open before raw writes on Windows
+
+[Compare v0.8.2...v0.9.0](https://github.com/exusxt/SC64_SD_Card_Builder/compare/v0.8.2...v0.9.0)
+
 ## [v0.8.2] - 2026-08-04
 
 ### Fixed
