@@ -43,6 +43,7 @@ export default function App(): React.JSX.Element {
   const [preparedCount, setPreparedCount] = useState<{ files: number; bytes: number } | null>(null)
   const [inspection, setInspection] = useState<CardInspection | null>(null)
   const [inspectionLoading, setInspectionLoading] = useState(false)
+  const [inspectionNonce, setInspectionNonce] = useState(0)
   const [ddiplValidation, setDdiplValidation] = useState<DdIplValidation | null>(null)
   const [running, setRunning] = useState<'prepare' | 'format' | null>(null)
   const [progress, setProgress] = useState<{ value: number; max: number; label?: string } | null>(null)
@@ -155,6 +156,7 @@ export default function App(): React.JSX.Element {
     try {
       const d = await window.api.listDrives()
       setDrives(d)
+      setInspectionNonce((n) => n + 1)
     } catch {
       setDrives([])
     } finally {
@@ -194,7 +196,7 @@ export default function App(): React.JSX.Element {
     return () => {
       mounted = false
     }
-  }, [destination])
+  }, [destination, inspectionNonce])
 
   useEffect(() => {
     if (!settings.ddiplSource) {
@@ -251,6 +253,7 @@ export default function App(): React.JSX.Element {
     setFormatResult(res)
     setResult({ kind: 'format', ok: res.ok, message: res.message })
     setRunning(null)
+    await refreshDrives()
   }
 
   const requestAdmin = async (): Promise<void> => {

@@ -56,6 +56,7 @@ export function DestinationStep({
   const hasDest = destination.trim().length > 0
   const fs = (selected?.filesystem ?? '').trim().toUpperCase()
   const isFat32 = fs === 'FAT32'
+  const isExfatCard = fs === 'EXFAT'
   const almostFull = selected?.free !== null && selected?.free !== undefined && selected.free < 512 * 1024 * 1024
   const mountpointKey = (selected?.mountpoint ?? '').trim().replace(/[\\/]+$/, '').toLowerCase()
   const formatConfirmKey = formatConfirm.trim().replace(/[\\/]+$/, '').toLowerCase()
@@ -158,12 +159,12 @@ export function DestinationStep({
             ) : null}
 
             {selected && fs ? (
-              isFat32 ? (
+              isFat32 || isExfatCard ? (
                 <div className="flex items-start gap-2 rounded-xl border border-sc64-good/40 bg-sc64-good/10 px-4 py-3 text-sm">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-sc64-good" />
                   <div>
-                    <div className="font-medium text-sc64-good">{t('dest.fat32Ok')}</div>
-                    <div className="text-xs text-sc64-good/80">{t('dest.fat32OkHint')}</div>
+                    <div className="font-medium text-sc64-good">{isFat32 ? t('dest.fat32Ok') : t('dest.exfatOk')}</div>
+                    <div className="text-xs text-sc64-good/80">{isFat32 ? t('dest.fat32OkHint') : t('dest.exfatOkHint')}</div>
                   </div>
                 </div>
               ) : (
@@ -189,7 +190,13 @@ export function DestinationStep({
               className="flex w-full items-center justify-between rounded-xl border border-sc64-border px-4 py-3 text-left text-sm transition-colors hover:border-sc64-borderlight"
             >
               <span className="flex items-center gap-2 font-medium text-sc64-text">
-                <AlertTriangle className="h-4 w-4 text-sc64-warn" />
+                {!selected ? (
+                  <HardDrive className="h-4 w-4 text-sc64-muted" />
+                ) : isFat32 || isExfatCard ? (
+                  <CheckCircle2 className="h-4 w-4 text-sc64-good" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-sc64-warn" />
+                )}
                 {isExfat ? t('dest.formatTitleExfat') : t('dest.formatTitle')}
                 <span className="text-[11px] font-normal text-sc64-muted">{isExfat ? t('dest.formatHintExfat') : t('dest.formatHint')}</span>
               </span>
