@@ -343,27 +343,6 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
             </div>
           ) : null}
 
-          {/* Description */}
-          {selected && selected.description ? (
-            <div
-              style={{
-                position: 'absolute',
-                left: VISIBLE_X0 + 10,
-                right: VISIBLE_X0 + 10,
-                top: SEPARATOR_Y - 24,
-                fontSize: 11,
-                lineHeight: '16px',
-                height: 20,
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                color: '#fff'
-              }}
-            >
-              {selected.description}
-            </div>
-          ) : null}
-
           {/* Footer / info bar */}
           <div style={{ position: 'absolute', left: 0, top: SEPARATOR_Y, width: SCREEN_W, height: SCREEN_H - SEPARATOR_Y }}>
             <div style={{ position: 'absolute', left: VISIBLE_X0, right: VISIBLE_X0, top: 0, height: 1, background: '#3f3f3f' }} />
@@ -383,6 +362,26 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
                           : `Type: ${entryType(selected)}`}
                     </div>
                     <div style={{ position: 'absolute', right: VISIBLE_X0 + 10, top: 10, fontSize: 12, color: '#fff' }}>{menuSize(selected.size)}</div>
+                    {selected.description ? (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: VISIBLE_X0 + 10,
+                          right: VISIBLE_X0 + 10,
+                          top: SEPARATOR_Y + 52,
+                          height: 26,
+                          fontSize: 11,
+                          lineHeight: '13px',
+                          color: '#fff',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {selected.description}
+                      </div>
+                    ) : null}
                   </>
                 ) : (
                   <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 34, fontSize: 12, color: '#fff' }}>A / Enter: open</div>
