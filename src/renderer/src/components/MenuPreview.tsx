@@ -368,7 +368,7 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
                           position: 'absolute',
                           left: VISIBLE_X0 + 10,
                           right: VISIBLE_X0 + 10,
-                          top: SEPARATOR_Y + 52,
+                          top: 52,
                           height: 26,
                           fontSize: 11,
                           lineHeight: '13px',
