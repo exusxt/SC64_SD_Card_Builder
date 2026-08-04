@@ -191,6 +191,13 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
   }, [entries, sel])
 
   const visible = entries ? entries.slice(start, start + LIST_ENTRIES) : []
+
+  const onWheel = (e: React.WheelEvent<HTMLDivElement>): void => {
+    if (!entries) return
+    const dir: 'up' | 'down' = e.deltaY > 0 ? 'down' : 'up'
+    const steps = Math.min(3, Math.max(1, Math.abs(Math.round(e.deltaY) / 40)))
+    for (let i = 0; i < steps; i++) setSel((s) => moveSelection(s, entries.length, dir))
+  }
   const isPortrait = selected?.region === 'Japan' && selected.kind === 'n64'
   const box = selected?.kind === 'dd' ? BOXART_DD : isPortrait ? BOXART_JP : BOXART_US
   const rootPath = dirRel ? `SD:/${dirRel}/` : 'SD:/'
@@ -210,7 +217,7 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg" style={{ width: SCREEN_W * scale, height: SCREEN_H * scale }}>
+      <div className="overflow-hidden rounded-lg" style={{ width: SCREEN_W * scale, height: SCREEN_H * scale }} onWheel={onWheel}>
         <div
           className="relative bg-black"
           style={{ width: SCREEN_W, height: SCREEN_H, transform: `scale(${scale})`, transformOrigin: 'top left', fontFamily: MONO }}
@@ -263,7 +270,7 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
           <div style={{ position: 'absolute', left: VISIBLE_X0, top: 48, right: VISIBLE_X0, bottom: SCREEN_H - SEPARATOR_Y, border: '4px solid #fff' }} />
 
           {/* File list */}
-          <div style={{ position: 'absolute', left: 0, top: 0, width: SCREEN_W, height: SEPARATOR_Y }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, width: SCREEN_W, height: SEPARATOR_Y, overflow: 'hidden' }}>
             {visible.map((entry, i) => {
               const idx = start + i
               const isSel = idx === sel
@@ -279,7 +286,7 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
                   {isSel ? (
                     <div style={{ position: 'absolute', left: VISIBLE_X0, top: 0, width: VISIBLE_X1 - VISIBLE_X0, height: ROW_H, background: '#7f7f7f' }} />
                   ) : null}
-                  <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 0, height: ROW_H, lineHeight: `${ROW_H}px`, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', color: isDir ? '#ffd866' : '#fff' }}>
+                  <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, right: 46, top: 0, height: ROW_H, lineHeight: `${ROW_H}px`, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: isDir ? '#ffd866' : '#fff' }}>
                     {isDir ? '[DIR] ' : ''}
                     {entry.name}
                   </div>
