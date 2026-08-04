@@ -155,7 +155,7 @@ const pl = {
   'opt.organize': 'Organizuj ROM-y w folderach',
   'opt.organizeHint': 'Zmień nazwy ROM-ów na <Tytuł> (Region) i umieść je we własnych folderach.',
   'opt.stockFolders': 'Użyj układu jak na oficjalnej karcie',
-  'opt.stockFoldersHint': 'Umieszczaj gry Game Boy w GBC/ i gry SNES w snes_rom/, jak na oficjalnej karcie.',
+  'opt.stockFoldersHint': 'Umieszczaj gry Game Boy w GBC/, gry SNES w snes_rom/ i gry SMS/GG w smsPlus64/, jak na oficjalnej karcie.',
   'opt.copyCheats': 'Kopiuj pliki cheatów (.cht)',
   'opt.copyCheatsHint': 'Skopiuj plik .cht obok każdego ROM-a, jeśli istnieje.',
   'opt.ddipl': 'Zainstaluj IPL 64DD',
@@ -236,6 +236,15 @@ const pl = {
   'n64.duplicate': 'Pomijanie duplikatu „{first}": {file}',
   'n64.summary': 'Sprawdzono {roms} ROM N64: {regions} · {warnings} ostrzeżeń, pominięto {dupes} duplikatów.',
 
+  'emu.notGB': '„{file}" nie wygląda na poprawny ROM Game Boya.',
+  'emu.notSNES': '„{file}" nie wygląda na poprawny ROM SNES.',
+  'emu.notSMS': '„{file}" nie wygląda na poprawny ROM Sega Master System / Game Gear.',
+  'emu.byteSwapped': '„{file}" ma najprawdopodobniej zamienione bajty — nagłówek można odczytać tylko po zamianie słów 16-bitowych.',
+  'emu.extMismatchHeadered': '„{file}" zawiera 512-bajtowy nagłówek copier, ale ma rozszerzenie .{ext} — użyj rozszerzenia .smc.',
+  'emu.extMismatchUnheadered': '„{file}" to surowy zrzut bez nagłówka, ale ma rozszerzenie .{ext} — użyj .sfc lub .fig.',
+  'emu.badDump': '„{file}" ma błędną sumę kontrolną nagłówka — to może być uszkodzony zrzut.',
+  'emu.summary': 'Sprawdzono {roms} ROM Game Boy/Color, SNES, SMS i GG: {kinds} · ostrzeżeń: {warnings}, pominięto duplikatów: {dupes}.',
+
   'inspect.title': 'Istniejąca karta',
   'inspect.loading': 'Sprawdzanie celu…',
   'inspect.empty': 'Na tym celu nie znaleziono plików — nowe przygotowanie utworzy wszystko od zera.',
@@ -245,6 +254,11 @@ const pl = {
   'inspect.menuPreview': 'Wersja preview (wersja deweloperska)',
   'inspect.menuNoneHint': 'Włącz „Pobierz najnowsze menu”, aby zainstalować N64FlashcartMenu na tej karcie.',
   'inspect.roms': 'Gry N64',
+  'inspect.gb': 'Gry Game Boy',
+  'inspect.gbc': 'Gry Game Boy Color',
+  'inspect.snes': 'Gry SNES',
+  'inspect.sms': 'Gry Sega Master System',
+  'inspect.gg': 'Gry Game Gear',
   'inspect.other': 'Inne gry',
   'inspect.saves': 'Foldery zapisów',
   'inspect.files': 'Pliki',
@@ -343,3 +357,4 @@ const pl = {
 } as const
 
 export default pl
+

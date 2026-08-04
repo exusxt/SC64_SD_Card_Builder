@@ -12,7 +12,7 @@ export interface InspectMenuInfo {
 
 export interface CardInspection {
   menu: InspectMenuInfo
-  roms: { n64: number; other: number }
+  roms: { n64: number; gb: number; gbc: number; snes: number; sms: number; gg: number; other: number }
   saves: number
   files: number
   bytes: number
@@ -20,7 +20,12 @@ export interface CardInspection {
 }
 
 const N64_EXTS = new Set(['.n64', '.z64', '.v64'])
-const OTHER_EXTS = new Set(['.nes', '.smc', '.sfc', '.fig', '.gb', '.gbc', '.sms', '.gg', '.chf', '.ndd', '.d64'])
+const GB_EXTS = new Set(['.gb'])
+const GBC_EXTS = new Set(['.gbc'])
+const SNES_EXTS = new Set(['.smc', '.sfc', '.fig'])
+const SMS_EXTS = new Set(['.sms'])
+const GG_EXTS = new Set(['.gg'])
+const OTHER_EXTS = new Set(['.nes', '.chf', '.ndd', '.d64'])
 
 // The menu embeds its build timestamp ("YYYY-MM-DD HH:MM:SS") and, in release
 // builds, the MENU_VERSION string (e.g. "V0.3.2") a few bytes apart inside the
@@ -68,6 +73,11 @@ export async function inspectCard(root: string): Promise<CardInspection | null> 
   let files = 0
   let bytes = 0
   let n64 = 0
+  let gb = 0
+  let gbc = 0
+  let snes = 0
+  let sms = 0
+  let gg = 0
   let other = 0
   let saves = 0
 
@@ -97,10 +107,15 @@ export async function inspectCard(root: string): Promise<CardInspection | null> 
       if (rel.startsWith('menu' + sep)) continue
       const ext = extOf(full)
       if (N64_EXTS.has(ext)) n64++
+      else if (GB_EXTS.has(ext)) gb++
+      else if (GBC_EXTS.has(ext)) gbc++
+      else if (SNES_EXTS.has(ext)) snes++
+      else if (SMS_EXTS.has(ext)) sms++
+      else if (GG_EXTS.has(ext)) gg++
       else if (OTHER_EXTS.has(ext)) other++
     }
   }
   walk(root)
 
-  return { menu, roms: { n64, other }, saves, files, bytes, freeBytes: await freeSpaceOf(root) }
+  return { menu, roms: { n64, gb, gbc, snes, sms, gg, other }, saves, files, bytes, freeBytes: await freeSpaceOf(root) }
 }

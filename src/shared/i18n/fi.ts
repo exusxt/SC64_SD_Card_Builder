@@ -155,7 +155,7 @@ const fi = {
   'opt.organize': 'Järjestä ROM-tiedostot kansioihin',
   'opt.organizeHint': 'Nimeä ROM-tiedostot muotoon <Otsikko> (Alue) ja sijoita ne omiin kansioihinsa.',
   'opt.stockFolders': 'Käytä alkuperäiskortin asettelua',
-  'opt.stockFoldersHint': 'Aseta Game Boy -pelit GBC/ ja SNES-pelit snes_rom/ kansioihin, kuten alkuperäiskortilla.',
+  'opt.stockFoldersHint': 'Aseta Game Boy -pelit GBC/, SNES-pelit snes_rom/ ja SMS/GG-pelit smsPlus64/ kansioihin, kuten alkuperäiskortilla.',
   'opt.copyCheats': 'Kopioi huijauskooditiedostot (.cht)',
   'opt.copyCheatsHint': 'Kopioi .cht-tiedosto jokaisen ROM:n viereen, jos sellainen löytyy.',
   'opt.ddipl': 'Asenna 64DD:n IPL',
@@ -236,6 +236,15 @@ const fi = {
   'n64.duplicate': 'Ohitetaan "{first}"-pelin kaksoiskappale: {file}',
   'n64.summary': '{roms} N64-ROMia tarkistettu: {regions} · {warnings} varoitusta, {dupes} kaksoiskappaletta ohitettu.',
 
+  'emu.notGB': '"{file}" ei vaikuta kelvolliselta Game Boy -ROMilta.',
+  'emu.notSNES': '"{file}" ei vaikuta kelvolliselta SNES-ROMilta.',
+  'emu.notSMS': '"{file}" ei vaikuta kelvolliselta Sega Master System / Game Gear -ROMilta.',
+  'emu.byteSwapped': '"{file}" vaikuttaa tavujärjestykseltään käännetyltä — otsikko on luettavissa vain 16-bittiset sanat vaihdettuina.',
+  'emu.extMismatchHeadered': '"{file}" sisältää 512 tavun copier-otsikon, mutta sen nimenä on .{ext} — käytä .smc-päätettä.',
+  'emu.extMismatchUnheadered': '"{file}" on otsikoton (unheadered) dump, mutta sen nimenä on .{ext} — käytä .sfc tai .fig.',
+  'emu.badDump': '"{file}" otsikon tarkistussumma on virheellinen — voi olla vioittunut dump.',
+  'emu.summary': 'Tarkistettu {roms} Game Boy/Color-, SNES-, SMS- ja GG-ROMia: {kinds} · {warnings} varoitusta, {dupes} päällekkäistä ohitettu.',
+
   'inspect.title': 'Olemassa oleva kortti',
   'inspect.loading': 'Tarkastetaan kohdetta…',
   'inspect.empty': 'Tästä kohteesta ei löytynyt tiedostoja — uusi valmistelu luo kaiken tyhjästä.',
@@ -245,6 +254,11 @@ const fi = {
   'inspect.menuPreview': 'Esiversio (kehitysversio)',
   'inspect.menuNoneHint': 'Ota käyttöön "Lataa uusin valikko" asentaaksesi N64FlashcartMenu tälle kortille.',
   'inspect.roms': 'N64-pelit',
+  'inspect.gb': 'Game Boy -pelit',
+  'inspect.gbc': 'Game Boy Color -pelit',
+  'inspect.snes': 'SNES-pelit',
+  'inspect.sms': 'Sega Master System -pelit',
+  'inspect.gg': 'Game Gear -pelit',
   'inspect.other': 'Muut pelit',
   'inspect.saves': 'Tallennuskansiot',
   'inspect.files': 'Tiedostot',
@@ -343,3 +357,4 @@ const fi = {
 } as const
 
 export default fi
+

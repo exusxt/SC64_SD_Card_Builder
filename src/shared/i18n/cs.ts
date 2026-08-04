@@ -155,7 +155,7 @@ const cs = {
   'opt.organize': 'Uspořádat ROM soubory do složek',
   'opt.organizeHint': 'Přejmenovat ROM soubory na <Název> (Region) a umístit je do vlastních složek.',
   'opt.stockFolders': 'Použít rozložení oficiální karty',
-  'opt.stockFoldersHint': 'Umístit hry pro Game Boy do GBC/ a hry pro SNES do snes_rom/, jako na oficiální kartě.',
+  'opt.stockFoldersHint': 'Umístit hry pro Game Boy do GBC/, hry pro SNES do snes_rom/ a hry pro SMS/GG do smsPlus64/, jako na oficiální kartě.',
   'opt.copyCheats': 'Kopírovat cheat soubory (.cht)',
   'opt.copyCheatsHint': 'Zkopírujte soubor .cht vedle každé ROM, pokud existuje.',
   'opt.ddipl': 'Nainstalovat IPL pro 64DD',
@@ -236,6 +236,15 @@ const cs = {
   'n64.duplicate': 'Přeskakuji duplikát souboru „{first}": {file}',
   'n64.summary': 'Zkontrolováno {roms} ROM N64: {regions} · {warnings} varování, přeskočeno {dupes} duplikátů.',
 
+  'emu.notGB': '„{file}" nevypadá jako platná ROM pro Game Boy.',
+  'emu.notSNES': '„{file}" nevypadá jako platná ROM pro SNES.',
+  'emu.notSMS': '„{file}" nevypadá jako platná ROM pro Sega Master System / Game Gear.',
+  'emu.byteSwapped': '„{file}" má pravděpodobně prohozené bajty — hlavičku lze přečíst jen po prohození 16bitových slov.',
+  'emu.extMismatchHeadered': '„{file}" má 512bajtovou copier hlavičku, ale jmenuje se .{ext} — použijte příponu .smc.',
+  'emu.extMismatchUnheadered': '„{file}" je holý (bez hlavičky) dump, ale jmenuje se .{ext} — použijte .sfc nebo .fig.',
+  'emu.badDump': '„{file}" má špatný kontrolní součet hlavičky — může jít o poškozený dump.',
+  'emu.summary': 'Zkontrolováno {roms} ROM pro Game Boy/Color, SNES, SMS a GG: {kinds} · {warnings} varování, přeskočeno {dupes} duplikátů.',
+
   'inspect.title': 'Existující karta',
   'inspect.loading': 'Kontrola cíle…',
   'inspect.empty': 'V tomto cíli nebyly nalezeny žádné soubory — nová příprava vytvoří vše od začátku.',
@@ -245,6 +254,11 @@ const cs = {
   'inspect.menuPreview': 'Předběžná verze (vývojový build)',
   'inspect.menuNoneHint': 'Zapněte „Stáhnout nejnovější nabídku“ pro instalaci N64FlashcartMenu na tuto kartu.',
   'inspect.roms': 'Hry N64',
+  'inspect.gb': 'Hry pro Game Boy',
+  'inspect.gbc': 'Hry pro Game Boy Color',
+  'inspect.snes': 'Hry pro SNES',
+  'inspect.sms': 'Hry pro Sega Master System',
+  'inspect.gg': 'Hry pro Game Gear',
   'inspect.other': 'Další hry',
   'inspect.saves': 'Složky s uloženými hrami',
   'inspect.files': 'Soubory',
@@ -343,3 +357,4 @@ const cs = {
 } as const
 
 export default cs
+

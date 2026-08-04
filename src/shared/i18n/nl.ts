@@ -155,7 +155,7 @@ const nl = {
   'opt.organize': "ROM's ordenen in mappen",
   'opt.organizeHint': "Hernoem ROM's naar <Titel> (Regio) en plaats ze in hun eigen map.",
   'opt.stockFolders': 'Gebruik de officiële kaartindeling',
-  'opt.stockFoldersHint': 'Plaats Game Boy-games in GBC/ en SNES-games in snes_rom/, zoals op de officiële kaart.',
+  'opt.stockFoldersHint': 'Plaats Game Boy-games in GBC/, SNES-games in snes_rom/ en SMS/GG-games in smsPlus64/, zoals op de officiële kaart.',
   'opt.copyCheats': 'Cheat-bestanden (.cht) kopiëren',
   'opt.copyCheatsHint': 'Kopieer een .cht-bestand naast elke ROM als die bestaat.',
   'opt.ddipl': '64DD-IPL installeren',
@@ -236,6 +236,15 @@ const nl = {
   'n64.duplicate': 'Duplicaat van "{first}" overgeslagen: {file}',
   'n64.summary': '{roms} N64-ROM(s) gecontroleerd: {regions} · {warnings} waarschuwing(en), {dupes} duplicaat/duplicaten overgeslagen.',
 
+  'emu.notGB': '„{file}" ziet er niet uit als een geldige Game Boy-ROM.',
+  'emu.notSNES': '„{file}" ziet er niet uit als een geldige SNES-ROM.',
+  'emu.notSMS': '„{file}" ziet er niet uit als een geldige Sega Master System / Game Gear-ROM.',
+  'emu.byteSwapped': '„{file}" lijkt byte-swapped te zijn — de header is alleen leesbaar met omgewisselde 16-bits woorden.',
+  'emu.extMismatchHeadered': '„{file}" heeft een 512-byte copier-header maar heet .{ext} — gebruik de extensie .smc.',
+  'emu.extMismatchUnheadered': '„{file}" is een kale (unheadered) dump maar heet .{ext} — gebruik .sfc of .fig.',
+  'emu.badDump': '„{file}" heeft een ongeldige header-checksum — mogelijk een slechte dump.',
+  'emu.summary': '{roms} Game Boy/Color-, SNES-, SMS- en GG-ROM(s) gecontroleerd: {kinds} · {warnings} waarschuwing(en), {dupes} duplicaat/duplicaten overgeslagen.',
+
   'inspect.title': 'Bestaande kaart',
   'inspect.loading': 'Bestemming controleren…',
   'inspect.empty': 'Geen bestanden gevonden op deze bestemming — een nieuwe voorbereiding bouwt alles vanaf nul op.',
@@ -245,6 +254,11 @@ const nl = {
   'inspect.menuPreview': 'Previewversie (ontwikkelbuild)',
   'inspect.menuNoneHint': 'Schakel "Nieuwste menu downloaden" in om N64FlashcartMenu op deze kaart te installeren.',
   'inspect.roms': 'N64-spellen',
+  'inspect.gb': 'Game Boy-spellen',
+  'inspect.gbc': 'Game Boy Color-spellen',
+  'inspect.snes': 'SNES-spellen',
+  'inspect.sms': 'Sega Master System-spellen',
+  'inspect.gg': 'Game Gear-spellen',
   'inspect.other': 'Andere spellen',
   'inspect.saves': 'Opslagmappen',
   'inspect.files': 'Bestanden',
@@ -343,3 +357,4 @@ const nl = {
 } as const
 
 export default nl
+

@@ -155,7 +155,7 @@ const uk = {
   'opt.organize': 'Упорядкувати ROM у папки',
   'opt.organizeHint': 'Перейменувати ROM у <Назва> (Регіон) і розмістити в окремі папки.',
   'opt.stockFolders': 'Використовувати розкладку оригінальної карти',
-  'opt.stockFoldersHint': 'Розміщувати ігри Game Boy у GBC/, а ігри SNES у snes_rom/, як на оригінальній карті.',
+  'opt.stockFoldersHint': 'Розміщувати ігри Game Boy у GBC/, ігри SNES у snes_rom/, а ігри SMS/GG у smsPlus64/, як на оригінальній карті.',
   'opt.copyCheats': 'Копіювати файли читів (.cht)',
   'opt.copyCheatsHint': 'Копіювати файл .cht поруч із кожним ROM, якщо він існує.',
   'opt.ddipl': 'Встановити IPL 64DD',
@@ -236,6 +236,15 @@ const uk = {
   'n64.duplicate': 'Пропуск дубліката «{first}»: {file}',
   'n64.summary': 'Перевірено ROM N64: {roms} · {regions} · попереджень: {warnings}, пропущено дублікатів: {dupes}.',
 
+  'emu.notGB': '«{file}» не схожий на коректний ROM Game Boy.',
+  'emu.notSNES': '«{file}» не схожий на коректний ROM SNES.',
+  'emu.notSMS': '«{file}» не схожий на коректний ROM Sega Master System / Game Gear.',
+  'emu.byteSwapped': '«{file}», схоже, має переставлені байти — заголовок читається лише з переставленими 16-бітними словами.',
+  'emu.extMismatchHeadered': '«{file}» містить 512-байтний copier-заголовок, але називається .{ext} — використовуйте розширення .smc.',
+  'emu.extMismatchUnheadered': '«{file}» — це сирий дамп без заголовка, але називається .{ext} — використовуйте .sfc або .fig.',
+  'emu.badDump': '«{file}» має невірну контрольну суму заголовка — можливо, пошкоджений дамп.',
+  'emu.summary': 'Перевірено ROM Game Boy/Color, SNES, SMS і GG: {roms} · {kinds} · попереджень: {warnings}, пропущено дублікатів: {dupes}.',
+
   'inspect.title': 'Існуюча карта',
   'inspect.loading': 'Перевірка призначення…',
   'inspect.empty': 'У цьому призначенні не знайдено файлів — нова підготовка створить усе з нуля.',
@@ -245,6 +254,11 @@ const uk = {
   'inspect.menuPreview': 'Попередня версія (збірка для розробки)',
   'inspect.menuNoneHint': 'Увімкніть «Завантажити останнє меню», щоб установити N64FlashcartMenu на цю карту.',
   'inspect.roms': 'Ігри N64',
+  'inspect.gb': 'Ігри Game Boy',
+  'inspect.gbc': 'Ігри Game Boy Color',
+  'inspect.snes': 'Ігри SNES',
+  'inspect.sms': 'Ігри Sega Master System',
+  'inspect.gg': 'Ігри Game Gear',
   'inspect.other': 'Інші ігри',
   'inspect.saves': 'Папки збережень',
   'inspect.files': 'Файли',
@@ -343,3 +357,4 @@ const uk = {
 } as const
 
 export default uk
+

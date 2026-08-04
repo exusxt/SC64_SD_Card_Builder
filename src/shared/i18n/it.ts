@@ -155,7 +155,7 @@ const it = {
   'opt.organize': 'Organizza le ROM in cartelle',
   'opt.organizeHint': 'Rinomina le ROM come <Titolo> (Regione) e mettile in una cartella dedicata.',
   'opt.stockFolders': 'Usa il layout della scheda originale',
-  'opt.stockFoldersHint': 'Metti i giochi Game Boy in GBC/ e i giochi SNES in snes_rom/, come la scheda ufficiale.',
+  'opt.stockFoldersHint': 'Metti i giochi Game Boy in GBC/, i giochi SNES in snes_rom/ e i giochi SMS/GG in smsPlus64/, come la scheda ufficiale.',
   'opt.copyCheats': 'Copia i file cheat (.cht)',
   'opt.copyCheatsHint': 'Copia un file .cht accanto a ogni ROM se presente.',
   'opt.ddipl': 'Installa l\'IPL 64DD',
@@ -236,6 +236,15 @@ const it = {
   'n64.duplicate': 'Duplicato di "{first}" saltato: {file}',
   'n64.summary': '{roms} ROM N64 controllata(e): {regions} · {warnings} avviso(i), {dupes} duplicato(i) saltato(i).',
 
+  'emu.notGB': '"{file}" non sembra una ROM Game Boy valida.',
+  'emu.notSNES': '"{file}" non sembra una ROM SNES valida.',
+  'emu.notSMS': '"{file}" non sembra una ROM Sega Master System / Game Gear valida.',
+  'emu.byteSwapped': '"{file}" sembra avere i byte invertiti: l’header è leggibile solo con le parole a 16 bit invertite.',
+  'emu.extMismatchHeadered': '"{file}" ha un header copier da 512 byte ma si chiama .{ext} — usa l’estensione .smc.',
+  'emu.extMismatchUnheadered': '"{file}" è un dump senza header ma si chiama .{ext} — usa .sfc o .fig.',
+  'emu.badDump': '"{file}" ha un checksum dell’header errato: potrebbe essere un dump danneggiato.',
+  'emu.summary': '{roms} ROM Game Boy/Color, SNES, SMS e GG controllate: {kinds} · {warnings} avviso(i), {dupes} duplicato(i) saltato(i).',
+
   'inspect.title': 'Scheda esistente',
   'inspect.loading': 'Ispezione della destinazione…',
   'inspect.empty': 'Nessun file trovato su questa destinazione: una nuova preparazione creerà tutto da zero.',
@@ -245,6 +254,11 @@ const it = {
   'inspect.menuPreview': 'Versione preview (build di sviluppo)',
   'inspect.menuNoneHint': "Abilita “Scarica l'ultimo menu” per installare N64FlashcartMenu su questa scheda.",
   'inspect.roms': 'Giochi N64',
+  'inspect.gb': 'Giochi Game Boy',
+  'inspect.gbc': 'Giochi Game Boy Color',
+  'inspect.snes': 'Giochi SNES',
+  'inspect.sms': 'Giochi Sega Master System',
+  'inspect.gg': 'Giochi Game Gear',
   'inspect.other': 'Altri giochi',
   'inspect.saves': 'Cartelle di salvataggio',
   'inspect.files': 'File',
@@ -343,3 +357,4 @@ const it = {
 } as const
 
 export default it
+

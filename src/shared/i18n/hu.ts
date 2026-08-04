@@ -155,7 +155,7 @@ const hu = {
   'opt.organize': 'ROM-ok mappákba rendezése',
   'opt.organizeHint': 'A ROM-ok átnevezése <Cím> (Régió) formátumra és saját mappába helyezése.',
   'opt.stockFolders': 'Hivatalos kártya-elrendezés használata',
-  'opt.stockFoldersHint': 'Helyezze a Game Boy-játékokat a GBC/ és az SNES-játékokat a snes_rom/ mappába, mint a hivatalos kártyán.',
+  'opt.stockFoldersHint': 'Helyezze a Game Boy-játékokat a GBC/, az SNES-játékokat a snes_rom/ és az SMS/GG-játékokat a smsPlus64/ mappába, mint a hivatalos kártyán.',
   'opt.copyCheats': 'Cheat-fájlok (.cht) másolása',
   'opt.copyCheatsHint': 'Másoljon egy .cht fájlt minden ROM mellé, ha létezik.',
   'opt.ddipl': '64DD IPL telepítése',
@@ -236,6 +236,15 @@ const hu = {
   'n64.duplicate': 'A(z) „{first}" másolatának átugrása: {file}',
   'n64.summary': '{roms} N64 ROM ellenőrizve: {regions} · {warnings} figyelmeztetés, {dupes} másolat átugorva.',
 
+  'emu.notGB': 'A(z) „{file}" nem tűnik érvényes Game Boy ROM-nak.',
+  'emu.notSNES': 'A(z) „{file}" nem tűnik érvényes SNES ROM-nak.',
+  'emu.notSMS': 'A(z) „{file}" nem tűnik érvényes Sega Master System / Game Gear ROM-nak.',
+  'emu.byteSwapped': 'A(z) „{file}" valószínűleg byte-felcserélt — a fejléc csak a 16 bites szavak felcserélésével olvasható.',
+  'emu.extMismatchHeadered': 'A(z) „{file}" 512 bájtos copier fejlécet tartalmaz, de .{ext} a kiterjesztése — használja a .smc kiterjesztést.',
+  'emu.extMismatchUnheadered': 'A(z) „{file}" nyers (fejléc nélküli) dump, de .{ext} a kiterjesztése — használja a .sfc vagy .fig kiterjesztést.',
+  'emu.badDump': 'A(z) „{file}" fejlécének ellenőrzőösszege hibás — sérült dump lehet.',
+  'emu.summary': '{roms} Game Boy/Color, SNES, SMS és GG ROM ellenőrizve: {kinds} · {warnings} figyelmeztetés, {dupes} duplikátum kihagyva.',
+
   'inspect.title': 'Meglévő kártya',
   'inspect.loading': 'Cél ellenőrzése…',
   'inspect.empty': 'Ezen a célon nem találhatók fájlok — egy új előkészítés mindent a nulláról épít fel.',
@@ -245,6 +254,11 @@ const hu = {
   'inspect.menuPreview': 'Előzetes verzió (fejlesztői build)',
   'inspect.menuNoneHint': 'Engedélyezd a „Legújabb menü letöltése” opciót az N64FlashcartMenu telepítéséhez erre a kártyára.',
   'inspect.roms': 'N64-játékok',
+  'inspect.gb': 'Game Boy-játékok',
+  'inspect.gbc': 'Game Boy Color-játékok',
+  'inspect.snes': 'SNES-játékok',
+  'inspect.sms': 'Sega Master System-játékok',
+  'inspect.gg': 'Game Gear-játékok',
   'inspect.other': 'Egyéb játékok',
   'inspect.saves': 'Mentésmappák',
   'inspect.files': 'Fájlok',
@@ -343,3 +357,4 @@ const hu = {
 } as const
 
 export default hu
+

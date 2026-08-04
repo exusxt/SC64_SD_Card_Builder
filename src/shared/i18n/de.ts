@@ -155,7 +155,7 @@ const de = {
   'opt.organize': 'ROMs in Ordner organisieren',
   'opt.organizeHint': 'ROMs zu <Titel> (Region) umbenennen und in eigene Ordner legen.',
   'opt.stockFolders': 'Offizielles Kartenlayout verwenden',
-  'opt.stockFoldersHint': 'Game-Boy-Spiele in GBC/ und SNES-Spiele in snes_rom/ legen, wie bei der Originalkarte.',
+  'opt.stockFoldersHint': 'Game-Boy-Spiele in GBC/, SNES-Spiele in snes_rom/ und SMS/GG-Spiele in smsPlus64/ legen, wie bei der Originalkarte.',
   'opt.copyCheats': 'Cheat-Dateien (.cht) kopieren',
   'opt.copyCheatsHint': 'Eine vorhandene .cht-Datei wird neben jede ROM kopiert.',
   'opt.ddipl': '64DD-IPL installieren',
@@ -236,6 +236,15 @@ const de = {
   'n64.duplicate': 'Überspringe Duplikat von „{first}": {file}',
   'n64.summary': '{roms} N64-ROM(s) geprüft: {regions} · {warnings} Warnung(en), {dupes} Duplikat(e) übersprungen.',
 
+  'emu.notGB': '"{file}" sieht nicht wie ein gültiger Game-Boy-ROM aus.',
+  'emu.notSNES': '"{file}" sieht nicht wie ein gültiges SNES-ROM aus.',
+  'emu.notSMS': '"{file}" sieht nicht wie ein gültiges Sega-Master-System-/Game-Gear-ROM aus.',
+  'emu.byteSwapped': '"{file}" scheint byte-vertauscht zu sein — der Header ist nur mit vertauschten 16-Bit-Wörtern lesbar.',
+  'emu.extMismatchHeadered': '"{file}" hat einen 512-Byte-Copier-Header, ist aber als .{ext} benannt — verwenden Sie die Erweiterung .smc.',
+  'emu.extMismatchUnheadered': '"{file}" ist ein roher (unheadered) Dump, ist aber als .{ext} benannt — verwenden Sie .sfc oder .fig.',
+  'emu.badDump': '"{file}" hat eine fehlerhafte Header-Prüfsumme — möglicherweise ein fehlerhafter Dump.',
+  'emu.summary': '{roms} Game-Boy/Color-, SNES-, SMS- und GG-ROM(s) geprüft: {kinds} · {warnings} Warnung(en), {dupes} Duplikat(e) übersprungen.',
+
   'inspect.title': 'Vorhandene Karte',
   'inspect.loading': 'Ziel wird geprüft…',
   'inspect.empty': 'Auf diesem Ziel wurden keine Dateien gefunden – ein frischer Vorgang erstellt alles von Grund auf neu.',
@@ -245,6 +254,11 @@ const de = {
   'inspect.menuPreview': 'Vorabversion (Entwicklungsbuild)',
   'inspect.menuNoneHint': 'Aktiviere „Neuestes Menü herunterladen“, um N64FlashcartMenu auf dieser Karte zu installieren.',
   'inspect.roms': 'N64-Spiele',
+  'inspect.gb': 'Game-Boy-Spiele',
+  'inspect.gbc': 'Game-Boy-Color-Spiele',
+  'inspect.snes': 'SNES-Spiele',
+  'inspect.sms': 'Sega-Master-System-Spiele',
+  'inspect.gg': 'Game-Gear-Spiele',
   'inspect.other': 'Andere Spiele',
   'inspect.saves': 'Spielstand-Ordner',
   'inspect.files': 'Dateien',
@@ -343,3 +357,4 @@ const de = {
 } as const
 
 export default de
+

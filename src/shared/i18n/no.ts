@@ -155,7 +155,7 @@ const no = {
   'opt.organize': 'Organiser ROM-er i mapper',
   'opt.organizeHint': 'Gi ROM-er nytt navn som <Tittel> (Region) og legg dem i egne mapper.',
   'opt.stockFolders': 'Bruk originalkortets oppsett',
-  'opt.stockFoldersHint': 'Plasser Game Boy-spill i GBC/ og SNES-spill i snes_rom/, som på originalkortet.',
+  'opt.stockFoldersHint': 'Plasser Game Boy-spill i GBC/, SNES-spill i snes_rom/ og SMS/GG-spill i smsPlus64/, som på originalkortet.',
   'opt.copyCheats': 'Kopier cheat-filer (.cht)',
   'opt.copyCheatsHint': 'Kopier en .cht-fil ved siden av hver ROM hvis den finnes.',
   'opt.ddipl': 'Installer 64DD-IPL',
@@ -236,6 +236,15 @@ const no = {
   'n64.duplicate': 'Hopper over duplikat av "{first}": {file}',
   'n64.summary': '{roms} N64-ROM(er) sjekket: {regions} · {warnings} advarsel(er), {dupes} duplikat(er) hoppet over.',
 
+  'emu.notGB': '"{file}" ser ikke ut som en gyldig Game Boy-ROM.',
+  'emu.notSNES': '"{file}" ser ikke ut som en gyldig SNES-ROM.',
+  'emu.notSMS': '"{file}" ser ikke ut som en gyldig Sega Master System / Game Gear-ROM.',
+  'emu.byteSwapped': '"{file}" ser ut til å være byte-vekslet — headeren kan bare leses med 16-bits ord byttet om.',
+  'emu.extMismatchHeadered': '"{file}" har en 512-byte copier-header, men heter .{ext} — bruk .smc-utvidelsen.',
+  'emu.extMismatchUnheadered': '"{file}" er en rå (uten header) dump, men heter .{ext} — bruk .sfc eller .fig.',
+  'emu.badDump': '"{file}" har en ugyldig header-sjekksum — kan være en dårlig dump.',
+  'emu.summary': '{roms} Game Boy/Color-, SNES-, SMS- og GG-ROM(er) kontrollert: {kinds} · {warnings} advarsel(er), {dupes} duplikat(er) hoppet over.',
+
   'inspect.title': 'Eksisterende kort',
   'inspect.loading': 'Inspiserer destinasjon…',
   'inspect.empty': 'Ingen filer funnet på denne destinasjonen — en ny forberedelse bygger alt fra bunnen av.',
@@ -245,6 +254,11 @@ const no = {
   'inspect.menuPreview': 'Forhåndsversjon (utviklingsbygge)',
   'inspect.menuNoneHint': 'Aktiver "Last ned nyeste meny" for å installere N64FlashcartMenu på dette kortet.',
   'inspect.roms': 'N64-spill',
+  'inspect.gb': 'Game Boy-spill',
+  'inspect.gbc': 'Game Boy Color-spill',
+  'inspect.snes': 'SNES-spill',
+  'inspect.sms': 'Sega Master System-spill',
+  'inspect.gg': 'Game Gear-spill',
   'inspect.other': 'Andre spill',
   'inspect.saves': 'Lagringsmapper',
   'inspect.files': 'Filer',
@@ -343,3 +357,4 @@ const no = {
 } as const
 
 export default no
+

@@ -38,7 +38,7 @@ export interface InspectMenuInfo {
 
 export interface CardInspection {
   menu: InspectMenuInfo
-  roms: { n64: number; other: number }
+  roms: { n64: number; gb: number; gbc: number; snes: number; sms: number; gg: number; other: number }
   saves: number
   files: number
   bytes: number
@@ -190,7 +190,7 @@ export interface PrepareResult {
   report?: { html: string; csv: string } | null
 }
 
-export type PreviewKind = 'n64' | 'dd' | 'gb' | 'gbc' | 'snes' | 'other'
+export type PreviewKind = 'n64' | 'dd' | 'gb' | 'gbc' | 'snes' | 'sms' | 'gg' | 'other'
 
 export interface PreviewEntry {
   name: string

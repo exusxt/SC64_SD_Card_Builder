@@ -39,6 +39,7 @@ function entryType(e: PreviewEntry): string {
   if (e.kind === 'dd') return '64DD disk'
   if (e.kind === 'gb' || e.kind === 'gbc') return 'Game Boy / Color ROM'
   if (e.kind === 'snes') return 'SNES ROM'
+  if (e.kind === 'sms' || e.kind === 'gg') return 'Sega ROM'
   const ext = e.name.slice(e.name.lastIndexOf('.')).toLowerCase()
   if (EMULATOR_EXTS.has(ext)) return 'Emulator ROM file'
   return 'File'

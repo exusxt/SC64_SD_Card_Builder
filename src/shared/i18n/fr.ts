@@ -155,7 +155,7 @@ const fr = {
   'opt.organize': 'Organiser les ROMs dans des dossiers',
   'opt.organizeHint': 'Renommer les ROMs en <Titre> (Région) et les placer dans leur propre dossier.',
   'opt.stockFolders': 'Utiliser la structure de carte d’origine',
-  'opt.stockFoldersHint': 'Placer les jeux Game Boy dans GBC/ et les jeux SNES dans snes_rom/, comme sur la carte officielle.',
+  'opt.stockFoldersHint': 'Placer les jeux Game Boy dans GBC/, les jeux SNES dans snes_rom/ et les jeux SMS/GG dans smsPlus64/, comme sur la carte officielle.',
   'opt.copyCheats': 'Copier les fichiers de triche (.cht)',
   'opt.copyCheatsHint': 'Copier un fichier .cht à côté de chaque ROM quand il existe.',
   'opt.ddipl': 'Installer l\'IPL 64DD',
@@ -236,6 +236,15 @@ const fr = {
   'n64.duplicate': 'Doublon ignoré de « {first} » : {file}',
   'n64.summary': '{roms} ROM N64 vérifiée(s) : {regions} · {warnings} avertissement(s), {dupes} doublon(s) ignoré(s).',
 
+  'emu.notGB': '« {file} » ne ressemble pas à une ROM Game Boy valide.',
+  'emu.notSNES': '« {file} » ne ressemble pas à une ROM SNES valide.',
+  'emu.notSMS': '« {file} » ne ressemble pas à une ROM Sega Master System / Game Gear valide.',
+  'emu.byteSwapped': '« {file} » semble être en octets inversés — l’en-tête n’est lisible qu’avec les mots de 16 bits inversés.',
+  'emu.extMismatchHeadered': '« {file} » comporte un en-tête copier de 512 octets mais s’appelle .{ext} — utilisez l’extension .smc.',
+  'emu.extMismatchUnheadered': '« {file} » est un dump brut (sans en-tête) mais s’appelle .{ext} — utilisez .sfc ou .fig.',
+  'emu.badDump': '« {file} » a une somme de contrôle d’en-tête incorrecte — dump potentiellement corrompu.',
+  'emu.summary': '{roms} ROM Game Boy/Color, SNES, SMS et GG vérifiée(s) : {kinds} · {warnings} avertissement(s), {dupes} doublon(s) ignoré(s).',
+
   'inspect.title': 'Carte existante',
   'inspect.loading': 'Inspection de la destination…',
   'inspect.empty': 'Aucun fichier trouvé sur cette destination — une nouvelle préparation créera tout de zéro.',
@@ -245,6 +254,11 @@ const fr = {
   'inspect.menuPreview': 'Version preview (build de dev)',
   'inspect.menuNoneHint': 'Activez « Télécharger le dernier menu » pour installer N64FlashcartMenu sur cette carte.',
   'inspect.roms': 'Jeux N64',
+  'inspect.gb': 'Jeux Game Boy',
+  'inspect.gbc': 'Jeux Game Boy Color',
+  'inspect.snes': 'Jeux SNES',
+  'inspect.sms': 'Jeux Sega Master System',
+  'inspect.gg': 'Jeux Game Gear',
   'inspect.other': 'Autres jeux',
   'inspect.saves': 'Dossiers de sauvegarde',
   'inspect.files': 'Fichiers',
@@ -343,3 +357,4 @@ const fr = {
 } as const
 
 export default fr
+

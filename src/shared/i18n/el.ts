@@ -155,7 +155,7 @@ const el = {
   'opt.organize': 'Οργάνωση ROM σε φακέλους',
   'opt.organizeHint': 'Μετονομασία ROM σε <Τίτλος> (Περιοχή) και τοποθέτησή τους σε δικούς τους φακέλους.',
   'opt.stockFolders': 'Χρήση διάταξης επίσημης κάρτας',
-  'opt.stockFoldersHint': 'Τοποθέτηση παιχνιδιών Game Boy στο GBC/ και SNES στο snes_rom/, όπως στην επίσημη κάρτα.',
+  'opt.stockFoldersHint': 'Τοποθέτηση παιχνιδιών Game Boy στο GBC/, SNES στο snes_rom/ και SMS/GG στο smsPlus64/, όπως στην επίσημη κάρτα.',
   'opt.copyCheats': 'Αντιγραφή αρχείων cheat (.cht)',
   'opt.copyCheatsHint': 'Αντιγραφή ενός αρχείου .cht δίπλα σε κάθε ROM, εάν υπάρχει.',
   'opt.ddipl': 'Εγκατάσταση IPL 64DD',
@@ -236,6 +236,15 @@ const el = {
   'n64.duplicate': 'Παράλειψη αντιγράφου του "{first}": {file}',
   'n64.summary': '{roms} ROM N64 ελέγχθηκαν: {regions} · {warnings} προειδοποίηση(εις), {dupes} αντίγραφο(α) παραλείφθηκαν.',
 
+  'emu.notGB': 'Το «{file}» δεν μοιάζει με έγκυρο ROM Game Boy.',
+  'emu.notSNES': 'Το «{file}» δεν μοιάζει με έγκυρο ROM SNES.',
+  'emu.notSMS': 'Το «{file}» δεν μοιάζει με έγκυρο ROM Sega Master System / Game Gear.',
+  'emu.byteSwapped': 'Το «{file}» φαίνεται να έχει ανεστραμμένα bytes — η κεφαλίδα διαβάζεται μόνο με ανεστραμμένες λέξεις 16 bit.',
+  'emu.extMismatchHeadered': 'Το «{file}» φέρει κεφαλίδα copier 512 byte αλλά ονομάζεται .{ext} — χρησιμοποιήστε την επέκταση .smc.',
+  'emu.extMismatchUnheadered': 'Το «{file}» είναι ωμό (χωρίς κεφαλίδα) dump αλλά ονομάζεται .{ext} — χρησιμοποιήστε .sfc ή .fig.',
+  'emu.badDump': 'Το «{file}» έχει λανθασμένο checksum κεφαλίδας — μπορεί να είναι κακό dump.',
+  'emu.summary': 'Ελέγχθηκαν {roms} ROM Game Boy/Color, SNES, SMS και GG: {kinds} · {warnings} προειδοποίηση(εις), {dupes} αντίγραφο(α) παραλείφθηκαν.',
+
   'inspect.title': 'Υπάρχουσα κάρτα',
   'inspect.loading': 'Έλεγχος προορισμού…',
   'inspect.empty': 'Δεν βρέθηκαν αρχεία σε αυτόν τον προορισμό — μια νέα προετοιμασία θα δημιουργήσει τα πάντα από την αρχή.',
@@ -245,6 +254,11 @@ const el = {
   'inspect.menuPreview': 'Δοκιμαστική έκδοση (αναπτυξιακό build)',
   'inspect.menuNoneHint': 'Ενεργοποιήστε την επιλογή «Λήψη του τελευταίου μενού» για να εγκατασταθεί το N64FlashcartMenu σε αυτήν την κάρτα.',
   'inspect.roms': 'Παιχνίδια N64',
+  'inspect.gb': 'Παιχνίδια Game Boy',
+  'inspect.gbc': 'Παιχνίδια Game Boy Color',
+  'inspect.snes': 'Παιχνίδια SNES',
+  'inspect.sms': 'Παιχνίδια Sega Master System',
+  'inspect.gg': 'Παιχνίδια Game Gear',
   'inspect.other': 'Άλλα παιχνίδια',
   'inspect.saves': 'Φάκελοι αποθήκευσης',
   'inspect.files': 'Αρχεία',
@@ -343,3 +357,4 @@ const el = {
 } as const
 
 export default el
+

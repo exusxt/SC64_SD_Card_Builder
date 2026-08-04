@@ -12,6 +12,7 @@ import { verifyFile } from './verify'
 import { pathContains } from './pathguard'
 import { organizeBase, uniqueBase, chtNameOf } from './organize'
 import { inspectN64File, isN64Ext, romIdentity, N64_REGION_LABELS, N64Header, N64Issue, N64Region } from './n64validate'
+import { validateEmuFile, emuIdentity, isGBExt, isSNESExt, isSMSExt, EmuHeaderInfo, EmuIssue, EmuKind } from './emuheader'
 import { installDDIPL } from './ddipl'
 import { writeReport, type ReportCounts, type ReportLog, type ReportRow } from './report'
 
@@ -33,6 +34,14 @@ const EXTENSIONS: Record<string, string[]> = {
 
 const STEP_IDS: StepId[] = ['folders', 'menu', 'metadata', 'emulators', 'ddipl', 'roms', 'format', 'verify', 'copy']
 
+const EMU_KIND_LABELS: Record<EmuKind, string> = {
+  gb: 'Game Boy',
+  gbc: 'Game Boy Color',
+  snes: 'SNES',
+  sms: 'Sega Master System',
+  gg: 'Sega Game Gear'
+}
+
 function baseNameOf(p: string): string {
   return p.split(/[/\\]/).pop() ?? p
 }
@@ -41,12 +50,14 @@ function extOf(p: string): string {
   return p.slice(p.lastIndexOf('.')).toLowerCase()
 }
 
-// Mirrors the stock card's layout: GB/GBC games live under GBC/ and SNES
-// games under snes_rom/, both with a saves/ folder per game.
+// Mirrors the stock card's layout: GB/GBC games live under GBC/, SNES games
+// under snes_rom/ and SMS/GG games under smsPlus64/, each with a saves/
+// folder per game.
 function stockFolderOf(p: string): string | null {
   const ext = extOf(p)
   if (ext === '.gb' || ext === '.gbc') return 'GBC'
   if (ext === '.smc' || ext === '.sfc' || ext === '.fig') return 'snes_rom'
+  if (ext === '.sms' || ext === '.gg') return 'smsPlus64'
   return null
 }
 
@@ -153,6 +164,25 @@ class Runner {
     }
   }
 
+  emuIssueMessage(issue: EmuIssue, rel: string): string {
+    switch (issue.code) {
+      case 'not-gb':
+        return this.t('emu.notGB', { file: rel })
+      case 'not-snes':
+        return this.t('emu.notSNES', { file: rel })
+      case 'not-sms':
+        return this.t('emu.notSMS', { file: rel })
+      case 'byte-swapped':
+        return this.t('emu.byteSwapped', { file: rel })
+      case 'ext-mismatch':
+        return issue.detail === 'headered'
+          ? this.t('emu.extMismatchHeadered', { file: rel, ext: extOf(rel).slice(1) })
+          : this.t('emu.extMismatchUnheadered', { file: rel, ext: extOf(rel).slice(1) })
+      case 'bad-dump':
+        return this.t('emu.badDump', { file: rel })
+    }
+  }
+
   async createFolders(destination: string, enabled: boolean, stockFolders = false): Promise<void> {
     if (!enabled) {
       this.markSkipped('folders')
@@ -160,7 +190,7 @@ class Runner {
     }
     this.step('folders', 'running')
     const dirs = ['menu', join('menu', 'metadata'), join('menu', '64ddipl'), join('menu', 'emulators')]
-    if (stockFolders) dirs.push('GBC', 'snes_rom')
+    if (stockFolders) dirs.push('GBC', 'snes_rom', 'smsPlus64')
     for (const d of dirs) await ensureDir(join(destination, d))
     this.log('info', this.t('log.createdFolders'))
     this.step('folders', 'done')
@@ -379,6 +409,7 @@ class Runner {
     let warningCount = 0
     let duplicateCount = 0
     const regionCounts: Partial<Record<N64Region, number>> = {}
+    const emuCounts: Partial<Record<EmuKind, number>> = {}
     const usedBases = new Set<string>()
     let cheatsCopied = 0
 
@@ -448,6 +479,33 @@ class Runner {
           }
         }
 
+        let emuHeader: EmuHeaderInfo | null = null
+        if (isGBExt(file) || isSNESExt(file) || isSMSExt(file)) {
+          const v = validateEmuFile(file)
+          if (v.header) {
+            emuHeader = v.header
+            const id = emuIdentity(v.header, fileSize(file))
+            const first = seen.get(id)
+            if (first) {
+              duplicateCount++
+              this.rows.push({ status: 'duplicate', source: rel, target: '', size: fileSize(file), game: v.header.title, region: v.header.region ?? '', note: this.t('n64.duplicate', { first, file: rel }) })
+              this.log('warn', this.t('n64.duplicate', { first, file: rel }))
+              continue
+            }
+            seen.set(id, rel)
+            emuCounts[v.header.kind] = (emuCounts[v.header.kind] ?? 0) + 1
+            for (const issue of v.issues) {
+              warningCount++
+              this.log('warn', this.emuIssueMessage(issue, rel))
+            }
+          } else {
+            warningCount++
+            for (const issue of v.issues) {
+              this.log('warn', this.emuIssueMessage(issue, rel))
+            }
+          }
+        }
+
         if (n64Header && options.organizeRoms) {
           const base = uniqueBase(organizeBase(n64Header), usedBases)
           target = join(destRoot, base, `${base}${extOf(file)}`)
@@ -484,7 +542,8 @@ class Runner {
         this.rows.push({
           status: isVerifyFail ? 'verify-fail' : (isN64Ext(file) && !n64Header) ? 'not-n64' : 'copied',
           source: rel, target: destRel, size: fileSize(file),
-          game: n64Header?.title ?? '', region: n64Header ? N64_REGION_LABELS[n64Header.region] : '',
+          game: n64Header?.title ?? emuHeader?.title ?? emuHeader?.productCode ?? '',
+          region: n64Header ? N64_REGION_LABELS[n64Header.region] : (emuHeader?.region ?? ''),
           note: isVerifyFail ? this.t('log.verifyFail', { file: rel }) : ''
         })
         if (roms % 50 === 0) this.progress(roms, matches.length, label)
@@ -497,6 +556,15 @@ class Runner {
         .map(([r, c]) => `${N64_REGION_LABELS[r]} ${c}`)
         .join(' · ')
       this.log('info', this.t('n64.summary', { roms: String(n64Count), regions, warnings: String(warningCount), dupes: String(duplicateCount) }))
+    }
+
+    const emuTotal = (Object.values(emuCounts) as number[]).reduce((a, b) => a + b, 0)
+    if (emuTotal > 0) {
+      const kinds = (Object.entries(emuCounts) as Array<[EmuKind, number]>)
+        .filter(([, c]) => c > 0)
+        .map(([k, c]) => `${EMU_KIND_LABELS[k]} ${c}`)
+        .join(' · ')
+      this.log('info', this.t('emu.summary', { roms: String(emuTotal), kinds, warnings: String(warningCount), dupes: String(duplicateCount) }))
     }
 
     let saves = 0

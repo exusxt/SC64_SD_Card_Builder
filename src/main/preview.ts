@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 import type { PreviewEntry } from '../shared/types'
 import { inspectN64File, isN64Ext, N64_REGION_LABELS } from './n64validate'
-import { inspectEmuFile, isGBExt, isSNESExt } from './emuheader'
+import { inspectEmuFile, isGBExt, isSNESExt, isSMSExt } from './emuheader'
 
 const DD_EXTS = new Set(['.ndd', '.d64'])
 
@@ -116,12 +116,12 @@ async function inspectFile(metaRoot: string, boxartRoot: string, filePath: strin
   if (DD_EXTS.has(extOf(filePath))) {
     return { kind: 'dd', title: null, gameCode: null, region: null, boxart: null, description: null }
   }
-  if (isGBExt(filePath) || isSNESExt(filePath)) {
+  if (isGBExt(filePath) || isSNESExt(filePath) || isSMSExt(filePath)) {
     const info = inspectEmuFile(filePath)
     if (info) {
       return {
         kind: info.kind,
-        title: info.title || null,
+        title: info.title || info.productCode || null,
         gameCode: null,
         region: info.region,
         boxart: null,

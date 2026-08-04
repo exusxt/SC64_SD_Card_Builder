@@ -421,6 +421,26 @@ export function DestinationStep({
                       <div className="font-medium">{inspection.roms.n64}</div>
                     </div>
                     <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.gb')}</div>
+                      <div className="font-medium">{inspection.roms.gb}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.gbc')}</div>
+                      <div className="font-medium">{inspection.roms.gbc}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.snes')}</div>
+                      <div className="font-medium">{inspection.roms.snes}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.sms')}</div>
+                      <div className="font-medium">{inspection.roms.sms}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.gg')}</div>
+                      <div className="font-medium">{inspection.roms.gg}</div>
+                    </div>
+                    <div>
                       <div className="text-[10px] uppercase tracking-wider text-sc64-muted">{t('inspect.other')}</div>
                       <div className="font-medium">{inspection.roms.other}</div>
                     </div>

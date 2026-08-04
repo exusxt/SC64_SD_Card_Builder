@@ -155,7 +155,7 @@ const ro = {
   'opt.organize': 'Organizează ROM-urile în foldere',
   'opt.organizeHint': 'Redenumește ROM-urile ca <Titlu> (Regiune) și pune-le în foldere proprii.',
   'opt.stockFolders': 'Folosește aspectul cardului oficial',
-  'opt.stockFoldersHint': 'Plasează jocurile Game Boy în GBC/ și jocurile SNES în snes_rom/, ca pe cardul oficial.',
+  'opt.stockFoldersHint': 'Plasează jocurile Game Boy în GBC/, jocurile SNES în snes_rom/ și jocurile SMS/GG în smsPlus64/, ca pe cardul oficial.',
   'opt.copyCheats': 'Copiază fișierele cheat (.cht)',
   'opt.copyCheatsHint': 'Copiază un fișier .cht lângă fiecare ROM, dacă există.',
   'opt.ddipl': 'Instalează IPL-ul 64DD',
@@ -236,6 +236,15 @@ const ro = {
   'n64.duplicate': 'Se omite duplicatul „{first}": {file}',
   'n64.summary': '{roms} ROM N64 verificate: {regions} · {warnings} avertisment(e), {dupes} duplicat(e) omise.',
 
+  'emu.notGB': '„{file}" nu pare a fi un ROM Game Boy valid.',
+  'emu.notSNES': '„{file}" nu pare a fi un ROM SNES valid.',
+  'emu.notSMS': '„{file}" nu pare a fi un ROM Sega Master System / Game Gear valid.',
+  'emu.byteSwapped': '„{file}" pare să aibă octeții inversați — antetul poate fi citit doar cu cuvintele de 16 biți inversate.',
+  'emu.extMismatchHeadered': '„{file}" are un antet copier de 512 octeți, dar se numește .{ext} — folosiți extensia .smc.',
+  'emu.extMismatchUnheadered': '„{file}" este un dump brut (fără antet), dar se numește .{ext} — folosiți .sfc sau .fig.',
+  'emu.badDump': '„{file}" are o sumă de control a antetului incorectă — poate fi un dump defect.',
+  'emu.summary': '{roms} ROM Game Boy/Color, SNES, SMS și GG verificate: {kinds} · {warnings} avertizare(i), {dupes} duplicat(e) omise.',
+
   'inspect.title': 'Card existent',
   'inspect.loading': 'Se inspectează destinația…',
   'inspect.empty': 'Nu s-au găsit fișiere pe această destinație — o nouă pregătire va construi totul de la zero.',
@@ -245,6 +254,11 @@ const ro = {
   'inspect.menuPreview': 'Versiune preview (build de dezvoltare)',
   'inspect.menuNoneHint': 'Activează „Descarcă ultimul meniu” pentru a instala N64FlashcartMenu pe acest card.',
   'inspect.roms': 'Jocuri N64',
+  'inspect.gb': 'Jocuri Game Boy',
+  'inspect.gbc': 'Jocuri Game Boy Color',
+  'inspect.snes': 'Jocuri SNES',
+  'inspect.sms': 'Jocuri Sega Master System',
+  'inspect.gg': 'Jocuri Game Gear',
   'inspect.other': 'Alte jocuri',
   'inspect.saves': 'Foldere de salvare',
   'inspect.files': 'Fișiere',
@@ -343,3 +357,4 @@ const ro = {
 } as const
 
 export default ro
+
