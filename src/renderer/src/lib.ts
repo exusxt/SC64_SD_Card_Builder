@@ -353,3 +353,25 @@ export function moveSelection(sel: number, length: number, dir: 'up' | 'down'): 
   if (dir === 'down') return sel >= length - 1 ? 0 : sel + 1
   return sel <= 0 ? length - 1 : sel - 1
 }
+
+// Restores a previously remembered selection after navigating back up a folder,
+// clamped to the (possibly shorter) new listing. Falls back to the top.
+export function restoreSelection(saved: number | undefined, length: number): number {
+  if (saved === undefined) return 0
+  if (length <= 0) return 0
+  return Math.min(saved, length - 1)
+}
+
+// LIFO memory of which item was highlighted when each folder was entered,
+// so the preview jumps back to the previously opened folder instead of the top.
+export class SelectionHistory {
+  private stack: number[] = []
+
+  enter(index: number): void {
+    this.stack.push(index)
+  }
+
+  leave(): number | undefined {
+    return this.stack.pop()
+  }
+}

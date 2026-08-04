@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cn, formatBytes, moveSelection, DEFAULT_SETTINGS } from '../src/renderer/src/lib'
+import { cn, formatBytes, moveSelection, restoreSelection, SelectionHistory, DEFAULT_SETTINGS } from '../src/renderer/src/lib'
 
 describe('formatBytes', () => {
   it('handles empty values', () => {
@@ -39,6 +39,32 @@ describe('moveSelection', () => {
   it('handles empty lists', () => {
     expect(moveSelection(0, 0, 'up')).toBe(0)
     expect(moveSelection(0, 0, 'down')).toBe(0)
+  })
+})
+
+describe('restoreSelection', () => {
+  it('returns the top when nothing was remembered', () => {
+    expect(restoreSelection(undefined, 5)).toBe(0)
+  })
+
+  it('restores the remembered index', () => {
+    expect(restoreSelection(3, 5)).toBe(3)
+  })
+
+  it('clamps to the new listing length', () => {
+    expect(restoreSelection(10, 5)).toBe(4)
+    expect(restoreSelection(3, 0)).toBe(0)
+  })
+})
+
+describe('SelectionHistory', () => {
+  it('remembers the selection when entering folders and restores LIFO on leave', () => {
+    const h = new SelectionHistory()
+    h.enter(3)
+    h.enter(7)
+    expect(h.leave()).toBe(7)
+    expect(h.leave()).toBe(3)
+    expect(h.leave()).toBeUndefined()
   })
 })
 

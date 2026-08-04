@@ -4,7 +4,7 @@ import type { PreviewEntry } from '../../../shared/types'
 import type { T } from '../i18n'
 import { BACKGROUNDS } from '../backgrounds'
 import { Button } from './ui'
-import { moveSelection } from '../lib'
+import { moveSelection, restoreSelection, SelectionHistory } from '../lib'
 
 const SCREEN_W = 640
 const SCREEN_H = 480
@@ -52,9 +52,10 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
   const [bgUrl, setBgUrl] = useState<string | null>(null)
   const prevSelectedRef = useRef<string | null>(null)
   const bgIdxRef = useRef(-1)
+  const selStackRef = useRef(new SelectionHistory())
 
   const loadDir = useCallback(
-    async (rel: string) => {
+    async (rel: string, restoreSel?: number) => {
       setDirRel(rel)
       setEntries(null)
       setLoadError(null)
@@ -62,7 +63,7 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
         const res = await window.api.listPreviewDir(root, rel)
         if (res) {
           setEntries(res)
-          setSel(0)
+          setSel(restoreSelection(restoreSel, res.length))
         } else {
           setLoadError('unreadable')
         }
@@ -119,12 +120,14 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
   }, [root, selected?.boxart])
 
   const openDir = (name: string): void => {
+    selStackRef.current.enter(sel)
     void loadDir(dirRel ? `${dirRel}/${name}` : name)
   }
 
   const goUp = (): void => {
+    const restore = selStackRef.current.leave()
     const idx = dirRel.lastIndexOf('/')
-    void loadDir(idx === -1 ? '' : dirRel.slice(0, idx))
+    void loadDir(idx === -1 ? '' : dirRel.slice(0, idx), restore)
   }
 
   const onKey = useCallback(
