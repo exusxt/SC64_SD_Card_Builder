@@ -253,6 +253,23 @@ export function OptionsStep({
           />
         </div>
 
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Checkbox
+            label={t('opt.organize')}
+            hint={t('opt.organizeHint')}
+            checked={settings.organizeRoms}
+            onChange={(v) => onSettingsChange({ organizeRoms: v })}
+            className="flex-1"
+          />
+          <Checkbox
+            label={t('opt.copyCheats')}
+            hint={t('opt.copyCheatsHint')}
+            checked={settings.copyCheats}
+            onChange={(v) => onSettingsChange({ copyCheats: v })}
+            className="flex-1"
+          />
+        </div>
+
         <Field label={t('opt.fileTypes')}>
           <div className="grid gap-1.5 sm:grid-cols-2">
             {(Object.keys(ROM_TYPE_LABELS) as Array<keyof AppSettings['romTypes']>).map((key) => (

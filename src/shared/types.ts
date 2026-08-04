@@ -99,6 +99,8 @@ export interface AppSettings {
   createSaves: boolean
   includeSubdirs: boolean
   overwrite: boolean
+  organizeRoms: boolean
+  copyCheats: boolean
   stage: boolean
   verify: boolean
   preparedSource: string | null
@@ -127,6 +129,8 @@ export interface PrepareOptions {
   createSaves: boolean
   includeSubdirs: boolean
   overwrite: boolean
+  organizeRoms: boolean
+  copyCheats: boolean
   verify: boolean
 }
 

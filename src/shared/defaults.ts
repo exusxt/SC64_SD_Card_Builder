@@ -21,6 +21,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   createSaves: true,
   includeSubdirs: true,
   overwrite: false,
+  organizeRoms: false,
+  copyCheats: false,
   stage: false,
   verify: true,
   preparedSource: null,

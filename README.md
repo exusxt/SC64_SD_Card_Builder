@@ -42,6 +42,7 @@ The executables below are the actual artifacts shipped with the current release 
 - **Pre-flight safety**: formatting requires typing the drive letter to confirm, and the destination must be confirmed when typed by hand; overlapping source/destination folders are rejected before anything is written
 - Install the latest [N64FlashcartMenu](https://github.com/Polprzewodnikowy/N64FlashcartMenu), boxart/metadata pack and emulators onto the card
 - Copy your own ROMs while preserving folder structure (optional save folders, file-type filter)
+- **Clean collection**: rename N64 ROMs to `<Title> (Region)` and place each one in its own folder (collision-safe, e.g. `Super Mario 64 (USA) (2)`), and optionally copy a sibling `.cht` cheat file next to each ROM
 - **N64 ROM validation**: detects byte order (.z64/.v64/.n64), flags mismatched extensions and bad-dump sizes, shows the region breakdown, and skips duplicate dumps of the same game
 - **Existing-card inspection**: pick a destination and instantly see the installed N64FlashcartMenu version (compared against the latest release), N64/other game counts, save folders, files and free space — with an in-place upgrade hint when the menu is outdated
 - **N64FlashcartMenu preview**: open any folder and browse it in an on-screen emulation of the menu's file browser — cursor-key navigation (wrapping at the top/bottom), folders, ROM titles/codes/regions, boxart and descriptions from the metadata pack, file sizes, and a CRT-styled view

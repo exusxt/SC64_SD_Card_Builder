@@ -290,7 +290,9 @@ export default function App(): React.JSX.Element {
       createSaves: settings.createSaves,
       includeSubdirs: settings.includeSubdirs,
       overwrite: settings.overwrite,
-      verify: settings.verify
+      verify: settings.verify,
+      organizeRoms: settings.organizeRoms,
+      copyCheats: settings.copyCheats
     })
     setResult({ kind: 'prepare', ok: res.ok, message: res.summary })
     setRunning(null)

@@ -9,6 +9,7 @@ import { getMenuRelease, getMetadataRelease, latestReleaseAssets, GB64_TEMPLATE_
 import { extractZip, findEntriesInZip, extractEntryTo, copyDirContents, rmTree, listDirDeep } from './unzip'
 import { verifyFile } from './verify'
 import { pathContains } from './pathguard'
+import { organizeBase, uniqueBase, chtNameOf } from './organize'
 import { inspectN64File, isN64Ext, romIdentity, N64_REGION_LABELS, N64Header, N64Issue, N64Region } from './n64validate'
 import { installDDIPL } from './ddipl'
 
@@ -58,6 +59,21 @@ function fileSize(p: string): number {
     return statSync(p).size
   } catch {
     return 0
+  }
+}
+
+function findCht(romPath: string): string | null {
+  const last = romPath.lastIndexOf('.')
+  const stem = last >= 0 ? romPath.slice(0, last) : romPath
+  const exact = `${stem}.cht`
+  if (existsSync(exact)) return exact
+  try {
+    const dir = dirname(romPath)
+    const want = baseNameOf(exact).toLowerCase()
+    const entry = readdirSync(dir).find((n) => n.toLowerCase() === want)
+    return entry ? join(dir, entry) : null
+  } catch {
+    return null
   }
 }
 
@@ -331,6 +347,8 @@ class Runner {
     let warningCount = 0
     let duplicateCount = 0
     const regionCounts: Partial<Record<N64Region, number>> = {}
+    const usedBases = new Set<string>()
+    let cheatsCopied = 0
 
     if (options.verify) this.step('verify', 'running')
     else this.markSkipped('verify')
@@ -347,12 +365,14 @@ class Runner {
       for (const file of matches) {
         this.checkCancel()
         const rel = options.includeSubdirs ? file.slice(source.length).replace(/^[/\\]/, '') : baseNameOf(file)
-        const target = join(destRoot, rel)
+        let target = join(destRoot, rel)
         if (existsSync(target) && !options.overwrite) continue
 
+        let n64Header: N64Header | null = null
         if (isN64Ext(file)) {
           const v = await inspectN64File(file)
           if (v.header) {
+            n64Header = v.header
             const id = romIdentity(v.header)
             const first = seen.get(id)
             if (first) {
@@ -373,10 +393,28 @@ class Runner {
           }
         }
 
+        if (n64Header && options.organizeRoms) {
+          const base = uniqueBase(organizeBase(n64Header), usedBases)
+          target = join(destRoot, base, `${base}${extOf(file)}`)
+        }
+
         await mkdir(dirname(target), { recursive: true })
         await copyFile(file, target)
         roms++
         if (options.createSaves) saveDirs.add(dirname(target))
+
+        if (options.copyCheats && n64Header) {
+          const cht = findCht(file)
+          if (cht) {
+            const chtTarget = chtNameOf(target)
+            if (!existsSync(chtTarget) || options.overwrite) {
+              await mkdir(dirname(chtTarget), { recursive: true })
+              await copyFile(cht, chtTarget)
+              cheatsCopied++
+            }
+          }
+        }
+
         if (options.verify) {
           if (await verifyFile(file, target)) {
             verified++
@@ -417,6 +455,7 @@ class Runner {
 
     this.log('success', this.t('log.romsCopied', { roms: String(roms) }))
     if (options.createSaves) this.log('success', this.t('log.savesCreated', { saves: String(saves) }))
+    if (options.copyCheats && cheatsCopied > 0) this.log('success', this.t('log.cheatsCopied', { count: String(cheatsCopied) }))
     this.step('roms', 'done')
     return { roms, saves }
   }
