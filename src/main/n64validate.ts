@@ -40,7 +40,7 @@ export interface N64Validation {
   issues: N64Issue[]
 }
 
-const STANDARD_SIZES = new Set([0x400000, 0x800000, 0x1000000, 0x2000000, 0x4000000])
+const STANDARD_SIZES = new Set([0x400000, 0x800000, 0xc00000, 0x1000000, 0x2000000, 0x4000000])
 
 // N64 destination codes (offset 0x3E), see n64brew.dev/wiki/ROM_Header.
 const REGION_BY_CODE: Record<string, N64Region> = {

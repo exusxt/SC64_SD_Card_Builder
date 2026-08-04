@@ -159,7 +159,7 @@ describe('inspectN64', () => {
   })
 
   it('accepts the other standard sizes', () => {
-    for (const size of [0x400000, 0x1000000, 0x2000000, 0x4000000]) {
+    for (const size of [0x400000, 0xc00000, 0x1000000, 0x2000000, 0x4000000]) {
       expect(inspectN64(makeZ64(), size, '.z64').issues).toEqual([])
     }
   })
