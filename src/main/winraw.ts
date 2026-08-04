@@ -8,14 +8,16 @@ import type { CancelToken, FormatProgress } from './fat32'
 // into a physical drive through an exclusively opened handle.
 //
 // Node's fs.open opens with shared access, and Windows (KB 942448) refuses raw
-// writes into a mounted file system. The volume on the target disk must be
-// locked + dismounted via FSCTL on its drive letter first, then the physical
-// drive handle can be opened exclusively and written. Opening exclusively can
-// briefly fail with a sharing violation while the storage stack or antivirus
-// still hold the drive, so the exclusive open is retried with backoff. The
-// drive letter is deliberately left in place (format.ts does not run
-// mountvol /p, which would remove the letter the writer needs to address the
-// volume).
+// writes into a mounted file system. Every volume on the target disk must be
+// locked + dismounted via FSCTL on its drive letter, and those volume handles
+// are kept open (locked) for the whole write: closing them would release the
+// lock and let Windows remount the volume, which blocks the physical write
+// with ERROR_ACCESS_DENIED. The physical drive handle is then opened
+// exclusively and written. Opening exclusively can briefly fail with a
+// sharing violation while the storage stack or antivirus still hold the
+// drive, so the exclusive open is retried with backoff. The drive letter is
+// deliberately left in place (format.ts does not run mountvol /p, which would
+// remove the letter the writer needs to address the volume).
 const RAW_WRITE_SCRIPT = [
   'param(',
   '  [string]$Device,',
@@ -57,53 +59,69 @@ const RAW_WRITE_SCRIPT = [
   '  }',
   '  if ($written -ne $Data.Length) { throw "WriteFile wrote $written of $($Data.Length) bytes" }',
   '}',
-  'function Lock-DismountVolume([string]$letter) {',
+  'function Open-LockedVolume([string]$letter) {',
   '  $volPath = "\\\\.\\$($letter):"',
   '  $vh = [RawWin32]::CreateFileW($volPath, $DESIRED_ACCESS, $VOLUME_SHARE, [IntPtr]::Zero, $OPEN_EXISTING, 0, [IntPtr]::Zero)',
   '  if ($vh.ToInt64() -eq -1) {',
   '    $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()',
-  '    if ($err -eq 2) { return }',
+  '    if ($err -eq 2) { return [IntPtr]::Zero }',
   '    throw ("Cannot open volume " + $volPath + " for locking: Win32 error " + $err)',
   '  }',
-  '  try {',
-  '    $ret = [uint32]0',
-  '    if (-not [RawWin32]::DeviceIoControl($vh, $FSCTL_LOCK_VOLUME, [IntPtr]::Zero, 0, [IntPtr]::Zero, 0, [ref]$ret, [IntPtr]::Zero)) {',
-  '      throw ("FSCTL_LOCK_VOLUME failed: Win32 error " + [System.Runtime.InteropServices.Marshal]::GetLastWin32Error())',
-  '    }',
-  '    $dismounted = $false',
-  '    $lastErr = [int]0',
-  '    for ($i = 0; $i -lt 5; $i++) {',
-  '      if ([RawWin32]::DeviceIoControl($vh, $FSCTL_DISMOUNT_VOLUME, [IntPtr]::Zero, 0, [IntPtr]::Zero, 0, [ref]$ret, [IntPtr]::Zero)) {',
-  '        $dismounted = $true',
-  '        break',
-  '      }',
-  '      $lastErr = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()',
-  '      if ($lastErr -ne 21) { break }',
-  '      Start-Sleep -Milliseconds 200',
-  '    }',
-  '    if (-not $dismounted) {',
-  '      throw ("FSCTL_DISMOUNT_VOLUME failed: Win32 error " + $lastErr)',
-  '    }',
-  '  } finally {',
+  '  $ret = [uint32]0',
+  '  if (-not [RawWin32]::DeviceIoControl($vh, $FSCTL_LOCK_VOLUME, [IntPtr]::Zero, 0, [IntPtr]::Zero, 0, [ref]$ret, [IntPtr]::Zero)) {',
   '    [void][RawWin32]::CloseHandle($vh)',
+  '    throw ("FSCTL_LOCK_VOLUME failed on " + $volPath + ": Win32 error " + [System.Runtime.InteropServices.Marshal]::GetLastWin32Error())',
   '  }',
-  '  Start-Sleep -Milliseconds 300',
+  '  $dismounted = $false',
+  '  $lastErr = [int]0',
+  '  for ($i = 0; $i -lt 5; $i++) {',
+  '    if ([RawWin32]::DeviceIoControl($vh, $FSCTL_DISMOUNT_VOLUME, [IntPtr]::Zero, 0, [IntPtr]::Zero, 0, [ref]$ret, [IntPtr]::Zero)) {',
+  '      $dismounted = $true',
+  '      break',
+  '    }',
+  '    $lastErr = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()',
+  '    if ($lastErr -ne 21) { break }',
+  '    Start-Sleep -Milliseconds 200',
+  '  }',
+  '  if (-not $dismounted) {',
+  '    [void][RawWin32]::CloseHandle($vh)',
+  '    throw ("FSCTL_DISMOUNT_VOLUME failed on " + $volPath + ": Win32 error " + $lastErr)',
+  '  }',
+  '  return $vh',
+  '}',
+  '$held = New-Object System.Collections.Generic.List[object]',
+  '$seen = New-Object System.Collections.Generic.HashSet[string]',
+  '$mm = [regex]::Match($Device, "(?i)PhysicalDrive(\\d+)")',
+  '$diskNum = ""',
+  'if ($mm.Success) { $diskNum = $mm.Groups[1].Value }',
+  'if ($diskNum -ne "") {',
+  '  $partLetters = @(Get-Partition -DiskNumber ([int]$diskNum) -ErrorAction SilentlyContinue | Where-Object { "$($_.DriveLetter)" -match "^[a-zA-Z]$" })',
+  '  foreach ($p in $partLetters) {',
+  '    $pl = ("{0}:" -f $p.DriveLetter)',
+  '    if ($seen.Add($pl)) {',
+  '      $vh = Open-LockedVolume ("{0}" -f $p.DriveLetter)',
+  '      if ($vh.ToInt64() -ne 0) { $held.Add($vh) }',
+  '    }',
+  '  }',
   '}',
   'if ($Letter) {',
-  '  Lock-DismountVolume $Letter',
+  '  if ($seen.Add(("{0}:" -f $Letter))) {',
+  '    $vh = Open-LockedVolume $Letter',
+  '    if ($vh.ToInt64() -ne 0) { $held.Add($vh) }',
+  '  }',
   '}',
   '$h = [IntPtr]::Zero',
-  'for ($i = 0; $i -lt 20; $i++) {',
-  '  $h = [RawWin32]::CreateFileW($Device, $DESIRED_ACCESS, 0, [IntPtr]::Zero, $OPEN_EXISTING, $FILE_FLAG_WRITE_THROUGH, [IntPtr]::Zero)',
-  '  if ($h.ToInt64() -ne -1) { break }',
-  '  $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()',
-  '  if ($err -ne 32) { break }',
-  '  Start-Sleep -Milliseconds 500',
-  '}',
-  'if ($h.ToInt64() -eq -1) {',
-  '  throw ("Cannot open " + $Device + " exclusively: Win32 error " + [System.Runtime.InteropServices.Marshal]::GetLastWin32Error())',
-  '}',
   'try {',
+  '  for ($i = 0; $i -lt 20; $i++) {',
+  '    $h = [RawWin32]::CreateFileW($Device, $DESIRED_ACCESS, 0, [IntPtr]::Zero, $OPEN_EXISTING, $FILE_FLAG_WRITE_THROUGH, [IntPtr]::Zero)',
+  '    if ($h.ToInt64() -ne -1) { break }',
+  '    $err = [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()',
+  '    if ($err -ne 32) { break }',
+  '    Start-Sleep -Milliseconds 500',
+  '  }',
+  '  if ($h.ToInt64() -eq -1) {',
+  '    throw ("Cannot open " + $Device + " exclusively: Win32 error " + [System.Runtime.InteropServices.Marshal]::GetLastWin32Error())',
+  '  }',
   '  $src = [System.IO.File]::OpenRead($Prefix)',
   '  try {',
   '    $buffer = New-Object byte[] 1048576',
@@ -141,7 +159,8 @@ const RAW_WRITE_SCRIPT = [
   '  [void][RawWin32]::FlushFileBuffers($h)',
   "  Write-Output 'DONE'",
   '} finally {',
-  '  [void][RawWin32]::CloseHandle($h)',
+  '  if ($h.ToInt64() -ne -1) { [void][RawWin32]::CloseHandle($h) }',
+  '  foreach ($vh in $held) { [void][RawWin32]::CloseHandle($vh) }',
   '}'
 ].join('\n')
 
