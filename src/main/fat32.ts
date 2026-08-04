@@ -143,6 +143,7 @@ export interface CancelToken {
 export interface FormatDeviceOptions {
   label: string
   fullFormat: boolean
+  mountpoint?: string | null
   onProgress?: (p: FormatProgress) => void
   cancel?: CancelToken
 }
@@ -223,6 +224,7 @@ export async function formatDevice(device: string, sizeBytes: number, opts: Form
       structure,
       totalBytes: sizeBytes,
       fullFormat: opts.fullFormat,
+      letter: opts.mountpoint,
       cancel: opts.fullFormat ? opts.cancel : undefined,
       onProgress: (p) => emit(p.stage, p.bytesWritten, p.totalBytes)
     })

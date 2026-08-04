@@ -42,6 +42,12 @@ async function unmountWindows(mountpoint: string | null): Promise<void> {
   if (!/^[a-zA-Z]:$/.test(letter)) return
   try {
     await run('mountvol.exe', [letter, '/p'])
+    await run('powershell.exe', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      'Update-HostStorageCache; Start-Sleep -Milliseconds 600'
+    ])
   } catch {
     // best-effort
   }
@@ -120,6 +126,7 @@ export async function formatDisk(req: FormatRequest, cb: FormatCallbacks): Promi
     await formatDevice(writeDevice, req.size, {
       label: req.label,
       fullFormat: req.fullFormat,
+      mountpoint: req.mountpoint,
       cancel: req.fullFormat ? cb.cancel : undefined,
       onProgress: (p) => {
         const stageKey =
