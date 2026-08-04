@@ -2,20 +2,22 @@ import { mkdir, mkdtemp, copyFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync, statSync, readdirSync } from 'node:fs'
 import { join, dirname, sep } from 'node:path'
 import { tmpdir } from 'node:os'
-import type { AppEvent, Locale, PrepareOptions, PrepareResult, StepId, StepState, EmulatorKey } from '../shared/types'
+import type { AppEvent, Locale, PrepareMode, PrepareOptions, PrepareResult, StepId, StepState, EmulatorKey } from '../shared/types'
 import { translate } from '../shared/i18n'
 import { downloadFile } from './download'
 import { getMenuRelease, getMetadataRelease, latestReleaseAssets, GB64_TEMPLATE_URL } from './releases'
-import { extractZip, findEntriesInZip, extractEntryTo, copyDirContents, rmTree, listDirDeep } from './unzip'
+import { extractZip, findEntriesInZip, extractEntryTo, copyDirContents, rmTree, listDirDeep, extractArchive } from './unzip'
 import { verifyFile } from './verify'
 import { pathContains } from './pathguard'
 import { organizeBase, uniqueBase, chtNameOf } from './organize'
 import { inspectN64File, isN64Ext, romIdentity, N64_REGION_LABELS, N64Header, N64Issue, N64Region } from './n64validate'
 import { installDDIPL } from './ddipl'
+import { writeReport, type ReportCounts, type ReportLog, type ReportRow } from './report'
 
 export interface PrepareCallbacks {
   emit: (ev: AppEvent) => void
   cancel?: { cancelled: boolean }
+  version?: string
 }
 
 const EXTENSIONS: Record<string, string[]> = {
@@ -81,6 +83,14 @@ class Runner {
   private steps: Record<StepId, StepState>
   private readonly locale: Locale
   lastCopyCount = 0
+  readonly logs: ReportLog[] = []
+  readonly rows: ReportRow[] = []
+  readonly counts: ReportCounts = {
+    romsCopied: 0, duplicates: 0, verified: 0, verifyFailures: 0,
+    cheatsCopied: 0, savesCreated: 0, archivesExtracted: 0,
+    emulatorsInstalled: 0, ddiplInstalled: 0, menuTag: '', metadataTag: ''
+  }
+  readonly startedAt: string = new Date().toISOString()
 
   constructor(private cb: PrepareCallbacks, locale: Locale) {
     this.locale = locale
@@ -106,6 +116,7 @@ class Runner {
   }
 
   log(level: 'info' | 'success' | 'warn' | 'error', message: string): void {
+    this.logs.push({ level, message })
     this.cb.emit({ type: 'log', level, message })
   }
 
@@ -164,6 +175,7 @@ class Runner {
     }
     this.log('info', this.t('log.menuDownloading', { tag: rel.tag }))
     await this.download(rel.downloadUrl, target, 'sc64menu.n64')
+    this.counts.menuTag = rel.tag
     this.log('success', this.t('log.menuDownloaded', { tag: rel.tag }))
     this.step('menu', 'done')
   }
@@ -196,6 +208,7 @@ class Runner {
       const target = join(destination, 'menu', 'metadata')
       await mkdir(target, { recursive: true })
       const count = await copyDirContents(source, target, true, onProgress)
+      this.counts.metadataTag = rel.tag
       this.log('success', this.t('log.metaExtracted', { count: String(count) }))
       this.step('metadata', 'done')
     } finally {
@@ -242,6 +255,7 @@ class Runner {
         if (!chosen) throw new Error('No Neon64 ROM found in zip')
         await extractEntryTo(zipPath, chosen, join(emuDir, 'neon64bu.rom'))
         await rm(zipPath, { force: true })
+        this.counts.emulatorsInstalled++
         this.log('success', `    ${this.t('log.installed', { name: 'neon64bu.rom' })}`)
       })
     }
@@ -258,6 +272,7 @@ class Runner {
         if (!chosen) throw new Error('No Sodium64 ROM found in zip')
         await extractEntryTo(zipPath, chosen, join(emuDir, 'sodium64.z64'))
         await rm(zipPath, { force: true })
+        this.counts.emulatorsInstalled++
         this.log('success', `    ${this.t('log.installed', { name: 'sodium64.z64' })}`)
       })
     }
@@ -267,6 +282,7 @@ class Runner {
         const target = join(emuDir, 'gb.v64')
         await this.download(GB64_TEMPLATE_URL, target, 'GB64')
         await copyFile(target, join(emuDir, 'gbc.v64'))
+        this.counts.emulatorsInstalled++
         this.log('success', `    ${this.t('log.installed', { name: 'gb.v64 + gbc.v64' })}`)
       })
     }
@@ -277,6 +293,7 @@ class Runner {
         const asset = assets.find((a) => /^smsPlus64\.z64$/i.test(a.name))
         if (!asset) throw new Error('No smsPlus64.z64 asset found')
         await this.download(asset.browser_download_url, join(emuDir, 'smsPlus64.z64'), 'SMSPlus64')
+        this.counts.emulatorsInstalled++
         this.log('success', `    ${this.t('log.installed', { name: 'smsPlus64.z64' })}`)
       })
     }
@@ -287,6 +304,7 @@ class Runner {
         const asset = assets.find((a) => /^Press-F\.z64$/i.test(a.name))
         if (!asset) throw new Error('No Press-F.z64 asset found')
         await this.download(asset.browser_download_url, join(emuDir, 'Press-F.z64'), 'Press-F')
+        this.counts.emulatorsInstalled++
         this.log('success', `    ${this.t('log.installed', { name: 'Press-F.z64' })}`)
       })
     }
@@ -309,6 +327,7 @@ class Runner {
     const dest = join(destination, 'menu', '64ddipl')
     const res = await installDDIPL(source, dest)
     if (res.installed.length > 0) {
+      this.counts.ddiplInstalled = res.installed.length
       this.log('success', this.t('log.ddiplInstalled', { count: String(res.installed.length), names: res.installed.join(', ') }))
     }
     for (const id of res.invalid) {
@@ -321,14 +340,16 @@ class Runner {
   }
 
   async copyRoms(options: PrepareOptions): Promise<{ roms: number; saves: number }> {
-    if (!options.copyRoms || options.romSources.length === 0) {
+    const archiveList = (options.archiveSources ?? []).filter((a) => existsSync(a))
+    const hasArchiveSources = options.copyRoms && archiveList.length > 0
+    if (!options.copyRoms || (options.romSources.length === 0 && !hasArchiveSources)) {
       this.markSkipped('roms')
       this.markSkipped('verify')
       return { roms: 0, saves: 0 }
     }
     this.step('roms', 'running')
     const extSet = new Set(options.romTypes.flatMap((t) => EXTENSIONS[t] ?? []))
-    if (extSet.size === 0) {
+    if (extSet.size === 0 && !hasArchiveSources) {
       this.step('roms', 'done', this.t('log.noTypes'))
       this.markSkipped('verify')
       return { roms: 0, saves: 0 }
@@ -352,6 +373,19 @@ class Runner {
 
     if (options.verify) this.step('verify', 'running')
     else this.markSkipped('verify')
+
+    for (const archive of archiveList) {
+      this.checkCancel()
+      const name = baseNameOf(archive)
+      this.log('info', this.t('log.archiveExtracting', { name }))
+      const count = await extractArchive(archive, destRoot)
+      if (count > 0) {
+        this.counts.archivesExtracted++
+        this.log('success', this.t('log.archiveExtracted', { name, count: String(count) }))
+      } else {
+        this.log('warn', this.t('log.archiveEmpty', { name }))
+      }
+    }
 
     for (const source of options.romSources) {
       this.checkCancel()
@@ -377,6 +411,7 @@ class Runner {
             const first = seen.get(id)
             if (first) {
               duplicateCount++
+              this.rows.push({ status: 'duplicate', source: rel, target: '', size: fileSize(file), game: v.header.title, region: N64_REGION_LABELS[v.header.region], note: this.t('n64.duplicate', { first, file: rel }) })
               this.log('warn', this.t('n64.duplicate', { first, file: rel }))
               continue
             }
@@ -424,6 +459,14 @@ class Runner {
             this.log('error', this.t('log.verifyFail', { file: rel }))
           }
         }
+        const destRel = target.slice(destRoot.length).replace(/^[/\\]/, '')
+        const isVerifyFail = options.verify && mismatches > 0 && rel === firstMismatch
+        this.rows.push({
+          status: isVerifyFail ? 'verify-fail' : (isN64Ext(file) && !n64Header) ? 'not-n64' : 'copied',
+          source: rel, target: destRel, size: fileSize(file),
+          game: n64Header?.title ?? '', region: n64Header ? N64_REGION_LABELS[n64Header.region] : '',
+          note: isVerifyFail ? this.t('log.verifyFail', { file: rel }) : ''
+        })
         if (roms % 50 === 0) this.progress(roms, matches.length, label)
       }
     }
@@ -457,6 +500,12 @@ class Runner {
     if (options.createSaves) this.log('success', this.t('log.savesCreated', { saves: String(saves) }))
     if (options.copyCheats && cheatsCopied > 0) this.log('success', this.t('log.cheatsCopied', { count: String(cheatsCopied) }))
     this.step('roms', 'done')
+    this.counts.romsCopied = roms
+    this.counts.duplicates = duplicateCount
+    this.counts.verified = verified
+    this.counts.verifyFailures = mismatches
+    this.counts.cheatsCopied = cheatsCopied
+    this.counts.savesCreated = saves
     return { roms, saves }
   }
 
@@ -513,6 +562,25 @@ class Runner {
     this.log('success', this.t('log.copiedTo', { dest, count: String(copied) }))
     this.step('copy', 'done')
   }
+
+  async writeReportFile(destination: string, mode: PrepareMode, durationMs: number, ok: boolean): Promise<{ html: string; csv: string } | null> {
+    const report = await writeReport({
+      appVersion: this.cb.version ?? '',
+      locale: this.locale,
+      destination,
+      mode,
+      startedAt: this.startedAt,
+      durationMs,
+      ok,
+      counts: this.counts,
+      rows: this.rows,
+      logs: this.logs
+    }, destination)
+    if (report) {
+      this.log('info', this.t('log.reportWritten', { path: join(destination, 'sc64-report.html') }))
+    }
+    return report
+  }
 }
 
 function isInsideDest(p: string, destNorm: string): boolean {
@@ -522,6 +590,7 @@ function isInsideDest(p: string, destNorm: string): boolean {
 
 export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Promise<PrepareResult> {
   const runner = new Runner(cb, options.locale ?? 'en')
+  const startMs = Date.now()
   try {
     const guardSources = options.mode === 'fromPrepared' ? [options.preparedSource ?? ''] : options.copyRoms ? options.romSources : []
     for (const src of guardSources) {
@@ -538,9 +607,11 @@ export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Pr
         if (id !== 'copy' && id !== 'verify') runner.markSkipped(id)
       }
       await runner.copyTree(src, options.destination, options.verify)
+      runner.counts.romsCopied = runner.lastCopyCount
+      const report = await runner.writeReportFile(options.destination, 'fromPrepared', Date.now() - startMs, true)
       const summary = runner.t('summary.doneCopy', { count: String(runner.lastCopyCount) })
       cb.emit({ type: 'done', scope: 'prepare', summary })
-      return { ok: true, summary }
+      return { ok: true, summary, report }
     }
 
     let target = options.destination
@@ -575,14 +646,21 @@ export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Pr
           saves: String(saves)
         })
       }
+      const report = await runner.writeReportFile(options.destination, options.mode, Date.now() - startMs, true)
       cb.emit({ type: 'done', scope: 'prepare', summary })
-      return { ok: true, summary }
+      return { ok: true, summary, report }
     } finally {
       if (cleanupTarget) await rmTree(target)
     }
   } catch (e: any) {
     const message = e?.message ?? String(e)
+    let report: { html: string; csv: string } | null = null
+    try {
+      report = await runner.writeReportFile(options.destination, options.mode, Date.now() - startMs, false)
+    } catch {
+      // report writing must never mask the original error
+    }
     cb.emit({ type: 'error', scope: 'prepare', message })
-    return { ok: false, summary: message }
+    return { ok: false, summary: message, report }
   }
 }

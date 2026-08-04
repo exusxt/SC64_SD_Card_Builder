@@ -1,5 +1,5 @@
 import { app, dialog, ipcMain, shell, BrowserWindow, IpcMainInvokeEvent } from 'electron'
-import { existsSync } from 'node:fs'
+import { existsSync, statSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import type { AppEvent, PrepareOptions, FormatOptions } from '../shared/types'
 import { listDrives } from './drives'
@@ -53,6 +53,32 @@ async function pickRomFiles(win: BrowserWindow | null): Promise<string[]> {
   return res.canceled ? [] : res.filePaths
 }
 
+async function pickArchives(win: BrowserWindow | null): Promise<string[]> {
+  const opts: Electron.OpenDialogOptions = {
+    properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'Archives', extensions: ['zip', '7z'] }]
+  }
+  const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+  return res.canceled ? [] : res.filePaths
+}
+
+function classifyDroppedPaths(paths: string[]): { folders: string[]; archives: string[] } {
+  const folders: string[] = []
+  const archives: string[] = []
+  for (const p of paths) {
+    try {
+      if (statSync(p).isDirectory()) {
+        folders.push(p)
+      } else if (/\.(zip|7z)$/i.test(p)) {
+        archives.push(p)
+      }
+    } catch {
+      // ignore unreadable paths
+    }
+  }
+  return { folders, archives }
+}
+
 export function registerIpc(): void {
   ipcMain.handle('drives:list', () => listDrives())
 
@@ -70,6 +96,8 @@ export function registerIpc(): void {
   ipcMain.handle('dialog:chooseFolder', (e) => pickFolder(winOf(e)))
   ipcMain.handle('dialog:chooseFolders', (e) => pickFolders(winOf(e)))
   ipcMain.handle('dialog:chooseRomFiles', (e) => pickRomFiles(winOf(e)))
+  ipcMain.handle('dialog:chooseArchives', (e) => pickArchives(winOf(e)))
+  ipcMain.handle('dialog:classifyDropped', (_e, paths: string[]) => classifyDroppedPaths(Array.isArray(paths) ? paths : []))
 
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:set', (_e, patch: unknown) => saveSettings(patch as never))
@@ -90,7 +118,8 @@ export function registerIpc(): void {
     prepareCancel = { cancelled: false }
     return prepare(options, {
       emit: (ev) => sendTo(win, ev),
-      cancel: prepareCancel
+      cancel: prepareCancel,
+      version: app.getVersion()
     })
   })
   ipcMain.on('prepare:cancel', () => {

@@ -1,7 +1,8 @@
 import AdmZip from 'adm-zip'
 import { readdirSync, statSync } from 'node:fs'
 import { access, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { basename, dirname, extname, join } from 'node:path'
+import SevenZip, { type SevenZipModule } from '7z-wasm'
 
 async function openZip(zipPath: string): Promise<AdmZip> {
   return new AdmZip(await readFile(zipPath))
@@ -105,4 +106,53 @@ export async function copyDirContents(srcDir: string, destDir: string, overwrite
 
 export async function rmTree(path: string): Promise<void> {
   await rm(path, { recursive: true, force: true })
+}
+
+let szModulePromise: Promise<SevenZipModule> | null = null
+let szCapture = ''
+
+async function szModule(): Promise<SevenZipModule> {
+  if (!szModulePromise) {
+    szModulePromise = SevenZip({
+      noExitRuntime: true,
+      print: (s) => { szCapture += s + '\n' },
+      printErr: (s) => { szCapture += s + '\n' }
+    })
+  }
+  return szModulePromise
+}
+
+function fsMkdirP(fs: SevenZipModule['FS'], path: string): void {
+  try { fs.mkdir(path) } catch { /* already exists */ }
+}
+
+export async function extract7z(archivePath: string, destDir: string): Promise<number> {
+  await mkdir(destDir, { recursive: true })
+  const sz = await szModule()
+  const arcParent = dirname(archivePath)
+  const arcName = basename(archivePath)
+
+  fsMkdirP(sz.FS, '/sc64')
+  fsMkdirP(sz.FS, '/sc64/in')
+  fsMkdirP(sz.FS, '/sc64/out')
+
+  for (const mount of ['/sc64/in', '/sc64/out']) {
+    try { sz.FS.unmount(mount) } catch { /* not mounted */ }
+  }
+  sz.FS.mount(sz.NODEFS, { root: arcParent }, '/sc64/in')
+  sz.FS.mount(sz.NODEFS, { root: destDir }, '/sc64/out')
+
+  szCapture = ''
+  const code = (sz.callMain as unknown as (args: string[]) => number)(['x', `/sc64/in/${arcName}`, '-o/sc64/out', '-y', '-bd'])
+  if (code !== 0) {
+    const detail = szCapture.split('\n').map((s) => s.trim()).filter(Boolean).slice(-3).join(' · ')
+    throw new Error(detail ? `7-Zip error (${code}): ${detail}` : `7-Zip failed with exit code ${code}`)
+  }
+  return listDirDeep(destDir).length
+}
+
+export async function extractArchive(archivePath: string, destDir: string): Promise<number> {
+  const ext = extname(archivePath).toLowerCase()
+  if (ext === '.7z') return extract7z(archivePath, destDir)
+  return extractZip(archivePath, destDir)
 }

@@ -1,4 +1,4 @@
-import { FolderPlus, Trash2, FolderOpen } from 'lucide-react'
+import { FolderPlus, Trash2, FolderOpen, FileArchive } from 'lucide-react'
 import type { AppSettings, DdIplFileInfo, DdIplValidation, EmulatorsInfo, EmulatorKey, MenuReleaseInfo, MetadataReleaseInfo } from '../../../shared/types'
 import { DD_IPL_SIZE } from '../../../shared/types'
 import type { T } from '../i18n'
@@ -72,6 +72,8 @@ export function OptionsStep({
   onSettingsChange,
   onAddSources,
   onRemoveSource,
+  onAddArchives,
+  onRemoveArchive,
   onChooseDDIPL
 }: {
   t: T
@@ -83,6 +85,8 @@ export function OptionsStep({
   onSettingsChange: (patch: Partial<AppSettings>) => void
   onAddSources: () => void
   onRemoveSource: (path: string) => void
+  onAddArchives: () => void
+  onRemoveArchive: (path: string) => void
   onChooseDDIPL: () => void
 }): React.JSX.Element {
   const hasAnyAction =
@@ -91,7 +95,8 @@ export function OptionsStep({
     settings.createFolders ||
     settings.downloadEmulators ||
     (settings.installDDIPL && settings.ddiplSource !== null) ||
-    (settings.copyRoms && settings.romSources.length > 0 && (settings.copyAllTypes || Object.values(settings.romTypes).some(Boolean)))
+    (settings.copyRoms && settings.romSources.length > 0 && (settings.copyAllTypes || Object.values(settings.romTypes).some(Boolean))) ||
+    (settings.copyRoms && settings.archiveSources.length > 0)
 
   return (
     <div className="space-y-4">
@@ -235,6 +240,38 @@ export function OptionsStep({
             ))}
           </ul>
         )}
+
+        <div className="mt-3 border-t border-sc64-border pt-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-sc64-muted">{t('opt.archivesSources')}</span>
+            <Button variant="outline" size="sm" onClick={onAddArchives}>
+              <FolderPlus className="h-3.5 w-3.5" /> {t('opt.addArchives')}
+            </Button>
+          </div>
+          <p className="mt-1 text-xs text-sc64-muted">{t('opt.archivesHint')}</p>
+
+          {settings.archiveSources.length === 0 ? (
+            <p className="mt-2 rounded-lg border border-dashed border-sc64-border px-3 py-3 text-center text-xs text-sc64-muted">
+              {t('opt.noArchives')}
+            </p>
+          ) : (
+            <ul className="mt-2 space-y-1.5">
+              {settings.archiveSources.map((src) => (
+                <li key={src} className="group flex items-center gap-2 rounded-lg border border-sc64-border bg-sc64-panel px-3 py-2">
+                  <FileArchive className="h-3.5 w-3.5 shrink-0 text-sc64-accent" />
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs">{src}</span>
+                  <button
+                    onClick={() => onRemoveArchive(src)}
+                    className="text-sc64-muted opacity-0 transition-opacity hover:text-sc64-bad group-hover:opacity-100"
+                    title={t('opt.removeArchive')}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
           <Checkbox

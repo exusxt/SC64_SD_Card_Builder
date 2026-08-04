@@ -27,6 +27,7 @@
     "release": "node scripts/release.mjs"
   },
   "dependencies": {
+    "7z-wasm": "^1.2.0",
     "adm-zip": "^0.5.16",
     "electron-updater": "^6.8.9"
   },

@@ -48,7 +48,7 @@ export default function App(): React.JSX.Element {
   const [progress, setProgress] = useState<{ value: number; max: number; label?: string } | null>(null)
   const [steps, setSteps] = useState<StepState[]>([])
   const [log, setLog] = useState<LogEntry[]>([])
-  const [result, setResult] = useState<{ kind: 'prepare' | 'format'; ok: boolean; message: string } | null>(null)
+  const [result, setResult] = useState<{ kind: 'prepare' | 'format'; ok: boolean; message: string; report?: { html: string; csv: string } | null } | null>(null)
   const [formatResult, setFormatResult] = useState<FormatResult | null>(null)
   const [previewRoot, setPreviewRoot] = useState<string | null>(null)
   const [update, setUpdate] = useState<UpdateState | null>(null)
@@ -221,7 +221,8 @@ export default function App(): React.JSX.Element {
     settings.createFolders ||
     settings.downloadEmulators ||
     (settings.installDDIPL && settings.ddiplSource !== null) ||
-    (settings.copyRoms && settings.romSources.length > 0 && (settings.copyAllTypes || Object.values(settings.romTypes).some(Boolean)))
+    (settings.copyRoms && settings.romSources.length > 0 && (settings.copyAllTypes || Object.values(settings.romTypes).some(Boolean))) ||
+    (settings.copyRoms && settings.archiveSources.length > 0)
 
   const canProceedTo2 = destination.trim().length > 0
   const canProceedTo3 = hasAnyAction || settings.preparedSource !== null
@@ -286,6 +287,7 @@ export default function App(): React.JSX.Element {
       ddiplSource: settings.ddiplSource ?? undefined,
       copyRoms: settings.copyRoms,
       romSources: settings.romSources,
+      archiveSources: settings.archiveSources,
       romTypes,
       createSaves: settings.createSaves,
       includeSubdirs: settings.includeSubdirs,
@@ -294,7 +296,7 @@ export default function App(): React.JSX.Element {
       organizeRoms: settings.organizeRoms,
       copyCheats: settings.copyCheats
     })
-    setResult({ kind: 'prepare', ok: res.ok, message: res.summary })
+    setResult({ kind: 'prepare', ok: res.ok, message: res.summary, report: res.report })
     setRunning(null)
   }
 
@@ -310,6 +312,29 @@ export default function App(): React.JSX.Element {
       ...s,
       romSources: Array.from(new Set([...s.romSources, ...dirs]))
     }))
+  }
+
+  const addArchiveSources = async (): Promise<void> => {
+    const files = await window.api.chooseArchives()
+    if (files.length === 0) return
+    setSettings((s) => ({
+      ...s,
+      archiveSources: Array.from(new Set([...s.archiveSources, ...files]))
+    }))
+  }
+
+  const addDropped = async (paths: string[]): Promise<void> => {
+    const classified = await window.api.classifyDropped(paths)
+    setSettings((s) => {
+      const next = { ...s }
+      if (classified.folders.length > 0) {
+        next.romSources = Array.from(new Set([...s.romSources, ...classified.folders]))
+      }
+      if (classified.archives.length > 0) {
+        next.archiveSources = Array.from(new Set([...s.archiveSources, ...classified.archives]))
+      }
+      return next
+    })
   }
 
   const choosePreparedFolder = async (): Promise<void> => {
@@ -338,8 +363,17 @@ export default function App(): React.JSX.Element {
     })
   }
 
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>): Promise<void> => {
+    e.preventDefault()
+    const paths = Array.from(e.dataTransfer.files)
+      .map((f) => window.api.getPathForFile(f))
+      .filter((p): p is string => Boolean(p))
+    if (paths.length === 0) return
+    await addDropped(paths)
+  }
+
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden">
+    <div className="relative flex h-screen flex-col overflow-hidden" onDragOver={(e) => e.preventDefault()} onDrop={(e) => void handleDrop(e)}>
       {isGalleryTheme(settings.theme) && galleryBg ? (
         <>
           <img
@@ -410,6 +444,8 @@ export default function App(): React.JSX.Element {
               onSettingsChange={patchSettings}
               onAddSources={() => void addRomSources()}
               onRemoveSource={(p) => setSettings((s) => ({ ...s, romSources: s.romSources.filter((x) => x !== p) }))}
+              onAddArchives={() => void addArchiveSources()}
+              onRemoveArchive={(p) => setSettings((s) => ({ ...s, archiveSources: s.archiveSources.filter((x) => x !== p) }))}
               onChooseDDIPL={() => void chooseDDIPLFolder()}
             />
           ) : null}

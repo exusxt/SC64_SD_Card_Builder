@@ -170,7 +170,7 @@ describe('prepare organizer + cheats', () => {
 
     const res = await prepare(options, { emit: () => {}, cancel: { cancelled: false } })
     expect(res.ok).toBe(true)
-    const folders = (await readdir(dest)).filter((n) => !n.startsWith('.'))
+    const folders = (await readdir(dest)).filter((n) => !n.startsWith('.') && n !== 'sc64-report.csv' && n !== 'sc64-report.html')
     expect(folders).toEqual(['BANJO (USA)'])
     expect(await readdir(join(dest, 'BANJO (USA)'))).toHaveLength(1)
 

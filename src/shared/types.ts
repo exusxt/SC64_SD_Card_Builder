@@ -94,6 +94,7 @@ export interface AppSettings {
   ddiplSource: string | null
   copyRoms: boolean
   romSources: string[]
+  archiveSources: string[]
   copyAllTypes: boolean
   romTypes: Record<'n64' | 'nes' | 'snes' | 'gb' | 'sms' | 'chf' | 'ndd', boolean>
   createSaves: boolean
@@ -125,6 +126,7 @@ export interface PrepareOptions {
   ddiplSource?: string | null
   copyRoms: boolean
   romSources: string[]
+  archiveSources: string[]
   romTypes: string[]
   createSaves: boolean
   includeSubdirs: boolean
@@ -179,6 +181,7 @@ export type AppEvent =
 export interface PrepareResult {
   ok: boolean
   summary: string
+  report?: { html: string; csv: string } | null
 }
 
 export type PreviewKind = 'n64' | 'dd' | 'other'

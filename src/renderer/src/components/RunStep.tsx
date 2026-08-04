@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { CheckCircle2, Play, Square, XCircle, ListChecks, Check, Copy, MonitorPlay } from 'lucide-react'
+import { CheckCircle2, Play, Square, XCircle, ListChecks, Check, Copy, MonitorPlay, FileDown, FileCode2 } from 'lucide-react'
 import type { AppSettings, StepState } from '../../../shared/types'
 import type { T } from '../i18n'
 import { Button, ProgressBar, Spinner } from './ui'
@@ -34,7 +34,7 @@ export function RunStep({
   progress: { value: number; max: number; label?: string } | null
   steps: StepState[]
   log: LogEntry[]
-  result: { kind: 'prepare' | 'format'; ok: boolean; message: string } | null
+  result: { kind: 'prepare' | 'format'; ok: boolean; message: string; report?: { html: string; csv: string } | null } | null
   onRun: () => void
   onCancel: () => void
   onGoBack: () => void
@@ -161,11 +161,30 @@ export function RunStep({
           )}
         >
           {result.ok ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" /> : <XCircle className="mt-0.5 h-5 w-5 shrink-0" />}
-          <span className="whitespace-pre-wrap">{result.message}</span>
+          <div className="min-w-0 flex-1">
+            <span className="whitespace-pre-wrap">{result.message}</span>
+            {result.kind === 'prepare' && result.report ? (
+              <p className="mt-1.5 text-xs opacity-80">
+                <span className="font-semibold uppercase tracking-wider">{t('run.reportTitle')}:</span> {t('run.reportHint')}
+              </p>
+            ) : null}
+          </div>
           {result.ok && result.kind === 'prepare' ? (
-            <Button variant="outline" size="sm" className="ml-auto shrink-0" onClick={onPreview}>
-              <MonitorPlay className="h-4 w-4" /> {t('preview.open')}
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="outline" size="sm" onClick={onPreview}>
+                <MonitorPlay className="h-4 w-4" /> {t('preview.open')}
+              </Button>
+              {result.report ? (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => void window.api.reveal(result.report!.csv)}>
+                    <FileDown className="h-4 w-4" /> {t('run.reportCsv')}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => void window.api.reveal(result.report!.html)}>
+                    <FileCode2 className="h-4 w-4" /> {t('run.reportHtml')}
+                  </Button>
+                </>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ) : null}

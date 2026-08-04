@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
+import { contextBridge, ipcRenderer, webUtils, IpcRendererEvent } from 'electron'
 import type {
   AppEvent,
   AppSettings,
@@ -19,6 +19,10 @@ const api = {
   chooseFolder: (): Promise<string | null> => ipcRenderer.invoke('dialog:chooseFolder'),
   chooseFolders: (): Promise<string[]> => ipcRenderer.invoke('dialog:chooseFolders'),
   chooseRomFiles: (): Promise<string[]> => ipcRenderer.invoke('dialog:chooseRomFiles'),
+  chooseArchives: (): Promise<string[]> => ipcRenderer.invoke('dialog:chooseArchives'),
+  classifyDropped: (paths: string[]): Promise<{ folders: string[]; archives: string[] }> =>
+    ipcRenderer.invoke('dialog:classifyDropped', paths),
+  getPathForFile: (file: File): string => webUtils.getPathForFile(file),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch: Partial<AppSettings>): Promise<AppSettings> => ipcRenderer.invoke('settings:set', patch),
   getMenuRelease: (): Promise<MenuReleaseInfo> => ipcRenderer.invoke('releases:menu'),

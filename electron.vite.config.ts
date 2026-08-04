@@ -6,7 +6,7 @@ export default defineConfig({
     build: {
       outDir: 'out/main',
       rollupOptions: {
-        external: ['adm-zip']
+        external: ['adm-zip', '7z-wasm']
       }
     }
   },

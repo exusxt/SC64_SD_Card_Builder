@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   ddiplSource: null,
   copyRoms: true,
   romSources: [],
+  archiveSources: [],
   copyAllTypes: true,
   romTypes: { n64: true, nes: true, snes: true, gb: true, sms: true, chf: true, ndd: true },
   createSaves: true,
