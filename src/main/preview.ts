@@ -43,10 +43,21 @@ function readDescription(dir: string): string | null {
   }
 }
 
-function isInside(root: string, target: string): boolean {
+// Directories the real menu hides and that never hold games. They exist on
+// freshly-formatted cards (System Volume Information, the Recycle Bin, macOS
+// junk folders) and would otherwise clutter the file browser preview.
+const SYSTEM_DIRS = new Set(['system volume information', '$recycle.bin', 'recycler', 'fseventsd'])
+// Files our own prepare step writes at the card root that the menu won't show.
+const SYSTEM_FILES = new Set(['sc64-report.html', 'sc64-report.csv'])
+
+export function isInside(root: string, target: string): boolean {
   const r = resolve(root).toLowerCase()
   const t = resolve(target).toLowerCase()
-  return t === r || t.startsWith(r + sep)
+  if (t === r) return true
+  // resolve() keeps a trailing separator on drive roots (E:\), so build the
+  // prefix without doubling it or subdirectories of a drive root would never match.
+  const prefix = r.endsWith(sep) ? r : r + sep
+  return t.startsWith(prefix)
 }
 
 function extOf(p: string): string {
@@ -115,14 +126,16 @@ export async function listPreviewDir(root: string, dirRel: string): Promise<Prev
     const name = ent.name
     const lname = name.toLowerCase()
     if (ent.isDirectory()) {
+      if (lname.startsWith('.')) continue
       if (lname === 'saves') continue
+      if (SYSTEM_DIRS.has(lname)) continue
       if (segments.length === 0 && lname === 'menu') continue
       out.push({ name, isDir: true, size: 0, kind: 'other', title: null, gameCode: null, region: null, boxart: null, description: null })
       continue
     }
     if (!ent.isFile()) continue
     if (lname.startsWith('.')) continue
-    if (segments.length === 0 && lname === 'sc64menu.n64') continue
+    if (segments.length === 0 && (lname === 'sc64menu.n64' || SYSTEM_FILES.has(lname))) continue
     const full = join(target, name)
     let size = 0
     try {

@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, afterEach } from 'vitest'
-import { listPreviewDir, loadPreviewBoxart } from '../src/main/preview'
+import { listPreviewDir, loadPreviewBoxart, isInside } from '../src/main/preview'
 
 let roots: string[] = []
 
@@ -99,6 +99,25 @@ describe('listPreviewDir', () => {
     expect(entries!.map((e) => e.kind)).toEqual(['dd', 'other'])
   })
 
+  it('hides system folders and report files at the root', async () => {
+    const root = makeRoot()
+    writeFileSync(join(root, 'sc64-report.html'), '<html></html>')
+    writeFileSync(join(root, 'sc64-report.csv'), 'a,b\n')
+    writeFileSync(join(root, 'readme.txt'), 'x')
+    mkdirSync(join(root, 'System Volume Information'), { recursive: true })
+    mkdirSync(join(root, '$RECYCLE.BIN'), { recursive: true })
+    mkdirSync(join(root, 'Games'), { recursive: true })
+
+    const entries = await listPreviewDir(root, '')
+    const names = entries!.map((e) => e.name)
+    expect(names).not.toContain('sc64-report.html')
+    expect(names).not.toContain('sc64-report.csv')
+    expect(names).not.toContain('System Volume Information')
+    expect(names).not.toContain('$RECYCLE.BIN')
+    expect(names).toContain('readme.txt')
+    expect(names).toContain('Games')
+  })
+
   it('rejects paths that escape the card root', async () => {
     const root = makeRoot()
     const entries = await listPreviewDir(root, '../../../etc')
@@ -108,6 +127,20 @@ describe('listPreviewDir', () => {
   it('returns null for a missing root', async () => {
     const entries = await listPreviewDir(join(tmpdir(), 'does-not-exist-sc64'), '')
     expect(entries).toBeNull()
+  })
+})
+
+describe('isInside', () => {
+  it('matches subpaths of a normal folder root', () => {
+    expect(isInside('C:\\Users\\foo\\prepared', 'C:\\Users\\foo\\prepared\\Games')).toBe(true)
+    expect(isInside('C:\\Users\\foo\\prepared', 'C:\\Users\\foo\\prepared')).toBe(true)
+    expect(isInside('C:\\Users\\foo\\prepared', 'C:\\Users\\foo\\prepared2')).toBe(false)
+  })
+
+  it('matches subpaths of a drive root that has a trailing separator', () => {
+    expect(isInside('E:\\', 'E:\\menu\\metadata\\boxart_front.png')).toBe(true)
+    expect(isInside('E:\\', 'E:\\')).toBe(true)
+    expect(isInside('E:\\', 'F:\\other')).toBe(false)
   })
 })
 
