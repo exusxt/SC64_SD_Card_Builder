@@ -1,8 +1,8 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { formatDevice, sanitizeLabel, CancelToken, FormatProgress } from './fat32'
+import { formatDevice, sanitizeLabel, sanitizeExfatLabel, zeroDevice, CancelToken, FormatProgress } from './fat32'
 import { formatWindows } from './winraw'
-import type { FormatResult, Locale } from '../shared/types'
+import type { FormatResult, Filesystem, Locale } from '../shared/types'
 import { translate, TranslationKey, TranslationVars } from '../shared/i18n'
 
 const execFileAsync = promisify(execFile)
@@ -21,6 +21,7 @@ export interface FormatRequest {
   device: string
   size: number
   label: string
+  filesystem: Filesystem
   fullFormat: boolean
   mountpoint: string | null
   locale?: Locale
@@ -66,8 +67,8 @@ async function remountWindows(device: string): Promise<void> {
 // device write left is the optional full-format zero pass, which runs right
 // after Clear-Disk removes every volume - with no mounted file system the
 // kernel allows the physical drive write and we keep byte-level progress and
-// cancellation for the slow part. The FAT32 layout itself is created by
-// Windows' own Format-Volume rather than by our byte-level structure builder.
+// cancellation for the slow part. The filesystem itself is created by Windows'
+// own Format-Volume rather than by our byte-level structure builder.
 async function formatWindowsDisk(
   req: FormatRequest,
   cb: FormatCallbacks,
@@ -77,7 +78,8 @@ async function formatWindowsDisk(
   if (diskNumber === null) {
     throw new Error(`Cannot determine Windows disk number from ${req.device}`)
   }
-  const label = sanitizeLabel(req.label).replace(/'/g, "''")
+  const fsName = req.filesystem === 'exfat' ? 'exFAT' : 'FAT32'
+  const label = (req.filesystem === 'exfat' ? sanitizeExfatLabel(req.label) : sanitizeLabel(req.label)).replace(/'/g, "''")
 
   cb.log('info', t('format.partitionTable'))
   cb.progress({ stage: t('format.partitionTable'), bytesWritten: 0, totalBytes: 0 })
@@ -109,9 +111,51 @@ async function formatWindowsDisk(
     `$d = Get-Disk -Number ${diskNumber}`,
     `if ($d.PartitionStyle -eq 'RAW') { Initialize-Disk -Number ${diskNumber} -PartitionStyle MBR }`,
     `$p = New-Partition -DiskNumber ${diskNumber} -UseMaximumSize -AssignDriveLetter`,
-    `Format-Volume -Partition $p -FileSystem FAT32 -NewFileSystemLabel '${label}' -Confirm:$false`
+    `Format-Volume -Partition $p -FileSystem ${fsName} -NewFileSystemLabel '${label}' -Confirm:$false`
   ].join('; ')
   await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps])
+}
+
+// exFAT on macOS/Linux is created with the platform's native tools rather than
+// our FAT32 structure builder (exFAT's layout is too complex to hand-build):
+// macOS uses diskutil, Linux uses sfdisk to create one MBR partition followed
+// by mkfs.exfat. The optional full-format pass zeroes the whole device first.
+async function formatExfatPosix(
+  req: FormatRequest,
+  cb: FormatCallbacks,
+  t: (key: TranslationKey, vars?: TranslationVars) => string,
+  writeDevice: string
+): Promise<void> {
+  const label = sanitizeExfatLabel(req.label)
+  const platform = process.platform
+
+  if (req.fullFormat) {
+    cb.log('info', t('format.full'))
+    await zeroDevice(writeDevice, req.size, {
+      cancel: cb.cancel,
+      emit: (_stage, bytesWritten, totalBytes) =>
+        cb.progress({ stage: t('format.full'), bytesWritten, totalBytes })
+    })
+  }
+
+  if (platform === 'darwin') {
+    cb.log('info', t('format.fats'))
+    cb.progress({ stage: t('format.fats'), bytesWritten: 0, totalBytes: 0 })
+    await run('diskutil', ['eraseDisk', 'EXFAT', label, req.device])
+  } else {
+    cb.log('info', t('format.partitionTable'))
+    cb.progress({ stage: t('format.partitionTable'), bytesWritten: 0, totalBytes: 0 })
+    await run('bash', ['-c', `printf ',,L\\n' | sfdisk --wipe=always --label dos '${req.device}'`])
+    cb.log('info', t('format.fats'))
+    cb.progress({ stage: t('format.fats'), bytesWritten: 0, totalBytes: 0 })
+    const part = partitionDeviceFor(req.device)
+    await run('mkfs.exfat', ['-n', label, part])
+  }
+}
+
+function partitionDeviceFor(device: string): string {
+  const d = device.replace(/[\\/]+$/, '')
+  return /\d$/.test(d) ? `${d}p1` : `${d}1`
 }
 
 async function unmountLinux(device: string): Promise<void> {
@@ -159,29 +203,33 @@ export async function formatDisk(req: FormatRequest, cb: FormatCallbacks): Promi
         await unmountLinux(device)
       }
 
-      let lastStage = ''
-      cb.log('info', t('format.structures', { device: writeDevice }))
-      await formatDevice(writeDevice, req.size, {
-        label: req.label,
-        fullFormat: req.fullFormat,
-        cancel: req.fullFormat ? cb.cancel : undefined,
-        onProgress: (p) => {
-          const stageKey =
-            p.stage === 'Writing partition table'
-              ? 'format.partitionTable'
-              : p.stage === 'Writing file allocation tables'
-                ? 'format.fats'
-                : p.stage === 'Root directory created'
-                  ? 'format.root'
-                  : 'format.full'
-          const stage = t(stageKey)
-          if (p.stage !== lastStage) {
-            cb.log('info', stage)
-            lastStage = p.stage
+      if (req.filesystem === 'exfat') {
+        await formatExfatPosix(req, cb, t, writeDevice)
+      } else {
+        let lastStage = ''
+        cb.log('info', t('format.structures', { device: writeDevice }))
+        await formatDevice(writeDevice, req.size, {
+          label: req.label,
+          fullFormat: req.fullFormat,
+          cancel: req.fullFormat ? cb.cancel : undefined,
+          onProgress: (p) => {
+            const stageKey =
+              p.stage === 'Writing partition table'
+                ? 'format.partitionTable'
+                : p.stage === 'Writing file allocation tables'
+                  ? 'format.fats'
+                  : p.stage === 'Root directory created'
+                    ? 'format.root'
+                    : 'format.full'
+            const stage = t(stageKey)
+            if (p.stage !== lastStage) {
+              cb.log('info', stage)
+              lastStage = p.stage
+            }
+            cb.progress({ ...p, stage })
           }
-          cb.progress({ ...p, stage })
-        }
-      })
+        })
+      }
     }
 
     cb.log('info', t('format.refresh'))

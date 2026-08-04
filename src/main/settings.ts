@@ -18,7 +18,11 @@ export function getSettings(): AppSettings {
     const file = settingsFile()
     if (existsSync(file)) {
       const parsed = JSON.parse(readFileSync(file, 'utf-8')) as Partial<AppSettings>
-      cached = { ...defaultSettings, ...parsed }
+      cached = {
+        ...defaultSettings,
+        ...parsed,
+        formatOptions: { ...defaultSettings.formatOptions, ...parsed.formatOptions }
+      }
     } else {
       cached = { ...defaultSettings }
     }

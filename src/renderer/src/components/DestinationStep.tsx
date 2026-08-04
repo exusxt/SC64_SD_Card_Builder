@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, CheckCircle2, FolderOpen, HardDrive, RefreshCw, ShieldAlert, Eye, XCircle, X, PackageOpen, Database } from 'lucide-react'
-import type { AppSettings, CardInspection, DriveInfo, FormatResult } from '../../../shared/types'
+import type { AppSettings, CardInspection, DriveInfo, Filesystem, FormatResult } from '../../../shared/types'
 import type { T } from '../i18n'
 import { Button, Checkbox, Field, Input, ProgressBar, Select } from './ui'
 import { cn, formatBytes } from '../lib'
@@ -61,6 +61,8 @@ export function DestinationStep({
   const formatConfirmKey = formatConfirm.trim().replace(/[\\/]+$/, '').toLowerCase()
   const formatConfirmValid = mountpointKey.length > 0 && formatConfirmKey === mountpointKey
   const folderDraftPending = folderDraft !== (settings.folder ?? '')
+  const formatFs: Filesystem = settings.formatOptions.filesystem
+  const isExfat = formatFs === 'exfat'
 
   const menuStatus: { label: string; kind: 'none' | 'preview' | 'version' } = (() => {
     const m = inspection?.menu
@@ -188,8 +190,8 @@ export function DestinationStep({
             >
               <span className="flex items-center gap-2 font-medium text-sc64-text">
                 <AlertTriangle className="h-4 w-4 text-sc64-warn" />
-                {t('dest.formatTitle')}
-                <span className="text-[11px] font-normal text-sc64-muted">{t('dest.formatHint')}</span>
+                {isExfat ? t('dest.formatTitleExfat') : t('dest.formatTitle')}
+                <span className="text-[11px] font-normal text-sc64-muted">{isExfat ? t('dest.formatHintExfat') : t('dest.formatHint')}</span>
               </span>
               <span className="text-sc64-muted">{showFormat ? '▲' : '▼'}</span>
             </button>
@@ -207,16 +209,31 @@ export function DestinationStep({
                   <div className="space-y-3">
                     <div className="flex items-start gap-2 text-xs text-sc64-warn">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                      <span>{t('dest.formatWarning', { dest: selected?.mountpoint ?? t('dest.notSelected') })}</span>
+                      <span>
+                        {isExfat
+                          ? t('dest.formatWarningExfat', { dest: selected?.mountpoint ?? t('dest.notSelected') })
+                          : t('dest.formatWarning', { dest: selected?.mountpoint ?? t('dest.notSelected') })}
+                      </span>
                     </div>
                     <div className="flex flex-wrap items-end gap-3">
                       <Field label={t('dest.volumeLabel')} hint={t('dest.volumeLabelHint')} className="w-44">
                         <Input
                           value={settings.volumeLabel}
-                          maxLength={11}
+                          maxLength={isExfat ? 15 : 11}
                           onChange={(e) => onSettingsChange({ volumeLabel: e.target.value })}
                           placeholder="SUMMERCART"
                         />
+                      </Field>
+                      <Field label={t('dest.filesystem')} hint={t('dest.filesystemHint')} className="w-48">
+                        <Select
+                          value={formatFs}
+                          onChange={(e) =>
+                            onSettingsChange({ formatOptions: { ...settings.formatOptions, filesystem: e.target.value as Filesystem } })
+                          }
+                        >
+                          <option value="fat32">FAT32 — {t('dest.fat32Recommended')}</option>
+                          <option value="exfat">exFAT</option>
+                        </Select>
                       </Field>
                       <Checkbox
                         label={t('dest.fullFormat')}
@@ -246,9 +263,11 @@ export function DestinationStep({
                       variant="danger"
                       onClick={onFormat}
                       disabled={!formatConfirmValid || drivesLoading}
-                      title={selected ? t('dest.formatButtonTitle') : t('dest.formatButtonTitleNone')}
+                      title={selected ? (isExfat ? t('dest.formatButtonTitleExfat') : t('dest.formatButtonTitle')) : t('dest.formatButtonTitleNone')}
                     >
-                      {t('dest.formatButton', { dest: selected?.mountpoint ?? '' })}
+                      {isExfat
+                        ? t('dest.formatButtonExfat', { dest: selected?.mountpoint ?? '' })
+                        : t('dest.formatButton', { dest: selected?.mountpoint ?? '' })}
                     </Button>
                   </div>
                 )}

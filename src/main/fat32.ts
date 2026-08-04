@@ -60,6 +60,14 @@ export function sanitizeLabel(label: string): string {
   return (cleaned || 'SUMMERCART').padEnd(11, ' ').slice(0, 11)
 }
 
+export function sanitizeExfatLabel(label: string): string {
+  const cleaned = (label || 'SUMMERCART')
+    .replace(/["*:<>?\\/|]/g, '')
+    .replace(/[\u0000-\u001f]/g, '')
+    .trim()
+  return (cleaned || 'SUMMERCART').slice(0, 15)
+}
+
 function buildMBR(partSectors: number): Buffer {
   const mbr = Buffer.alloc(SECTOR_SIZE)
   // status 0x00 (not bootable)
@@ -214,4 +222,29 @@ export async function formatDevice(device: string, sizeBytes: number, opts: Form
   const structure = buildStructure(layout, label)
 
   await formatDevicePosix(device, layout, structure, opts, emit)
+}
+
+// Writes zeros across the entire device. Used for the full-format zero pass of
+// exFAT on macOS/Linux, where the native tools build the filesystem afterwards.
+export async function zeroDevice(device: string, totalBytes: number, opts: ZeroDeviceOptions): Promise<void> {
+  const devicePath = Buffer.from(device.replace(/[\\/]+$/, ''))
+  const handle = await open(devicePath, 'r+')
+  try {
+    const chunk = Buffer.alloc(ZERO_CHUNK)
+    let pos = 0
+    while (pos < totalBytes) {
+      if (opts.cancel?.cancelled) throw new Error('Format cancelled')
+      const len = Math.min(chunk.length, totalBytes - pos)
+      await writeAt(handle, chunk, pos, len)
+      pos += len
+      opts.emit('Full format', pos, totalBytes)
+    }
+  } finally {
+    await handle.close()
+  }
+}
+
+export interface ZeroDeviceOptions {
+  cancel?: CancelToken
+  emit: (stage: string, bytesWritten: number, totalBytes: number) => void
 }

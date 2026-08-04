@@ -243,6 +243,7 @@ export default function App(): React.JSX.Element {
       device: selectedDrive.device,
       size: selectedDrive.size,
       label: settings.volumeLabel || 'SUMMERCART',
+      filesystem: settings.formatOptions.filesystem,
       fullFormat: settings.formatOptions.fullFormat,
       mountpoint: selectedDrive.mountpoint,
       locale: settings.language

@@ -78,6 +78,8 @@ export interface EmulatorsInfo {
 import type { Locale, ThemeId } from './i18n'
 export type { Locale, ThemeId } from './i18n'
 
+export type Filesystem = 'fat32' | 'exfat'
+
 export interface AppSettings {
   destinationMode: 'drive' | 'folder'
   driveId: string | null
@@ -107,6 +109,7 @@ export interface AppSettings {
   preparedSource: string | null
   formatOptions: {
     fullFormat: boolean
+    filesystem: Filesystem
   }
 }
 
@@ -140,6 +143,7 @@ export interface FormatOptions {
   device: string
   size: number
   label: string
+  filesystem: Filesystem
   fullFormat: boolean
   mountpoint: string | null
   locale: Locale

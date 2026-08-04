@@ -27,5 +27,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   stage: false,
   verify: true,
   preparedSource: null,
-  formatOptions: { fullFormat: false }
+  formatOptions: { fullFormat: false, filesystem: 'fat32' }
 }

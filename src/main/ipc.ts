@@ -165,6 +165,7 @@ export function registerIpc(): void {
       device: opts.device,
       size: opts.size,
       label: opts.label,
+      filesystem: opts.filesystem,
       fullFormat: opts.fullFormat,
       mountpoint: opts.mountpoint,
       locale: opts.locale
