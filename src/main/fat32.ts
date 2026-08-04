@@ -160,7 +160,12 @@ export async function formatDevice(device: string, sizeBytes: number, opts: Form
   const label = sanitizeLabel(opts.label)
   const emit = (stage: string, bytesWritten: number, totalBytes: number): void => opts.onProgress?.({ stage, bytesWritten, totalBytes })
 
-  const handle = await open(device, 'r+')
+  // Pass the device path as a Buffer: older Node versions (< 23) mangle string
+  // device paths on Windows via toNamespacedPath() (adds a trailing backslash),
+  // which breaks the open with EINVAL. Buffer paths bypass that. Kept as
+  // defence-in-depth even though current Electron (43, Node 24) no longer mangles.
+  const devicePath = Buffer.from(device.replace(/[\\/]+$/, ''))
+  const handle = await open(devicePath, 'r+')
   try {
     // 1. Zero the region between start of disk and partition start, then write the MBR.
     const zero1MiB = Buffer.alloc(1024 * 1024)

@@ -58,7 +58,8 @@ export function DestinationStep({
   const isFat32 = fs === 'FAT32'
   const almostFull = selected?.free !== null && selected?.free !== undefined && selected.free < 512 * 1024 * 1024
   const mountpointKey = (selected?.mountpoint ?? '').trim().replace(/[\\/]+$/, '').toLowerCase()
-  const formatConfirmValid = mountpointKey.length > 0 && formatConfirm.trim().toLowerCase() === mountpointKey
+  const formatConfirmKey = formatConfirm.trim().replace(/[\\/]+$/, '').toLowerCase()
+  const formatConfirmValid = mountpointKey.length > 0 && formatConfirmKey === mountpointKey
   const folderDraftPending = folderDraft !== (settings.folder ?? '')
 
   const menuStatus: { label: string; kind: 'none' | 'preview' | 'version' } = (() => {
