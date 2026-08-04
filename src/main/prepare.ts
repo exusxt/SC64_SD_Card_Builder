@@ -41,6 +41,15 @@ function extOf(p: string): string {
   return p.slice(p.lastIndexOf('.')).toLowerCase()
 }
 
+// Mirrors the stock card's layout: GB/GBC games live under GBC/ and SNES
+// games under snes_rom/, both with a saves/ folder per game.
+function stockFolderOf(p: string): string | null {
+  const ext = extOf(p)
+  if (ext === '.gb' || ext === '.gbc') return 'GBC'
+  if (ext === '.smc' || ext === '.sfc' || ext === '.fig') return 'snes_rom'
+  return null
+}
+
 function isDir(p: string): boolean {
   try {
     return statSync(p).isDirectory()
@@ -144,13 +153,14 @@ class Runner {
     }
   }
 
-  async createFolders(destination: string, enabled: boolean): Promise<void> {
+  async createFolders(destination: string, enabled: boolean, stockFolders = false): Promise<void> {
     if (!enabled) {
       this.markSkipped('folders')
       return
     }
     this.step('folders', 'running')
     const dirs = ['menu', join('menu', 'metadata'), join('menu', '64ddipl'), join('menu', 'emulators')]
+    if (stockFolders) dirs.push('GBC', 'snes_rom')
     for (const d of dirs) await ensureDir(join(destination, d))
     this.log('info', this.t('log.createdFolders'))
     this.step('folders', 'done')
@@ -401,6 +411,15 @@ class Runner {
         this.checkCancel()
         const rel = options.includeSubdirs ? file.slice(source.length).replace(/^[/\\]/, '') : baseNameOf(file)
         let target = join(destRoot, rel)
+        if (options.stockFolders) {
+          const folder = stockFolderOf(file)
+          if (folder) {
+            const firstSeg = rel.split(/[/\\]/)[0]?.toLowerCase()
+            if (firstSeg !== folder.toLowerCase()) {
+              target = join(destRoot, folder, rel)
+            }
+          }
+        }
         if (existsSync(target) && !options.overwrite) continue
 
         let n64Header: N64Header | null = null
@@ -628,7 +647,7 @@ export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Pr
       await writeFile(probe, '')
       await rm(probe, { force: true })
 
-      await runner.createFolders(target, options.createFolders)
+      await runner.createFolders(target, options.createFolders, options.stockFolders)
       await runner.downloadMenu(target, options.downloadMenu, options.overwrite)
       await runner.downloadMetadata(target, options.downloadMetadata)
       await runner.downloadEmulators(target, options.downloadEmulators, options.emulators)

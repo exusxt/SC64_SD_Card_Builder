@@ -30,6 +30,18 @@ function makeHeader(title: string, gameCode: string, country: string): Buffer {
   return buf
 }
 
+function makeGBHeader(title: string): Buffer {
+  const buf = Buffer.alloc(0x150)
+  buf.write(title, 0x134, 'latin1')
+  return buf
+}
+
+function makeSNESHeader(title: string): Buffer {
+  const buf = Buffer.alloc(0x8000)
+  buf.write(title, 0x7fc0, 'latin1')
+  return buf
+}
+
 describe('listPreviewDir', () => {
   it('lists files and folders, hiding system files and the menu folder', async () => {
     const root = makeRoot()
@@ -88,6 +100,51 @@ describe('listPreviewDir', () => {
     expect(entries![0].kind).toBe('n64')
     expect(entries![0].region).toBe('PAL')
     expect(entries![0].boxart).toBe(join(meta, 'boxart_front.png'))
+  })
+
+  it('falls back to the flat menu/boxart/<cartid>.png file', async () => {
+    const root = makeRoot()
+    const box = join(root, 'menu', 'boxart')
+    mkdirSync(box, { recursive: true })
+    writeFileSync(join(box, 'GE.png'), Buffer.from([3, 3]))
+    const games = join(root, 'Games')
+    mkdirSync(games, { recursive: true })
+    writeFileSync(join(games, 'Mario.z64'), makeHeader('SUPER MARIO 64', 'NGEE', 'E'))
+
+    const entries = await listPreviewDir(root, 'Games')
+    expect(entries![0].kind).toBe('n64')
+    expect(entries![0].boxart).toBe(join(box, 'GE.png'))
+  })
+
+  it('resolves the flat boxart case-insensitively', async () => {
+    const root = makeRoot()
+    const box = join(root, 'menu', 'boxart')
+    mkdirSync(box, { recursive: true })
+    writeFileSync(join(box, 'ge.png'), Buffer.from([4, 4]))
+    const games = join(root, 'Games')
+    mkdirSync(games, { recursive: true })
+    writeFileSync(join(games, 'Mario.z64'), makeHeader('SUPER MARIO 64', 'NGEE', 'E'))
+
+    const entries = await listPreviewDir(root, 'Games')
+    expect(entries![0].boxart).toBe(join(box, 'ge.png'))
+  })
+
+  it('shows Game Boy and SNES titles from their headers', async () => {
+    const root = makeRoot()
+    const games = join(root, 'Games')
+    mkdirSync(games, { recursive: true })
+    writeFileSync(join(games, 'Tetris.gb'), makeGBHeader('TETRIS'))
+    writeFileSync(join(games, 'Kirby.gbc'), makeGBHeader('KIRBY'))
+    writeFileSync(join(games, 'Mario.smc'), makeSNESHeader('SUPER MARIO WORLD'))
+
+    const entries = await listPreviewDir(root, 'Games')
+    const byName = Object.fromEntries(entries!.map((e) => [e.name, e]))
+    expect(byName['Tetris.gb'].kind).toBe('gb')
+    expect(byName['Tetris.gb'].title).toBe('TETRIS')
+    expect(byName['Kirby.gbc'].kind).toBe('gbc')
+    expect(byName['Kirby.gbc'].title).toBe('KIRBY')
+    expect(byName['Mario.smc'].kind).toBe('snes')
+    expect(byName['Mario.smc'].title).toBe('SUPER MARIO WORLD')
   })
 
   it('marks non-N64 files and 64DD disks as other kinds', async () => {
@@ -152,6 +209,15 @@ describe('loadPreviewBoxart', () => {
     const root = makeRoot()
     const art = join(root, 'menu', 'metadata', 'N', 'G', 'E', 'E', 'boxart_front.png')
     mkdirSync(join(root, 'menu', 'metadata', 'N', 'G', 'E', 'E'), { recursive: true })
+    writeFileSync(art, Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+    const out = loadPreviewBoxart(root, art)
+    expect(out).toBe('data:image/png;base64,iVBORw==')
+  })
+
+  it('returns a PNG data URL for art under menu/boxart', () => {
+    const root = makeRoot()
+    const art = join(root, 'menu', 'boxart', 'GE.png')
+    mkdirSync(join(root, 'menu', 'boxart'), { recursive: true })
     writeFileSync(art, Buffer.from([0x89, 0x50, 0x4e, 0x47]))
     const out = loadPreviewBoxart(root, art)
     expect(out).toBe('data:image/png;base64,iVBORw==')

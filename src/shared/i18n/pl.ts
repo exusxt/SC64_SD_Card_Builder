@@ -154,6 +154,8 @@ const pl = {
   'opt.verifyHint': 'Porównuj każdy skopiowany plik bajt po bajcie i zgłaszaj rozbieżności.',
   'opt.organize': 'Organizuj ROM-y w folderach',
   'opt.organizeHint': 'Zmień nazwy ROM-ów na <Tytuł> (Region) i umieść je we własnych folderach.',
+  'opt.stockFolders': 'Użyj układu jak na oficjalnej karcie',
+  'opt.stockFoldersHint': 'Umieszczaj gry Game Boy w GBC/ i gry SNES w snes_rom/, jak na oficjalnej karcie.',
   'opt.copyCheats': 'Kopiuj pliki cheatów (.cht)',
   'opt.copyCheatsHint': 'Skopiuj plik .cht obok każdego ROM-a, jeśli istnieje.',
   'opt.ddipl': 'Zainstaluj IPL 64DD',

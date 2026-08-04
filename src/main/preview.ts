@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 import type { PreviewEntry } from '../shared/types'
 import { inspectN64File, isN64Ext, N64_REGION_LABELS } from './n64validate'
+import { inspectEmuFile, isGBExt, isSNESExt } from './emuheader'
 
 const DD_EXTS = new Set(['.ndd', '.d64'])
 
@@ -16,13 +17,31 @@ function metadataDir(metaRoot: string, gameCode: string): string | null {
   return join(metaRoot, code[0], code[1], code[2], code[3])
 }
 
-function boxartPath(metaRoot: string, gameCode: string): string | null {
+// The official menu also reads flat menu/boxart/<cartid>.png files (a single
+// unique-code letter pair, e.g. NSME -> SM.png) on stock cards. Those are not
+// part of the current metadata pack, so this is only a preview-side fallback.
+function flatBoxart(boxartRoot: string, code: string): string | null {
+  const flatName = `${code[1]}${code[2]}.png`
+  let entries: string[] = []
+  try {
+    entries = readdirSync(boxartRoot)
+  } catch {
+    return null
+  }
+  const exact = entries.find((n) => n === flatName)
+  if (exact) return join(boxartRoot, exact)
+  const ci = entries.find((n) => n.toLowerCase() === flatName.toLowerCase())
+  return ci ? join(boxartRoot, ci) : null
+}
+
+function boxartPath(metaRoot: string, boxartRoot: string, gameCode: string): string | null {
   const code = gameCode.toUpperCase()
   if (code.length !== 4) return null
   const full = join(metaRoot, code[0], code[1], code[2], code[3], 'boxart_front.png')
   if (existsSync(full)) return full
   const three = join(metaRoot, code[0], code[1], code[2], 'boxart_front.png')
-  return existsSync(three) ? three : null
+  if (existsSync(three)) return three
+  return flatBoxart(boxartRoot, code)
 }
 
 // Homebrew ROMs use the "Advanced Homebrew ROM Header" (game code xEDx) and the
@@ -65,13 +84,13 @@ function extOf(p: string): string {
   return last >= 0 ? p.slice(last).toLowerCase() : ''
 }
 
-async function inspectFile(metaRoot: string, filePath: string): Promise<Pick<PreviewEntry, 'kind' | 'title' | 'gameCode' | 'region' | 'boxart' | 'description'>> {
+async function inspectFile(metaRoot: string, boxartRoot: string, filePath: string): Promise<Pick<PreviewEntry, 'kind' | 'title' | 'gameCode' | 'region' | 'boxart' | 'description'>> {
   if (isN64Ext(filePath)) {
     const v = await inspectN64File(filePath)
     const h = v.header
     if (h) {
       const code = h.gameCode.toUpperCase()
-      let boxart = boxartPath(metaRoot, h.gameCode)
+      let boxart = boxartPath(metaRoot, boxartRoot, h.gameCode)
       let description: string | null = null
       if (code === 'XEDX' || code.startsWith('XED')) {
         boxart = homebrewBoxart(metaRoot, h.title) ?? boxart
@@ -97,6 +116,19 @@ async function inspectFile(metaRoot: string, filePath: string): Promise<Pick<Pre
   if (DD_EXTS.has(extOf(filePath))) {
     return { kind: 'dd', title: null, gameCode: null, region: null, boxart: null, description: null }
   }
+  if (isGBExt(filePath) || isSNESExt(filePath)) {
+    const info = inspectEmuFile(filePath)
+    if (info) {
+      return {
+        kind: info.kind,
+        title: info.title || null,
+        gameCode: null,
+        region: info.region,
+        boxart: null,
+        description: null
+      }
+    }
+  }
   return { kind: 'other', title: null, gameCode: null, region: null, boxart: null, description: null }
 }
 
@@ -120,6 +152,7 @@ export async function listPreviewDir(root: string, dirRel: string): Promise<Prev
   }
 
   const metaRoot = join(base, 'menu', 'metadata')
+  const boxartRoot = join(base, 'menu', 'boxart')
   const out: PreviewEntry[] = []
 
   for (const ent of entries) {
@@ -143,7 +176,7 @@ export async function listPreviewDir(root: string, dirRel: string): Promise<Prev
     } catch {
       continue
     }
-    const info = await inspectFile(metaRoot, full)
+    const info = await inspectFile(metaRoot, boxartRoot, full)
     out.push({ name, isDir: false, size, ...info })
   }
 
@@ -156,9 +189,11 @@ export async function listPreviewDir(root: string, dirRel: string): Promise<Prev
 
 export function loadPreviewBoxart(root: string, path: string): string | null {
   const base = resolve(root)
-  const metaRoot = resolve(join(base, 'menu', 'metadata'))
   const target = resolve(path)
-  if (!isInside(metaRoot, target) || !isInside(base, target)) return null
+  if (!isInside(base, target)) return null
+  const metaRoot = resolve(join(base, 'menu', 'metadata'))
+  const boxartRoot = resolve(join(base, 'menu', 'boxart'))
+  if (!isInside(metaRoot, target) && !isInside(boxartRoot, target)) return null
   if (!existsSync(target)) return null
   try {
     return `data:image/png;base64,${readFileSync(target).toString('base64')}`

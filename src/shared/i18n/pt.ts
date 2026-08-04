@@ -154,6 +154,8 @@ const pt = {
   'opt.verifyHint': 'Compara cada ficheiro copiado byte a byte e reporta qualquer diferença.',
   'opt.organize': 'Organizar ROMs em pastas',
   'opt.organizeHint': 'Renomear as ROMs como <Título> (Região) e colocá-las na própria pasta.',
+  'opt.stockFolders': 'Usar o layout da placa original',
+  'opt.stockFoldersHint': 'Colocar os jogos de Game Boy em GBC/ e os de SNES em snes_rom/, como no cartão oficial.',
   'opt.copyCheats': 'Copiar ficheiros de truques (.cht)',
   'opt.copyCheatsHint': 'Copia um ficheiro .cht ao lado de cada ROM quando existir.',
   'opt.ddipl': 'Instalar o IPL do 64DD',

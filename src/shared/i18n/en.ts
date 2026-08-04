@@ -160,6 +160,8 @@ const en = {
   'opt.verifyHint': 'Compare every copied file byte-for-byte and report any mismatch.',
   'opt.organize': 'Organize ROMs into folders',
   'opt.organizeHint': 'Rename ROMs to <Title> (Region) and place each one in its own folder.',
+  'opt.stockFolders': 'Use the stock-card folder layout',
+  'opt.stockFoldersHint': 'Place Game Boy games in GBC/ and SNES games in snes_rom/, like the official card.',
   'opt.copyCheats': 'Copy cheat files (.cht)',
   'opt.copyCheatsHint': 'Copies a .cht cheat file next to each ROM when one exists.',
   'opt.ddipl': 'Install the 64DD IPL',

@@ -154,6 +154,8 @@ const da = {
   'opt.verifyHint': 'Sammenlign hver kopierede fil byte for byte og rapportér eventuelle afvigelser.',
   'opt.organize': 'Organisér ROM-filer i mapper',
   'opt.organizeHint': 'Omdøb ROM-filer til <Titel> (Region) og læg dem i deres egne mapper.',
+  'opt.stockFolders': 'Brug originalkortets layout',
+  'opt.stockFoldersHint': 'Placer Game Boy-spil i GBC/ og SNES-spil i snes_rom/, som på originalkortet.',
   'opt.copyCheats': 'Kopiér cheat-filer (.cht)',
   'opt.copyCheatsHint': 'Kopiér en .cht-fil ved siden af hver ROM, hvis en sådan findes.',
   'opt.ddipl': 'Installer 64DD-IPL',

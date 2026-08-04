@@ -154,6 +154,8 @@ const el = {
   'opt.verifyHint': 'Σύγκριση κάθε αντιγραμμένου αρχείου byte προς byte και αναφορά τυχόν αποκλίσεων.',
   'opt.organize': 'Οργάνωση ROM σε φακέλους',
   'opt.organizeHint': 'Μετονομασία ROM σε <Τίτλος> (Περιοχή) και τοποθέτησή τους σε δικούς τους φακέλους.',
+  'opt.stockFolders': 'Χρήση διάταξης επίσημης κάρτας',
+  'opt.stockFoldersHint': 'Τοποθέτηση παιχνιδιών Game Boy στο GBC/ και SNES στο snes_rom/, όπως στην επίσημη κάρτα.',
   'opt.copyCheats': 'Αντιγραφή αρχείων cheat (.cht)',
   'opt.copyCheatsHint': 'Αντιγραφή ενός αρχείου .cht δίπλα σε κάθε ROM, εάν υπάρχει.',
   'opt.ddipl': 'Εγκατάσταση IPL 64DD',

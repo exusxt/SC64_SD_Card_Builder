@@ -37,6 +37,8 @@ function entryType(e: PreviewEntry): string {
   if (e.isDir) return 'Directory'
   if (e.kind === 'n64') return 'N64 ROM'
   if (e.kind === 'dd') return '64DD disk'
+  if (e.kind === 'gb' || e.kind === 'gbc') return 'Game Boy / Color ROM'
+  if (e.kind === 'snes') return 'SNES ROM'
   const ext = e.name.slice(e.name.lastIndexOf('.')).toLowerCase()
   if (EMULATOR_EXTS.has(ext)) return 'Emulator ROM file'
   return 'File'
@@ -368,7 +370,9 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
                     <div style={{ position: 'absolute', left: VISIBLE_X0 + 10, top: 34, right: VISIBLE_X0 + 10, fontSize: 12, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {selected.kind === 'n64'
                         ? `Title: ${selected.title ?? '?'}   Code: ${selected.gameCode ?? '?'}   Region: ${selected.region ?? '?'}`
-                        : `Type: ${entryType(selected)}`}
+                        : selected.title
+                          ? `Title: ${selected.title}${selected.region ? `   Region: ${selected.region}` : ''}`
+                          : `Type: ${entryType(selected)}`}
                     </div>
                     <div style={{ position: 'absolute', right: VISIBLE_X0 + 10, top: 10, fontSize: 12, color: '#fff' }}>{menuSize(selected.size)}</div>
                   </>

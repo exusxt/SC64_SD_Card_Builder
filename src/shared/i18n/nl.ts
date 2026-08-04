@@ -154,6 +154,8 @@ const nl = {
   'opt.verifyHint': 'Vergelijk elk gekopieerd bestand byte voor byte en meld eventuele afwijkingen.',
   'opt.organize': "ROM's ordenen in mappen",
   'opt.organizeHint': "Hernoem ROM's naar <Titel> (Regio) en plaats ze in hun eigen map.",
+  'opt.stockFolders': 'Gebruik de officiële kaartindeling',
+  'opt.stockFoldersHint': 'Plaats Game Boy-games in GBC/ en SNES-games in snes_rom/, zoals op de officiële kaart.',
   'opt.copyCheats': 'Cheat-bestanden (.cht) kopiëren',
   'opt.copyCheatsHint': 'Kopieer een .cht-bestand naast elke ROM als die bestaat.',
   'opt.ddipl': '64DD-IPL installeren',

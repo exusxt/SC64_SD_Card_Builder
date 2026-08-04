@@ -298,6 +298,7 @@ export default function App(): React.JSX.Element {
       overwrite: settings.overwrite,
       verify: settings.verify,
       organizeRoms: settings.organizeRoms,
+      stockFolders: settings.stockFolders,
       copyCheats: settings.copyCheats
     })
     setResult({ kind: 'prepare', ok: res.ok, message: res.summary, report: res.report })

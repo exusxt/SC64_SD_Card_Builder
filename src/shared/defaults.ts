@@ -23,6 +23,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   includeSubdirs: true,
   overwrite: false,
   organizeRoms: false,
+  stockFolders: true,
   copyCheats: false,
   stage: false,
   verify: true,

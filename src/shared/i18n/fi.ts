@@ -154,6 +154,8 @@ const fi = {
   'opt.verifyHint': 'Vertaa jokaista kopioitua tiedostoa tavu tavulta ja ilmoita mahdollisista eroista.',
   'opt.organize': 'Järjestä ROM-tiedostot kansioihin',
   'opt.organizeHint': 'Nimeä ROM-tiedostot muotoon <Otsikko> (Alue) ja sijoita ne omiin kansioihinsa.',
+  'opt.stockFolders': 'Käytä alkuperäiskortin asettelua',
+  'opt.stockFoldersHint': 'Aseta Game Boy -pelit GBC/ ja SNES-pelit snes_rom/ kansioihin, kuten alkuperäiskortilla.',
   'opt.copyCheats': 'Kopioi huijauskooditiedostot (.cht)',
   'opt.copyCheatsHint': 'Kopioi .cht-tiedosto jokaisen ROM:n viereen, jos sellainen löytyy.',
   'opt.ddipl': 'Asenna 64DD:n IPL',

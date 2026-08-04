@@ -154,6 +154,8 @@ const hu = {
   'opt.verifyHint': 'Minden másolt fájl bájtonkénti összehasonlítása és eltérések jelentése.',
   'opt.organize': 'ROM-ok mappákba rendezése',
   'opt.organizeHint': 'A ROM-ok átnevezése <Cím> (Régió) formátumra és saját mappába helyezése.',
+  'opt.stockFolders': 'Hivatalos kártya-elrendezés használata',
+  'opt.stockFoldersHint': 'Helyezze a Game Boy-játékokat a GBC/ és az SNES-játékokat a snes_rom/ mappába, mint a hivatalos kártyán.',
   'opt.copyCheats': 'Cheat-fájlok (.cht) másolása',
   'opt.copyCheatsHint': 'Másoljon egy .cht fájlt minden ROM mellé, ha létezik.',
   'opt.ddipl': '64DD IPL telepítése',

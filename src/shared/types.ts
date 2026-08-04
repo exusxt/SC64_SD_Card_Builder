@@ -103,6 +103,7 @@ export interface AppSettings {
   includeSubdirs: boolean
   overwrite: boolean
   organizeRoms: boolean
+  stockFolders: boolean
   copyCheats: boolean
   stage: boolean
   verify: boolean
@@ -135,6 +136,7 @@ export interface PrepareOptions {
   includeSubdirs: boolean
   overwrite: boolean
   organizeRoms: boolean
+  stockFolders: boolean
   copyCheats: boolean
   verify: boolean
 }
@@ -188,7 +190,7 @@ export interface PrepareResult {
   report?: { html: string; csv: string } | null
 }
 
-export type PreviewKind = 'n64' | 'dd' | 'other'
+export type PreviewKind = 'n64' | 'dd' | 'gb' | 'gbc' | 'snes' | 'other'
 
 export interface PreviewEntry {
   name: string

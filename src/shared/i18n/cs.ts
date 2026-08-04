@@ -154,6 +154,8 @@ const cs = {
   'opt.verifyHint': 'Porovnat každý zkopírovaný soubor byte po bytu a nahlásit případné rozdíly.',
   'opt.organize': 'Uspořádat ROM soubory do složek',
   'opt.organizeHint': 'Přejmenovat ROM soubory na <Název> (Region) a umístit je do vlastních složek.',
+  'opt.stockFolders': 'Použít rozložení oficiální karty',
+  'opt.stockFoldersHint': 'Umístit hry pro Game Boy do GBC/ a hry pro SNES do snes_rom/, jako na oficiální kartě.',
   'opt.copyCheats': 'Kopírovat cheat soubory (.cht)',
   'opt.copyCheatsHint': 'Zkopírujte soubor .cht vedle každé ROM, pokud existuje.',
   'opt.ddipl': 'Nainstalovat IPL pro 64DD',

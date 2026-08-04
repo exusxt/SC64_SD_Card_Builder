@@ -109,6 +109,7 @@ describe('prepare organizer + cheats', () => {
       includeSubdirs: false,
       overwrite: false,
       organizeRoms: true,
+      stockFolders: false,
       copyCheats: true,
       verify: false
     }
@@ -164,6 +165,7 @@ describe('prepare organizer + cheats', () => {
       includeSubdirs: false,
       overwrite: false,
       organizeRoms: true,
+      stockFolders: false,
       copyCheats: false,
       verify: false
     }
@@ -173,6 +175,97 @@ describe('prepare organizer + cheats', () => {
     const folders = (await readdir(dest)).filter((n) => !n.startsWith('.') && n !== 'sc64-report.csv' && n !== 'sc64-report.html')
     expect(folders).toEqual(['BANJO (USA)'])
     expect(await readdir(join(dest, 'BANJO (USA)'))).toHaveLength(1)
+
+    await rm(root, { recursive: true, force: true })
+  })
+})
+
+describe('prepare stock-card routing', () => {
+  it('places GB/GBC ROMs under GBC/ and SNES ROMs under snes_rom/, leaving others at the root', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'sc64-test-'))
+    const source = join(root, 'source')
+    const dest = join(root, 'dest')
+    await mkdir(source, { recursive: true })
+    await mkdir(dest, { recursive: true })
+
+    await writeFile(join(source, 'Tetris.gb'), 'gb-rom')
+    await writeFile(join(source, 'Kirby.gbc'), 'gbc-rom')
+    await writeFile(join(source, 'Mario.smc'), 'snes-rom')
+    await writeFile(join(source, 'Zelda.sfc'), 'snes-rom')
+    await writeFile(join(source, 'Jackal.nes'), 'nes-rom')
+
+    const options: PrepareOptions = {
+      destination: dest,
+      locale: 'en',
+      mode: 'direct',
+      downloadMenu: false,
+      downloadMetadata: false,
+      createFolders: false,
+      downloadEmulators: false,
+      emulators: { nes: false, snes: false, gb: false, sms: false, chf: false },
+      installDDIPL: false,
+      ddiplSource: null,
+      copyRoms: true,
+      romSources: [source],
+      romTypes: ['gb', 'snes', 'nes'],
+      createSaves: false,
+      includeSubdirs: false,
+      overwrite: false,
+      organizeRoms: false,
+      stockFolders: true,
+      copyCheats: false,
+      verify: false
+    }
+
+    const res = await prepare(options, { emit: () => {}, cancel: { cancelled: false } })
+    expect(res.ok).toBe(true)
+    expect(await readdir(join(dest, 'GBC'))).toEqual(expect.arrayContaining(['Tetris.gb', 'Kirby.gbc']))
+    expect(await readdir(join(dest, 'snes_rom'))).toEqual(expect.arrayContaining(['Mario.smc', 'Zelda.sfc']))
+    expect(await readdir(dest)).toContain('Jackal.nes')
+
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('does not double up when the source already uses GBC/ or snes_rom/', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'sc64-test-'))
+    const source = join(root, 'source')
+    const dest = join(root, 'dest')
+    await mkdir(join(source, 'GBC', 'sub'), { recursive: true })
+    await mkdir(join(source, 'snes_rom'), { recursive: true })
+    await mkdir(dest, { recursive: true })
+
+    await writeFile(join(source, 'GBC', 'sub', 'Tetris.gb'), 'gb-rom')
+    await writeFile(join(source, 'snes_rom', 'Mario.smc'), 'snes-rom')
+
+    const options: PrepareOptions = {
+      destination: dest,
+      locale: 'en',
+      mode: 'direct',
+      downloadMenu: false,
+      downloadMetadata: false,
+      createFolders: false,
+      downloadEmulators: false,
+      emulators: { nes: false, snes: false, gb: false, sms: false, chf: false },
+      installDDIPL: false,
+      ddiplSource: null,
+      copyRoms: true,
+      romSources: [source],
+      romTypes: ['gb', 'snes'],
+      createSaves: false,
+      includeSubdirs: true,
+      overwrite: false,
+      organizeRoms: false,
+      stockFolders: true,
+      copyCheats: false,
+      verify: false
+    }
+
+    const res = await prepare(options, { emit: () => {}, cancel: { cancelled: false } })
+    expect(res.ok).toBe(true)
+    expect(await readdir(join(dest, 'GBC', 'sub'))).toContain('Tetris.gb')
+    expect(await readdir(join(dest, 'snes_rom'))).toContain('Mario.smc')
+    expect(await readdir(join(dest, 'GBC'))).toEqual(['sub'])
+    expect(await readdir(join(dest, 'snes_rom'))).toEqual(['Mario.smc'])
 
     await rm(root, { recursive: true, force: true })
   })

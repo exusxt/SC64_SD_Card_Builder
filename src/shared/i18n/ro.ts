@@ -154,6 +154,8 @@ const ro = {
   'opt.verifyHint': 'Compară fiecare fișier copiat byte cu byte și raportează orice nepotrivire.',
   'opt.organize': 'Organizează ROM-urile în foldere',
   'opt.organizeHint': 'Redenumește ROM-urile ca <Titlu> (Regiune) și pune-le în foldere proprii.',
+  'opt.stockFolders': 'Folosește aspectul cardului oficial',
+  'opt.stockFoldersHint': 'Plasează jocurile Game Boy în GBC/ și jocurile SNES în snes_rom/, ca pe cardul oficial.',
   'opt.copyCheats': 'Copiază fișierele cheat (.cht)',
   'opt.copyCheatsHint': 'Copiază un fișier .cht lângă fiecare ROM, dacă există.',
   'opt.ddipl': 'Instalează IPL-ul 64DD',
