@@ -1,4 +1,5 @@
 import { open } from 'node:fs/promises'
+import { formatWindows } from './winraw'
 
 const SECTOR_SIZE = 512
 const PARTITION_START = 2048
@@ -7,6 +8,7 @@ const NUM_FATS = 2
 const ROOT_CLUSTER = 2
 const FSINFO_SECTOR = 1
 const BACKUP_BOOT = 6
+const ZERO_CHUNK = 4 * 1024 * 1024
 
 export interface Fat32Layout {
   spc: number
@@ -155,51 +157,40 @@ async function writeAt(handle: Awaited<ReturnType<typeof open>>, buffer: Buffer,
   }
 }
 
-export async function formatDevice(device: string, sizeBytes: number, opts: FormatDeviceOptions): Promise<void> {
-  const layout = computeLayout(sizeBytes)
-  const label = sanitizeLabel(opts.label)
-  const emit = (stage: string, bytesWritten: number, totalBytes: number): void => opts.onProgress?.({ stage, bytesWritten, totalBytes })
+// Builds the whole FAT32 structure (MBR, boot sector, FSInfo, backup boot
+// sector, both FATs and the root directory cluster) as one zero-filled prefix
+// of the disk. The rest of the disk is left untouched unless fullFormat.
+function buildStructure(layout: Fat32Layout, label: string): Buffer {
+  const bootStart = layout.partStartSector * SECTOR_SIZE
+  const structureEnd = layout.dataStartSector * SECTOR_SIZE + layout.bytesPerCluster
+  const buf = Buffer.alloc(structureEnd)
+  buildMBR(layout.partSectors).copy(buf, 0)
+  const bpb = buildBPB(layout, label)
+  bpb.copy(buf, bootStart)
+  buildFSInfo(layout.totalClusters).copy(buf, bootStart + FSINFO_SECTOR * SECTOR_SIZE)
+  bpb.copy(buf, bootStart + BACKUP_BOOT * SECTOR_SIZE)
+  const fat = buildFAT(layout.fatSize)
+  fat.copy(buf, bootStart + RESERVED * SECTOR_SIZE)
+  fat.copy(buf, bootStart + (RESERVED + layout.fatSize) * SECTOR_SIZE)
+  return buf
+}
 
-  // Pass the device path as a Buffer: older Node versions (< 23) mangle string
-  // device paths on Windows via toNamespacedPath() (adds a trailing backslash),
-  // which breaks the open with EINVAL. Buffer paths bypass that. Kept as
-  // defence-in-depth even though current Electron (43, Node 24) no longer mangles.
+async function formatDevicePosix(
+  device: string,
+  layout: Fat32Layout,
+  structure: Buffer,
+  opts: FormatDeviceOptions,
+  emit: (stage: string, bytesWritten: number, totalBytes: number) => void
+): Promise<void> {
   const devicePath = Buffer.from(device.replace(/[\\/]+$/, ''))
   const handle = await open(devicePath, 'r+')
   try {
-    // 1. Zero the region between start of disk and partition start, then write the MBR.
-    const zero1MiB = Buffer.alloc(1024 * 1024)
-    emit('Writing partition table', 0, 1024 * 1024)
-    await writeAt(handle, zero1MiB, 0, PARTITION_START * SECTOR_SIZE)
-    await writeAt(handle, buildMBR(layout.partSectors), 0)
-    emit('Writing partition table', 1024 * 1024, 1024 * 1024)
+    emit('Writing partition table', 0, structure.length)
+    await writeAt(handle, structure, 0)
+    emit('Writing partition table', structure.length, structure.length)
 
-    const bpb = buildBPB(layout, label)
-    const bootStart = PARTITION_START * SECTOR_SIZE
-
-    // 2. Boot sector + FSInfo + backup boot sector.
-    await writeAt(handle, bpb, bootStart)
-    await writeAt(handle, buildFSInfo(layout.totalClusters), bootStart + FSINFO_SECTOR * SECTOR_SIZE)
-    // zero reserved sectors 2..5
-    await writeAt(handle, zero1MiB, bootStart + 2 * SECTOR_SIZE, (BACKUP_BOOT - 2) * SECTOR_SIZE)
-    await writeAt(handle, bpb, bootStart + BACKUP_BOOT * SECTOR_SIZE)
-    // zero reserved sectors 7..31
-    await writeAt(handle, zero1MiB, bootStart + (BACKUP_BOOT + 1) * SECTOR_SIZE, (RESERVED - BACKUP_BOOT - 1) * SECTOR_SIZE)
-
-    // 3. FAT tables.
-    const fat = buildFAT(layout.fatSize)
-    emit('Writing file allocation tables', 0, layout.fatSize * SECTOR_SIZE)
-    await writeAt(handle, fat, bootStart + RESERVED * SECTOR_SIZE)
-    await writeAt(handle, fat, bootStart + (RESERVED + layout.fatSize) * SECTOR_SIZE)
-    emit('Writing file allocation tables', layout.fatSize * SECTOR_SIZE, layout.fatSize * SECTOR_SIZE)
-
-    // 4. Root directory cluster.
-    await writeAt(handle, Buffer.alloc(layout.bytesPerCluster), layout.dataStartSector * SECTOR_SIZE)
-    emit('Root directory created', 0, 0)
-
-    // 5. Optional full format: zero out the whole data area.
     if (opts.fullFormat) {
-      const chunk = Buffer.alloc(4 * 1024 * 1024)
+      const chunk = Buffer.alloc(ZERO_CHUNK)
       const start = layout.dataStartSector * SECTOR_SIZE
       const end = (layout.partStartSector + layout.partSectors) * SECTOR_SIZE
       let pos = start
@@ -214,4 +205,29 @@ export async function formatDevice(device: string, sizeBytes: number, opts: Form
   } finally {
     await handle.close()
   }
+}
+
+export async function formatDevice(device: string, sizeBytes: number, opts: FormatDeviceOptions): Promise<void> {
+  const layout = computeLayout(sizeBytes)
+  const label = sanitizeLabel(opts.label)
+  const emit = (stage: string, bytesWritten: number, totalBytes: number): void =>
+    opts.onProgress?.({ stage, bytesWritten, totalBytes })
+  const structure = buildStructure(layout, label)
+
+  if (process.platform === 'win32') {
+    // Node's fs.open opens physical drives with shared access, which Windows
+    // refuses for writes past the MBR (KB 942448). On Windows the structure is
+    // streamed to the device by a PowerShell helper that opens it exclusively.
+    await formatWindows({
+      device,
+      structure,
+      totalBytes: sizeBytes,
+      fullFormat: opts.fullFormat,
+      cancel: opts.fullFormat ? opts.cancel : undefined,
+      onProgress: (p) => emit(p.stage, p.bytesWritten, p.totalBytes)
+    })
+    return
+  }
+
+  await formatDevicePosix(device, layout, structure, opts, emit)
 }
