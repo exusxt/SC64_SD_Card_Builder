@@ -1,3 +1,9 @@
+// The prepare pipeline: downloads the menu, metadata, and emulators, installs
+// the 64DD IPL, copies and validates ROMs, creates save folders and .cht
+// cheats, then writes an HTML/CSV report. Runs entirely in the main process so
+// downloads and large copies never block the renderer; every stage streams
+// step/progress/log events through PrepareCallbacks.emit.
+
 import { mkdtemp, copyFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync, statSync, readdirSync } from 'node:fs'
 import { join, dirname, sep } from 'node:path'
@@ -16,12 +22,19 @@ import { validateEmuFile, emuIdentity, isGBExt, isSNESExt, isSMSExt, EmuHeaderIn
 import { installDDIPL } from './ddipl'
 import { writeReport, type ReportCounts, type ReportLog, type ReportRow } from './report'
 
+/**
+ * Callbacks the runner uses to reach the outside world: `emit` pushes
+ * AppEvents (step/progress/log/done/error) to the renderer, `cancel` is the
+ * shared flag toggled by the prepare:cancel channel, and `version` is the app
+ * version stamped into the generated report.
+ */
 export interface PrepareCallbacks {
   emit: (ev: AppEvent) => void
   cancel?: { cancelled: boolean }
   version?: string
 }
 
+/** ROM file extensions accepted per type; the enabled romTypes map onto these. */
 const EXTENSIONS: Record<string, string[]> = {
   n64: ['.n64', '.z64', '.v64'],
   nes: ['.nes'],
@@ -32,8 +45,14 @@ const EXTENSIONS: Record<string, string[]> = {
   ndd: ['.ndd', '.d64']
 }
 
+/**
+ * The ordered pipeline steps shown as the stepper in the UI. 'format' is the
+ * exception: it is owned by the separate format:run flow and is never executed
+ * here, so it stays 'pending' (or is marked skipped in fromPrepared mode).
+ */
 const STEP_IDS: StepId[] = ['folders', 'menu', 'metadata', 'emulators', 'ddipl', 'roms', 'format', 'verify', 'copy']
 
+// Human-readable names for the per-console emulator summary log.
 const EMU_KIND_LABELS: Record<EmuKind, string> = {
   gb: 'Game Boy',
   gbc: 'Game Boy Color',
@@ -46,13 +65,16 @@ function baseNameOf(p: string): string {
   return p.split(/[/\\]/).pop() ?? p
 }
 
+// extOf lowercases so .Z64 matches .z64 on case-insensitive and
+// case-sensitive filesystems alike.
 function extOf(p: string): string {
   return p.slice(p.lastIndexOf('.')).toLowerCase()
 }
 
 // Mirrors the stock card's layout: GB/GBC games live under GBC/, SNES games
 // under snes_rom/ and SMS/GG games under smsPlus64/, each with a saves/
-// folder per game.
+// folder per game. Returns null for systems without a stock folder (N64, NES,
+// 64DD), which stay in the card root - exactly what the menu expects.
 function stockFolderOf(p: string): string | null {
   const ext = extOf(p)
   if (ext === '.gb' || ext === '.gbc') return 'GBC'
@@ -85,6 +107,8 @@ function fileSize(p: string): number {
   }
 }
 
+// A .cht cheat file next to the ROM, matched case-insensitively because cheats
+// dumped from some setups are named with different casing than the ROM.
 function findCht(romPath: string): string | null {
   const last = romPath.lastIndexOf('.')
   const stem = last >= 0 ? romPath.slice(0, last) : romPath
@@ -100,6 +124,11 @@ function findCht(romPath: string): string | null {
   }
 }
 
+/**
+ * Stateful executor for a single prepare run. Accumulates per-step states,
+ * report rows/logs/counts, and a locale for localizing every message it
+ * emits, then feeds progress to the renderer through the callbacks.
+ */
 class Runner {
   private steps: Record<StepId, StepState>
   private readonly locale: Locale
@@ -116,15 +145,19 @@ class Runner {
   constructor(private cb: PrepareCallbacks, locale: Locale) {
     this.locale = locale
     this.steps = {} as Record<StepId, StepState>
+    // Every step starts 'pending' so the stepper shows the full pipeline even
+    // before a step has run; steps that never run stay pending (e.g. format).
     for (const id of STEP_IDS) {
       this.steps[id] = { id, label: this.t(`stepLabel.${id}`), state: 'pending' }
     }
   }
 
+  /** Localized message helper bound to this run's locale. */
   t(key: Parameters<typeof translate>[1], vars?: Record<string, string | number>): string {
     return translate(this.locale, key, vars)
   }
 
+  /** Marks a step running/done/error and pushes the change to the renderer. */
   step(id: StepId, state: StepState['state'], detail?: string): void {
     const s = this.steps[id]
     s.state = state
@@ -132,27 +165,33 @@ class Runner {
     this.cb.emit({ type: 'step', step: { ...s } })
   }
 
+  /** Ends a step 'done' with a "skipped" detail so the stepper stays green when a feature is disabled. */
   markSkipped(id: StepId): void {
     this.step(id, 'done', this.t('log.skipped'))
   }
 
+  /** Appends a line to the report log and streams the same line to the UI. */
   log(level: 'info' | 'success' | 'warn' | 'error', message: string): void {
     this.logs.push({ level, message })
     this.cb.emit({ type: 'log', level, message })
   }
 
+  /** Forwards byte/file progress to the renderer. */
   progress(value: number, max: number, label?: string): void {
     this.cb.emit({ type: 'progress', value, max, label })
   }
 
+  /** Downloads a file with progress; `max` is the byte count when the server reports one. */
   async download(url: string, dest: string, label: string): Promise<void> {
     await downloadFile(url, dest, { onProgress: (p) => this.progress(p.received, p.total || 0, label) })
   }
 
+  /** Throws when the user requested a cancel; polled between files so cancellation lands quickly. */
   checkCancel(): void {
     if (this.cb.cancel?.cancelled) throw new Error(this.t('log.cancelled'))
   }
 
+  /** Localizes an N64 validation issue using the parsed header for its details. */
   n64IssueMessage(issue: N64Issue, header: N64Header, rel: string): string {
     switch (issue.code) {
       case 'ext-mismatch':
@@ -164,6 +203,7 @@ class Runner {
     }
   }
 
+  /** Localizes an emulator (GB/SNES/SMS/GG) validation issue. */
   emuIssueMessage(issue: EmuIssue, rel: string): string {
     switch (issue.code) {
       case 'not-gb':
@@ -183,6 +223,11 @@ class Runner {
     }
   }
 
+  /**
+   * Creates the menu folder tree (menu/, menu/metadata/, menu/64ddipl/,
+   * menu/emulators/) and, when stockFolders is set, the per-console game
+   * folders GBC/, snes_rom/ and smsPlus64/.
+   */
   async createFolders(destination: string, enabled: boolean, stockFolders = false): Promise<void> {
     if (!enabled) {
       this.markSkipped('folders')
@@ -196,6 +241,10 @@ class Runner {
     this.step('folders', 'done')
   }
 
+  /**
+   * Downloads the latest sc64menu.n64 release into the card root. A card that
+   * already has a menu keeps it unless the user asked to overwrite.
+   */
   async downloadMenu(destination: string, enabled: boolean, overwrite: boolean): Promise<void> {
     if (!enabled) {
       this.markSkipped('menu')
@@ -221,6 +270,10 @@ class Runner {
     this.step('menu', 'done')
   }
 
+  /**
+   * Downloads the boxart & metadata release into a temp dir, extracts it, and
+   * merges its contents into menu/metadata/. The temp dir is always removed.
+   */
   async downloadMetadata(destination: string, enabled: boolean): Promise<void> {
     if (!enabled) {
       this.markSkipped('metadata')
@@ -257,12 +310,19 @@ class Runner {
     }
   }
 
+  // Metadata zips have shipped with several internal layouts; probe the known
+  // ones before falling back to the extracted root.
   private findMetadataSource(extractDir: string): string {
     const candidates = [join(extractDir, 'metadata'), join(extractDir, 'menu', 'metadata'), join(extractDir, 'menu')]
     for (const c of candidates) if (isDir(c)) return c
     return extractDir
   }
 
+  /**
+   * Downloads the selected emulators into menu/emulators/. Each emulator is
+   * isolated in its own try/catch so a failed release never aborts the step;
+   * the step still ends 'done' with a partial-failure detail.
+   */
   async downloadEmulators(destination: string, enabled: boolean, emulators: Record<EmulatorKey, boolean>): Promise<void> {
     if (!enabled) {
       this.markSkipped('emulators')
@@ -273,6 +333,8 @@ class Runner {
     await ensureDir(emuDir)
     let anyError = false
 
+    // Wraps one emulator install: logs the label, swallows the failure into
+    // anyError, and keeps the other emulators running.
     const guard = async (label: string, fn: () => Promise<void>): Promise<void> => {
       this.checkCancel()
       this.log('info', `  ${label}`)
@@ -289,8 +351,12 @@ class Runner {
         const assets = await latestReleaseAssets('hcs64/neon64v2')
         const zip = assets.find((a) => a.name.toLowerCase().endsWith('.zip'))
         if (!zip) throw new Error('No Neon64 zip asset found')
+        // Dot-prefixed temp files keep the download invisible to the menu's
+        // file browser and are deleted as soon as the needed ROM is pulled out.
         const zipPath = join(emuDir, '.neon64.zip')
         await this.download(zip.browser_download_url, zipPath, 'Neon64')
+        // The release bundles several ROM variants; prefer the 'bu' build,
+        // else fall back to the first match.
         const entries = await findEntriesInZip(zipPath, (n) => /\.rom$/i.test(n) || /neon64/i.test(n))
         const chosen = entries.find((n) => /bu/i.test(n)) ?? entries[0]
         if (!chosen) throw new Error('No Neon64 ROM found in zip')
@@ -308,6 +374,8 @@ class Runner {
         if (!zip) throw new Error('No Sodium64 zip asset found')
         const zipPath = join(emuDir, '.sodium64.zip')
         await this.download(zip.browser_download_url, zipPath, 'Sodium64')
+        // Same pattern as Neon64: pull just the intended N64 ROM out of the
+        // release zip, then drop the zip.
         const entries = await findEntriesInZip(zipPath, (n) => /\.(z64|v64|n64)$/i.test(n))
         const chosen = entries.find((n) => /sodium64/i.test(n)) ?? entries[0]
         if (!chosen) throw new Error('No Sodium64 ROM found in zip')
@@ -321,6 +389,8 @@ class Runner {
     if (emulators.gb) {
       await guard('Game Boy / Color (GB64)...', async () => {
         const target = join(emuDir, 'gb.v64')
+        // GB64 serves both Game Boy and Game Boy Color, so the single download
+        // is copied to both names and only counted once.
         await this.download(GB64_TEMPLATE_URL, target, 'GB64')
         await copyFile(target, join(emuDir, 'gbc.v64'))
         this.counts.emulatorsInstalled++
@@ -354,6 +424,10 @@ class Runner {
     this.step('emulators', 'done', anyError ? this.t('log.someFailed') : undefined)
   }
 
+  /**
+   * Installs validated 64DD IPL dumps into menu/64ddipl. A missing source is
+   * tolerated (warn + skip) so a run without IPL dumps still completes.
+   */
   async installDDIPLStep(destination: string, enabled: boolean, source: string | null): Promise<void> {
     if (!enabled) {
       this.markSkipped('ddipl')
@@ -380,6 +454,13 @@ class Runner {
     this.step('ddipl', 'done')
   }
 
+  /**
+   * The core copying step: extracts archives into the destination, walks every
+   * ROM source, validates N64 and emulator headers, dedupes by identity, and
+   * copies matching files (organizing and creating saves/cheats as
+   * configured). Optionally byte-for-byte verifies each copy. Returns how many
+   * ROMs and save folders were produced.
+   */
   async copyRoms(options: PrepareOptions): Promise<{ roms: number; saves: number }> {
     const archiveList = (options.archiveSources ?? []).filter((a) => existsSync(a))
     const hasArchiveSources = options.copyRoms && archiveList.length > 0
@@ -404,6 +485,8 @@ class Runner {
     const destNorm = destRoot.replace(/\//g, sep).toLowerCase()
     const label = this.t('log.copyingRoms')
 
+    // Duplicate-detection map shared by N64 and emulator ROMs; see the key
+    // construction below for what each identity contains.
     const seen = new Map<string, string>()
     let n64Count = 0
     let warningCount = 0
@@ -416,6 +499,8 @@ class Runner {
     if (options.verify) this.step('verify', 'running')
     else this.markSkipped('verify')
 
+    // Archives are extracted straight into the destination so their internal
+    // folder layout is preserved as-is.
     for (const archive of archiveList) {
       this.checkCancel()
       const name = baseNameOf(archive)
@@ -435,6 +520,8 @@ class Runner {
       const files = options.includeSubdirs ? listDirDeep(source) : listFilesDirect(source)
       const matches: string[] = []
       for (const file of files) {
+        // Never copy a source that lives inside the destination - the walk
+        // would read back what we write and loop into itself.
         if (isInsideDest(file, destNorm)) continue
         if (extSet.has(extOf(file))) matches.push(file)
       }
@@ -443,6 +530,8 @@ class Runner {
         const rel = options.includeSubdirs ? file.slice(source.length).replace(/^[/\\]/, '') : baseNameOf(file)
         let target = join(destRoot, rel)
         if (options.stockFolders) {
+          // Retarget the file into its stock folder (GBC/, snes_rom/,
+          // smsPlus64/) unless the source path already targets it.
           const folder = stockFolderOf(file)
           if (folder) {
             const firstSeg = rel.split(/[/\\]/)[0]?.toLowerCase()
@@ -451,6 +540,7 @@ class Runner {
             }
           }
         }
+        // Respect overwrite: existing files are skipped unless overwriting.
         if (existsSync(target) && !options.overwrite) continue
 
         let n64Header: N64Header | null = null
@@ -458,6 +548,11 @@ class Runner {
           const v = await inspectN64File(file)
           if (v.header) {
             n64Header = v.header
+            // Duplicate detection: N64 ROMs are keyed by romIdentity (game
+            // code + header CRCs, lowercase), so the same game is caught even
+            // when its filename or byte order differs. The map value is the
+            // first occurrence's relative path, used to say where the
+            // duplicate was already seen.
             const id = romIdentity(v.header)
             const first = seen.get(id)
             if (first) {
@@ -484,6 +579,8 @@ class Runner {
           const v = validateEmuFile(file)
           if (v.header) {
             emuHeader = v.header
+            // Emulator ROMs are keyed by emuIdentity + size (kind + title or
+            // product code + checksum), sharing the same `seen` map as N64.
             const id = emuIdentity(v.header, fileSize(file))
             const first = seen.get(id)
             if (first) {
@@ -507,6 +604,8 @@ class Runner {
         }
 
         if (n64Header && options.organizeRoms) {
+          // Organize mode: each game lands in its own "Title (Region)" folder;
+          // uniqueBase appends a numeric suffix when two titles collide.
           const base = uniqueBase(organizeBase(n64Header), usedBases)
           target = join(destRoot, base, `${base}${extOf(file)}`)
         }
@@ -514,9 +613,12 @@ class Runner {
         await ensureDir(dirname(target))
         await copyFile(file, target)
         roms++
+        // Remember the folder for the saves/ subfolder pass below.
         if (options.createSaves) saveDirs.add(dirname(target))
 
         if (options.copyCheats && n64Header) {
+          // Sidecar .cht cheat files are copied beside the ROM and renamed to
+          // match the copied target (see chtNameOf).
           const cht = findCht(file)
           if (cht) {
             const chtTarget = chtNameOf(target)
@@ -529,6 +631,8 @@ class Runner {
         }
 
         if (options.verify) {
+          // Byte-for-byte comparison of the copy against the source before the
+          // next file is written.
           if (await verifyFile(file, target)) {
             verified++
           } else {
@@ -550,6 +654,9 @@ class Runner {
       }
     }
 
+    // Per-console summary lines: the N64 line breaks counts down by region and
+    // the emulator line by console, so the user sees the shape of the card at
+    // a glance.
     if (n64Count > 0) {
       const regions = (Object.entries(regionCounts) as Array<[N64Region, number]>)
         .filter(([, c]) => c > 0)
@@ -569,6 +676,8 @@ class Runner {
 
     let saves = 0
     if (options.createSaves) {
+      // saveDirs collected every folder that received a ROM; each gets one
+      // saves/ subfolder, which is where the menu writes save files.
       for (const d of saveDirs) {
         await ensureDir(join(d, 'saves'))
         saves++
@@ -597,6 +706,11 @@ class Runner {
     return { roms, saves }
   }
 
+  /**
+   * Copies a fully-prepared tree into the destination (used by 'staged' and
+   * 'fromPrepared' modes). Verifies every byte when requested and throws at
+   * the end when any mismatch was found, naming up to five offending files.
+   */
   async copyTree(source: string, dest: string, verify: boolean): Promise<void> {
     this.step('copy', 'running')
     this.step('verify', 'pending')
@@ -651,6 +765,7 @@ class Runner {
     this.step('copy', 'done')
   }
 
+  /** Renders and writes sc64-report.html/csv next to the prepared card contents. */
   async writeReportFile(destination: string, mode: PrepareMode, durationMs: number, ok: boolean): Promise<{ html: string; csv: string } | null> {
     const report = await writeReport({
       appVersion: this.cb.version ?? '',
@@ -671,15 +786,31 @@ class Runner {
   }
 }
 
+// Case-insensitive containment check (paths normalized to the platform
+// separator) so a source folder that is actually inside the destination is
+// detected regardless of letter case.
 function isInsideDest(p: string, destNorm: string): boolean {
   const norm = p.replace(/\//g, sep).toLowerCase()
   return norm === destNorm || norm.startsWith(destNorm + sep)
 }
 
+/**
+ * Entry point of the prepare pipeline, invoked over the prepare:run channel.
+ *
+ * In 'direct' mode everything is written straight into the destination. In
+ * 'staged' mode the pipeline builds a temp staging folder first (so the card
+ * can be formatted before files land) and then copies the tree over.
+ * 'fromPrepared' skips every build step and just copies an already-prepared
+ * folder tree. All modes end with the HTML/CSV report and a done/error
+ * AppEvent.
+ */
 export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Promise<PrepareResult> {
   const runner = new Runner(cb, options.locale ?? 'en')
   const startMs = Date.now()
   try {
+    // Conflict guard: refuse to build when a source folder contains the
+    // destination, because copying would read back what we write and never
+    // converge.
     const guardSources = options.mode === 'fromPrepared' ? [options.preparedSource ?? ''] : options.copyRoms ? options.romSources : []
     for (const src of guardSources) {
       if (src && pathContains(src, options.destination)) {
@@ -687,6 +818,8 @@ export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Pr
       }
     }
     if (options.mode === 'fromPrepared') {
+      // Reuse a prior staged result: only copy + verify run, and the rest of
+      // the stepper is marked skipped.
       const src = options.preparedSource
       if (!src || !existsSync(src)) {
         throw new Error(runner.t('log.preparedMissing', { path: src ?? '' }))
@@ -705,12 +838,16 @@ export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Pr
     let target = options.destination
     let cleanupTarget = false
     if (options.mode === 'staged') {
+      // staged mode builds into a temp dir so the card can be formatted
+      // before any file lands; the staging dir is removed when the run ends.
       target = await mkdtemp(join(tmpdir(), 'sc64-stage-'))
       cleanupTarget = true
       runner.log('info', runner.t('log.staging'))
     }
 
     try {
+      // Probe write/delete confirms the destination is actually writable
+      // before the pipeline spends effort building into it.
       const probe = join(target, '.sc64-probe')
       await writeFile(probe, '')
       await rm(probe, { force: true })
@@ -738,6 +875,7 @@ export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Pr
       cb.emit({ type: 'done', scope: 'prepare', summary })
       return { ok: true, summary, report }
     } finally {
+      // Staging and extraction temp dirs are always cleaned up, even on error.
       if (cleanupTarget) await rmTree(target)
     }
   } catch (e: any) {

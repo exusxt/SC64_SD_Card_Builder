@@ -1,9 +1,22 @@
+// Windows UAC / macOS / Linux pkexec elevation for the main process. Formatting
+// a drive and other low-level card operations need administrator rights:
+// isElevated() reports whether the current process already has them,
+// relaunchElevated() restarts the app with elevation (reusing the same argv),
+// and showAdminPrompt() is the IPC-facing wrapper that quits this instance
+// once the elevated copy is on its way up.
+
 import { execFile, spawn } from 'node:child_process'
 import { app, dialog } from 'electron'
 import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
 
+/**
+ * Whether the current process already runs with administrator/root rights.
+ * Uses `net session` (which fails with access denied unless elevated) on
+ * Windows and the effective UID on macOS/Linux. Non-admin platforms report
+ * true.
+ */
 export async function isElevated(): Promise<boolean> {
   try {
     if (process.platform === 'win32') {
@@ -21,10 +34,19 @@ export async function isElevated(): Promise<boolean> {
   }
 }
 
+/**
+ * Relaunch the app elevated, preserving the current argv. Windows elevates via
+ * a PowerShell Start-Process -Verb RunAs (the UAC prompt); macOS via osascript;
+ * Linux via pkexec with --no-sandbox. Resolves with { ok, message } and never
+ * throws.
+ */
 export async function relaunchElevated(): Promise<{ ok: boolean; message: string }> {
   const exe = process.execPath
   try {
     if (process.platform === 'win32') {
+      // The portable build's .exe is a self-extracting wrapper; run the real
+      // binary directly with no argv so it launches plain instead of
+      // re-extracting itself.
       const portableExe = process.env.PORTABLE_EXECUTABLE_FILE
       const target = portableExe ?? exe
       const args = portableExe ? '' : process.argv.slice(1).join(' ')
@@ -72,6 +94,12 @@ export async function relaunchElevated(): Promise<{ ok: boolean; message: string
   }
 }
 
+/**
+ * IPC-facing prompt for elevation. On success quits this instance shortly
+ * after (so the user is left with one admin window, not two copies of the
+ * app) and returns an ok result; on failure shows an error dialog and returns
+ * the failure.
+ */
 export async function showAdminPrompt(): Promise<{ ok: boolean; message: string }> {
   const res = await relaunchElevated()
   if (res.ok) {

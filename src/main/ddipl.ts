@@ -1,15 +1,25 @@
+// 64DD IPL dump validation and installation for the main process. Scans a
+// user-selected folder for big-endian 4 MiB IPL dumps, validates them against
+// the canonical disk IDs, and copies the good ones into /menu/64ddipl/ during
+// the card build so the menu's disk-swap feature has the drive firmware to
+// serve.
+
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import { copyFile, mkdir, open } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import type { DdIplFileInfo, DdIplValidation } from '../shared/types'
 import { DD_IPL_SIZE } from '../shared/types'
 
-// Canonical 64DD IPL disk IDs recognised by N64FlashcartMenu inside
-// /menu/64ddipl/. NDDJ0/NDDJ1 are older Japanese cartridge IPLs; NDDE0 is the
-// US retail drive, NDDJ2 the Japanese retail drive and NDXJ0 the dev drive.
+/**
+ * Canonical 64DD IPL disk IDs recognised by N64FlashcartMenu inside
+ * /menu/64ddipl/. NDDJ0/NDDJ1 are older Japanese cartridge IPLs; NDDE0 is the
+ * US retail drive, NDDJ2 the Japanese retail drive and NDXJ0 the dev drive.
+ */
 export const DD_IPL_IDS = ['NDDJ0', 'NDDJ1', 'NDDJ2', 'NDDE0', 'NDXJ0'] as const
 export type DdIplId = (typeof DD_IPL_IDS)[number]
 
+// All three N64 byte orders are accepted for an IPL dump; validity is decided
+// from the content, not the extension.
 const ACCEPTED_EXTS = new Set(['.n64', '.z64', '.v64'])
 
 function baseOf(name: string): string {
@@ -17,6 +27,8 @@ function baseOf(name: string): string {
   return ext ? name.slice(0, -ext.length) : name
 }
 
+// A single candidate file's size, first-0x40 header bytes and raw disk-ID
+// field, gathered without loading the whole 4 MiB dump.
 interface Probe {
   size: number
   header: Buffer
@@ -30,6 +42,8 @@ async function probe(path: string): Promise<Probe> {
     const buf = Buffer.alloc(0x40)
     const { bytesRead } = await fh.read(buf, 0, buf.length, 0)
     const header = buf.subarray(0, bytesRead)
+    // Disk-ID field at 0x3B (e.g. "NDDJ" / "NDDE" / "NDXJ"), right where the
+    // N64 game-code field sits; a byte-swapped dump garbles it.
     const id = header.length >= 0x3f ? header.toString('latin1', 0x3b, 0x3f) : null
     return { size, header, id }
   } finally {
@@ -38,7 +52,8 @@ async function probe(path: string): Promise<Probe> {
 }
 
 // 64DD IPL ROMs are big-endian and start with 0x80270740 at offset 0; the
-// ASCII disk ID ("NDDJ"/"NDDE"/"NDXJ") sits at offset 0x3B.
+// ASCII disk ID ("NDDJ"/"NDDE"/"NDXJ") sits at offset 0x3B. A swapped dump
+// fails the magic word (either half-word order).
 function byteOrderOf(header: Buffer): 'be' | 'swapped' | null {
   if (header.length < 4) return null
   const b = header
@@ -47,6 +62,12 @@ function byteOrderOf(header: Buffer): 'be' | 'swapped' | null {
   return null
 }
 
+/**
+ * Inspect a folder for the canonical IPL dumps, matched by base name
+ * (<ID>.n64/.z64/.v64, case-insensitive). Every known ID gets a file entry
+ * (present or not); files with a recognized extension but an unknown base name
+ * are listed in `unrecognized`. Never throws for a missing/non-directory path.
+ */
 export async function scanDDIPLFolder(dir: string): Promise<DdIplValidation | null> {
   if (!dir || !existsSync(dir) || !statSync(dir).isDirectory()) return null
   const entries = readdirSync(dir)
@@ -83,9 +104,12 @@ export interface DDIPLInstallResult {
   invalid: string[]
 }
 
-// Copies the valid big-endian IPL dumps from `source` into `dest` as the
-// canonical <ID>.n64 filenames the menu expects. Missing/Invalid dumps are
-// reported instead of failing, so the rest of the card build can continue.
+/**
+ * Copy every valid big-endian IPL dump from `source` into `dest` under the
+ * canonical <ID>.n64 filename N64FlashcartMenu expects, creating `dest` first.
+ * Missing and invalid dumps are reported instead of failing so the rest of the
+ * card build can continue.
+ */
 export async function installDDIPL(source: string, dest: string): Promise<DDIPLInstallResult> {
   const validation = await scanDDIPLFolder(source)
   const result: DDIPLInstallResult = { installed: [], missing: [], invalid: [] }

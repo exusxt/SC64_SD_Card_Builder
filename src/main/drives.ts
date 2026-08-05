@@ -1,3 +1,9 @@
+// Drive enumeration for the drive-picker flow.
+//
+// Produces DriveInfo[] from platform tools: the PowerShell Storage module
+// (Get-Volume / Get-Partition / Get-Disk) on Windows, `lsblk -J` on Linux and
+// `diskutil list -plist` on macOS. Internal/system disks are filtered out or
+// flagged (isSystem) so the UI never offers the OS drive for formatting.
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import type { DriveInfo } from '../shared/types'
@@ -16,6 +22,8 @@ function run(cmd: string, args: string[]): Promise<string> {
 async function listWindows(): Promise<DriveInfo[]> {
   const script = [
     '$ErrorActionPreference = "SilentlyContinue";',
+    // Walk volume -> partition -> disk so each volume maps to its physical
+    // disk number (needed for the raw \\.\PhysicalDriveN path and isSystem).
     'Get-Volume | Where-Object { $_.DriveLetter } | ForEach-Object {',
     '  $v = $_;',
     '  $p = Get-Partition -DriveLetter $v.DriveLetter;',
@@ -23,6 +31,7 @@ async function listWindows(): Promise<DriveInfo[]> {
     '  $d = Get-Disk -Number $p.DiskNumber;',
     '  if (-not $d) { return };',
     '  $rem = $false;',
+    // Removable bus types are the practical proxy for "safe to format".
     '  try { $rem = $d.BusType -in @("USB","SD","FireWire","Thunderbolt") } catch {};',
     '  [pscustomobject]@{',
     '    id = "disk$($d.Number)";',
@@ -44,6 +53,8 @@ async function listWindows(): Promise<DriveInfo[]> {
 }
 
 async function listLinux(): Promise<DriveInfo[]> {
+  // -b reports sizes in bytes, -J emits JSON. Only partitions with a
+  // mountpoint are listed because the app formats a partition's whole disk.
   const out = await run('lsblk', ['-b', '-J', '-o', 'NAME,SIZE,TYPE,RM,PATH,MOUNTPOINTS,MODEL,FSTYPE,LABEL'])
   let data: any
   try {
@@ -58,6 +69,8 @@ async function listLinux(): Promise<DriveInfo[]> {
     if (!b.path) continue
     const mount = Array.isArray(b.mountpoints) ? b.mountpoints.find(Boolean) : b.mountpoints
     if (!mount) continue
+    // Strip the partition suffix (e.g. sdb1 -> sdb, nvme0n1p1 -> nvme0n1) to
+    // find the whole-disk node that carries the size/model/removable flags.
     const parentName = b.name.replace(/p?\d+$/, '')
     const parent = blocks.find((x: any) => x.name === parentName)
     drives.push({
@@ -70,6 +83,8 @@ async function listLinux(): Promise<DriveInfo[]> {
       filesystem: b.fstype ?? null,
       volumeLabel: b.label ?? null,
       removable: parent ? Number(parent.rm ?? 0) === 1 : false,
+      // lsblk exposes no reliable system-disk marker, so nothing is flagged;
+      // the UI relies on the removable flag and user confirmation instead.
       isSystem: false
     })
   }
@@ -77,6 +92,8 @@ async function listLinux(): Promise<DriveInfo[]> {
 }
 
 async function listMacos(): Promise<DriveInfo[]> {
+  // diskutil list -plist gives the disk/partition tree; each partition needs
+  // its own `diskutil info` call for mountpoint, filesystem and label.
   const out = await run('diskutil', ['list', '-plist'])
   const plist = parsePlist(out)
   const drives: DriveInfo[] = []
@@ -84,6 +101,8 @@ async function listMacos(): Promise<DriveInfo[]> {
   for (const disk of all) {
     const wholePath = `/dev/${disk.DeviceIdentifier}`
     const info = parsePlist(await run('diskutil', ['info', '-plist', wholePath]))
+    // Internal (onboard/soldered) disks are the boot candidates - skip them
+    // entirely so the picker only ever shows removable media.
     const isInternal = info.Internal === true
     if (isInternal) continue
     const size = Number(disk.Size ?? 0)
@@ -109,10 +128,18 @@ async function listMacos(): Promise<DriveInfo[]> {
   return drives
 }
 
+/**
+ * Enumerates candidate SD cards / removable drives for the drive picker.
+ * Failures return an empty list so the UI degrades gracefully instead of
+ * crashing; Windows results are filtered to volumes that have a drive letter.
+ *
+ * @returns DriveInfo[] of candidate disks, possibly empty
+ */
 export async function listDrives(): Promise<DriveInfo[]> {
   try {
     if (process.platform === 'win32') {
       const drives = await listWindows()
+      // A volume without a drive letter is of no use as a copy target.
       return drives.filter((d) => d.mountpoint)
     }
     if (process.platform === 'darwin') {
@@ -126,17 +153,23 @@ export async function listDrives(): Promise<DriveInfo[]> {
   }
 }
 
+/**
+ * Free bytes available to an unprivileged user on the given mountpoint
+ * (statfs: bavail x bsize), or null when the path is not statable. Kept as a
+ * lazy import so this module stays usable in every process context.
+ */
 export function freeSpaceOf(path: string): Promise<number | null> {
   return import('node:fs').then((fs) => {
     try {
       const s = fs.statfsSync(path)
-      return s.bavail * s.bsize
+      return s.bavail * s.bsize // free blocks for unprivileged users x block size
     } catch {
       return null
     }
   })
 }
 
+// PowerShell output may be a single object or an array; normalise both to a list.
 function parseJsonList<T>(text: string): T[] {
   const trimmed = text.trim()
   if (!trimmed) return []
@@ -144,6 +177,9 @@ function parseJsonList<T>(text: string): T[] {
   return Array.isArray(parsed) ? (parsed as T[]) : [parsed as T]
 }
 
+// Minimal plist parser for diskutil output: extracts top-level scalar values
+// (boolean/string/integer/real) only. Nested dicts/arrays are not needed by
+// the diskutil list/info calls used here.
 function parsePlist(xml: string): Record<string, any> {
   const result: Record<string, any> = {}
   const re = /<key>([^<]+)<\/key>\s*(<true\/>|<false\/>|<(?:string|integer|real)>([^<]*)<\/)/g

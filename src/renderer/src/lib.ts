@@ -1,9 +1,18 @@
+/**
+ * Renderer-side UI utilities: the theme registry (including the Gallery Glass
+ * family that is the default on fresh installs), background handling, preview
+ * selection helpers, emulator/ROM-type labels and number formatting.
+ */
 import type { EmulatorKey } from '../../shared/types'
 import type { ThemeId } from '../../shared/i18n'
 import { DEFAULT_SETTINGS } from '../../shared/defaults'
 
 export { DEFAULT_SETTINGS }
 
+/**
+ * Formats a byte count into a human-readable unit string (B..PB). Returns the
+ * em-dash placeholder for null/undefined/non-finite or non-positive input.
+ */
 export function formatBytes(bytes: number | null | undefined, decimals = 1): string {
   if (bytes === null || bytes === undefined || !Number.isFinite(bytes) || bytes <= 0) return '—'
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -16,6 +25,7 @@ export function formatBytes(bytes: number | null | undefined, decimals = 1): str
   return `${value.toFixed(i === 0 ? 0 : decimals)} ${units[i]}`
 }
 
+/** CSS custom properties (--sc64-*) a theme defines; applied via applyTheme. */
 export type ThemeVars = Record<string, string>
 
 type GalleryVariant = {
@@ -35,6 +45,10 @@ type GalleryVariant = {
   overlay: string
 }
 
+/**
+ * Builds the full CSS variable set for a Gallery (photo-background) variant:
+ * panels stay translucent so the background image shows through.
+ */
 function glassVars(v: GalleryVariant): ThemeVars {
   return {
     '--sc64-bg': '#0b1020',
@@ -55,6 +69,8 @@ function glassVars(v: GalleryVariant): ThemeVars {
   }
 }
 
+// Color variants for the Gallery Glass family, listed first in THEMES because
+// "gallery" is the default theme on fresh installs (see shared/defaults).
 const GALLERY_VARIANTS: Record<string, GalleryVariant> = {
   gallery: {
     panel: 'rgba(17, 26, 48, 0.68)',
@@ -170,10 +186,13 @@ const GALLERY_VARIANTS: Record<string, GalleryVariant> = {
   }
 }
 
+/** True for the Gallery Glass family (ids starting with "gallery"). */
 export function isGalleryTheme(id: ThemeId): boolean {
   return id.startsWith('gallery')
 }
 
+// All selectable themes. The Gallery Glass family is grouped first; the shared
+// defaults point at "gallery", making it the default theme on fresh installs.
 export const THEMES: Record<ThemeId, { name: string; vars: ThemeVars }> = {
   midnight: {
     name: 'Midnight',
@@ -317,6 +336,10 @@ export const THEMES: Record<ThemeId, { name: string; vars: ThemeVars }> = {
   }
 }
 
+/**
+ * Applies a theme by writing its CSS variables onto <html> and recording the
+ * active id in the dataset. Falls back to the default Gallery Glass theme.
+ */
 export function applyTheme(id: ThemeId): void {
   const theme = THEMES[id] ?? THEMES.gallery
   for (const [key, value] of Object.entries(theme.vars)) {
@@ -325,6 +348,7 @@ export function applyTheme(id: ThemeId): void {
   document.documentElement.dataset.theme = id
 }
 
+// Display names for each console emulator the menu can install.
 export const EMULATOR_LABELS: Record<EmulatorKey, string> = {
   nes: 'NES (Neon64)',
   snes: 'SNES (Sodium64)',
@@ -333,6 +357,7 @@ export const EMULATOR_LABELS: Record<EmulatorKey, string> = {
   chf: 'Channel F (Press-F Ultra)'
 }
 
+// Display names for the ROM/disk types the app can copy, with their extensions.
 export const ROM_TYPE_LABELS: Record<string, string> = {
   n64: 'N64 (.n64 / .z64 / .v64)',
   nes: 'NES (.nes)',
@@ -343,6 +368,7 @@ export const ROM_TYPE_LABELS: Record<string, string> = {
   ndd: '64DD disks (.ndd / .d64)'
 }
 
+/** Joins non-empty class names with spaces (a tiny classnames helper). */
 export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ')
 }

@@ -1,3 +1,9 @@
+/**
+ * Step 1 of the wizard: pick the destination card (removable drive) or folder,
+ * optionally reformat it (FAT32/exFAT, guarded by a typed mount-point confirm),
+ * and inspect an existing card for its menu version, ROM counts and free space.
+ * Settings are read from props and patched up via onSettingsChange.
+ */
 import { useEffect, useState } from 'react'
 import { AlertTriangle, CheckCircle2, FolderOpen, HardDrive, RefreshCw, ShieldAlert, Eye, XCircle, X, PackageOpen, Database } from 'lucide-react'
 import type { AppSettings, CardInspection, DriveInfo, Filesystem, FormatResult } from '../../../shared/types'
@@ -5,6 +11,11 @@ import type { T } from '../i18n'
 import { Button, Checkbox, Field, Input, ProgressBar, Select } from './ui'
 import { cn, formatBytes } from '../lib'
 
+/**
+ * DestinationStep. The wizard body is driven by App.tsx: drives and inspection
+ * come from window.api listDrives/inspectCard, and formatting is delegated up
+ * via onFormat/onCancelFormat with progress and result fed back in as props.
+ */
 export function DestinationStep({
   t,
   settings,
@@ -45,19 +56,26 @@ export function DestinationStep({
   onReveal: () => void
 }): React.JSX.Element {
   const [showFormat, setShowFormat] = useState(false)
+  // Destructive-format guard: the user must retype the card's mount point before onFormat is enabled.
   const [formatConfirm, setFormatConfirm] = useState('')
+  // Local draft of the folder path; only committed to settings when the user confirms, so a
+  // half-typed path never silently replaces the saved destination.
   const [folderDraft, setFolderDraft] = useState(settings.folder ?? '')
 
   useEffect(() => {
     setFolderDraft(settings.folder ?? '')
   }, [settings.folder])
+  // Only removable drives are offered; internal/system drives are never eligible to be written or formatted.
   const removableDrives = drives.filter((d) => d.removable)
   const selected = drives.find((d) => d.id === settings.driveId) ?? null
   const hasDest = destination.trim().length > 0
   const fs = (selected?.filesystem ?? '').trim().toUpperCase()
   const isFat32 = fs === 'FAT32'
   const isExfatCard = fs === 'EXFAT'
+  // Warn once free space drops below half a gigabyte; a prepare run can easily exceed that.
   const almostFull = selected?.free !== null && selected?.free !== undefined && selected.free < 512 * 1024 * 1024
+  // Normalize both sides (strip trailing slashes, lower-case) so a trailing backslash doesn't
+  // defeat the mount-point retype check and Windows drive letters compare case-insensitively.
   const mountpointKey = (selected?.mountpoint ?? '').trim().replace(/[\\/]+$/, '').toLowerCase()
   const formatConfirmKey = formatConfirm.trim().replace(/[\\/]+$/, '').toLowerCase()
   const formatConfirmValid = mountpointKey.length > 0 && formatConfirmKey === mountpointKey
@@ -65,6 +83,8 @@ export function DestinationStep({
   const formatFs: Filesystem = settings.formatOptions.filesystem
   const isExfat = formatFs === 'exfat'
 
+  // Inspection flow: collapse the raw card scan into a single status line. A menu file
+  // present without a parseable version is corrupt; "Preview release" is a pre-release build.
   const menuStatus: { label: string; kind: 'none' | 'preview' | 'version' } = (() => {
     const m = inspection?.menu
     if (!m?.present) return { label: t('inspect.menuNone'), kind: 'none' }
@@ -73,6 +93,8 @@ export function DestinationStep({
     return { label: m.version, kind: 'version' }
   })()
 
+  // Compare the installed menu against the latest GitHub release tag, ignoring a
+  // leading "v" so "v2.3" and "2.3" are treated as the same version.
   let menuUpdate: 'none' | 'up-to-date' | 'update' = 'none'
   if (menuStatus.kind !== 'none' && latestMenuTag) {
     const installed = menuStatus.label.replace(/^[vV]/, '')
@@ -86,6 +108,8 @@ export function DestinationStep({
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-sc64-muted">{t('dest.title')}</h2>
           <div className="flex items-center gap-2">
+            {/* Wizard transition within step 1: switching destination mode swaps the whole
+                body between the removable-drive picker and a plain folder path input. */}
             <div className="flex rounded-lg border border-sc64-borderlight bg-sc64-panel2 p-0.5">
               <button
                 onClick={() => onSettingsChange({ destinationMode: 'drive' })}
@@ -118,6 +142,8 @@ export function DestinationStep({
                     value={settings.driveId ?? ''}
                     onChange={(e) => {
                       onSettingsChange({ driveId: e.target.value || null })
+                      // Clearing the retype guard when the card changes prevents a confirmation
+                      // typed for one volume from being applied to a different one.
                       setFormatConfirm('')
                     }}
                     className="flex-1"

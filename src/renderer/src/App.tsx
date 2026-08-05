@@ -1,3 +1,9 @@
+/**
+ * Renderer entry component: the top-level app shell wiring the prepare/format
+ * wizard together. Holds the persisted settings, drives the Destination ->
+ * Options -> Run step machine, reacts to main-process events and applies the
+ * selected theme, language, gallery background, admin badge and update toast.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Shuffle } from 'lucide-react'
 import type {
@@ -26,10 +32,17 @@ import { UpdateToast, UpdateState } from './components/UpdateToast'
 import { MenuPreview } from './components/MenuPreview'
 import { Button } from './components/ui'
 
+// Module-level counter used to key log entries appended from main-process events.
 let logId = 0
 
+/**
+ * Root component. Renders the frameless title bar, header, wizard stepper and
+ * the active step, plus the gallery background, update toast and menu preview.
+ */
 export default function App(): React.JSX.Element {
+  // Active wizard step (1 = Destination, 2 = Options, 3 = Run).
   const [step, setStep] = useState(1)
+  // Persisted app settings: the single source of truth for every wizard option.
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [drives, setDrives] = useState<DriveInfo[]>([])
   const [drivesLoading, setDrivesLoading] = useState(false)
@@ -65,8 +78,13 @@ export default function App(): React.JSX.Element {
     }
   }, [])
 
+  /**
+   * Dispatches main-process AppEvents into renderer state. Kept stable (empty
+   * deps) so the subscription below is registered exactly once.
+   */
   const handleEvent = useCallback((ev: AppEvent): void => {
     if (ev.type === 'log') {
+      // Keep only the most recent 250 entries so the log view stays bounded.
       setLog((l) => [...l.slice(-250), { id: ++logId, level: ev.level, message: ev.message }])
     } else if (ev.type === 'step') {
       setSteps((s) => {
@@ -94,6 +112,7 @@ export default function App(): React.JSX.Element {
       }
       setUpdate({ state: ev.state, version: ev.version, percent: ev.percent, message: ev.message })
       if (ev.state === 'not-available') {
+        // Auto-dismiss the "no update" toast after a short pause.
         updateTimer.current = window.setTimeout(() => setUpdate(null), 4000)
       }
     }
@@ -102,6 +121,8 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     let mounted = true
     void (async () => {
+      // Boot: load persisted settings (merged over defaults), admin state and
+      // window maximized state before rendering the real UI state.
       const [s, admin, winMax] = await Promise.all([window.api.getSettings(), window.api.isAdmin(), window.api.windowIsMaximized()])
       if (!mounted) return
       setSettings({ ...DEFAULT_SETTINGS, ...s })
@@ -114,6 +135,8 @@ export default function App(): React.JSX.Element {
     window.api.getMenuRelease().then(setMenu).catch(() => undefined)
     window.api.getMetadataRelease().then(setMetadata).catch(() => undefined)
     window.api.getEmulatorsInfo().then(setEmulators).catch(() => undefined)
+    // Subscribe to AppEvent updates and window maximize changes, and tear both
+    // down (plus the mounted guard) on unmount.
     const offEvent = window.api.onEvent(handleEvent)
     const offMax = window.api.onWindowMaximized(setMaximized)
     return () => {
@@ -123,12 +146,14 @@ export default function App(): React.JSX.Element {
     }
   }, [handleEvent])
 
+  // Push the active theme's CSS variables onto <html> whenever the theme id changes.
   useEffect(() => {
     applyTheme(settings.theme)
   }, [settings.theme])
 
   // Gallery themes: pick a fresh random background on startup and whenever the
-  // theme is (re)selected.
+  // theme is (re)selected. Non-gallery themes clear the background so the
+  // previous image does not linger behind the flat color theme.
   useEffect(() => {
     if (!isGalleryTheme(settings.theme)) {
       setGalleryBg(null)
@@ -164,14 +189,20 @@ export default function App(): React.JSX.Element {
     }
   }, [])
 
+  // Persist settings whenever they change. The loadedRef guard skips the very
+  // first render, otherwise the in-memory defaults would overwrite the stored
+  // settings before they have been read from disk.
   useEffect(() => {
     if (!loadedRef.current) return
     void window.api.saveSettings(settings)
   }, [settings])
 
   const selectedDrive = drives.find((d) => d.id === settings.driveId) ?? null
+  // Effective destination: the selected drive's mountpoint or the chosen folder.
   const destination = settings.destinationMode === 'drive' ? (selectedDrive?.mountpoint ?? '') : (settings.folder ?? '')
 
+  // Inspect the destination when it changes; inspectionNonce additionally
+  // re-triggers this after drive refreshes so post-format state is picked up.
   useEffect(() => {
     if (!destination) {
       setInspection(null)
@@ -226,9 +257,15 @@ export default function App(): React.JSX.Element {
     (settings.copyRoms && settings.romSources.length > 0 && (settings.copyAllTypes || Object.values(settings.romTypes).some(Boolean))) ||
     (settings.copyRoms && settings.archiveSources.length > 0)
 
+  // Step gates: step 2 needs a destination, step 3 needs an action or a
+  // previously prepared source folder to operate on.
   const canProceedTo2 = destination.trim().length > 0
   const canProceedTo3 = hasAnyAction || settings.preparedSource !== null
 
+  /**
+   * Re-formats the selected drive. When not running elevated the app relaunches
+   * itself as administrator first, since formatting requires admin rights.
+   */
   const runFormat = async (): Promise<void> => {
     if (!selectedDrive) return
     if (!isAdmin) {
@@ -256,6 +293,8 @@ export default function App(): React.JSX.Element {
     await refreshDrives()
   }
 
+  // Request elevation via relaunchAdmin; guarded against double-click while a
+  // relaunch is already in flight.
   const requestAdmin = async (): Promise<void> => {
     if (isAdmin || adminRequesting) return
     setAdminRequesting(true)
@@ -266,6 +305,11 @@ export default function App(): React.JSX.Element {
     }
   }
 
+  /**
+   * Starts the prepare run. Picks the mode: "fromPrepared" reuses a previously
+   * prepared source folder, "staged" copies into a staging area first, and
+   * "direct" writes straight to the destination.
+   */
   const runPrepare = async (): Promise<void> => {
     if (!destination) return
     const mode: PrepareMode = settings.preparedSource ? 'fromPrepared' : settings.stage ? 'staged' : 'direct'
@@ -305,11 +349,13 @@ export default function App(): React.JSX.Element {
     setRunning(null)
   }
 
+  // Route the cancel to whichever operation is currently running.
   const cancelRun = (): void => {
     if (running === 'prepare') window.api.cancelPrepare()
     else if (running === 'format') window.api.cancelFormat()
   }
 
+  // Merge newly picked ROM folders into the list, deduping overlaps.
   const addRomSources = async (): Promise<void> => {
     const dirs = await window.api.chooseFolders()
     if (dirs.length === 0) return
@@ -319,6 +365,7 @@ export default function App(): React.JSX.Element {
     }))
   }
 
+  // Merge newly picked archive files into the list, deduping overlaps.
   const addArchiveSources = async (): Promise<void> => {
     const files = await window.api.chooseArchives()
     if (files.length === 0) return
@@ -328,6 +375,8 @@ export default function App(): React.JSX.Element {
     }))
   }
 
+  // Let the main process classify dragged-in paths, then route each group into
+  // the matching source list.
   const addDropped = async (paths: string[]): Promise<void> => {
     const classified = await window.api.classifyDropped(paths)
     setSettings((s) => {
@@ -356,6 +405,7 @@ export default function App(): React.JSX.Element {
     setSettings((s) => ({ ...s, ...patch }))
   }
 
+  // Pick a random background, avoiding the currently shown one when possible.
   const shuffleBg = (): void => {
     setGalleryBg((prev) => {
       if (BACKGROUNDS.length === 0) return prev
@@ -368,6 +418,7 @@ export default function App(): React.JSX.Element {
     })
   }
 
+  // Convert dropped File objects back into absolute paths for the main process.
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>): Promise<void> => {
     e.preventDefault()
     const paths = Array.from(e.dataTransfer.files)
@@ -386,6 +437,7 @@ export default function App(): React.JSX.Element {
             alt=""
             className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
           />
+          {/* Tint overlay (--sc64-gallery-overlay) keeps text readable over the photo */}
           <div
             className="pointer-events-none absolute inset-0 z-0"
             style={{ background: THEMES[settings.theme].vars['--sc64-gallery-overlay'] }}
@@ -485,6 +537,7 @@ export default function App(): React.JSX.Element {
                 <Shuffle className="h-3.5 w-3.5" /> {t('theme.shuffleBg')}
               </Button>
             ) : null}
+            {/* Back/Continue between steps; gated by canProceedTo2/canProceedTo3 */}
             {step === 2 ? (
               <Button variant="ghost" onClick={() => setStep(1)} disabled={running !== null}>
                 ← {t('common.back')}

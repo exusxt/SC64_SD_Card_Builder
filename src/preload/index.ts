@@ -1,3 +1,8 @@
+// Preload bridge: the only script that runs in the isolated renderer context.
+// It exposes a typed, promise-based window.api to the React renderer. Every
+// method is a thin ipcRenderer.invoke/send wrapper whose channel name is the
+// IPC contract with the handlers in src/main/ipc.ts.
+
 import { contextBridge, ipcRenderer, webUtils, IpcRendererEvent } from 'electron'
 import type {
   AppEvent,
@@ -14,6 +19,11 @@ import type {
   PrepareResult,
   PreviewEntry
 } from '../shared/types'
+/**
+ * The renderer-facing API surface. Each method maps one-to-one to an IPC
+ * channel handled in the main process; the channel names are the contract.
+ * invoke = request/response, send = fire-and-forget.
+ */
 const api = {
   listDrives: (): Promise<DriveInfo[]> => ipcRenderer.invoke('drives:list'),
   chooseFolder: (): Promise<string | null> => ipcRenderer.invoke('dialog:chooseFolder'),
@@ -22,9 +32,10 @@ const api = {
   chooseArchives: (): Promise<string[]> => ipcRenderer.invoke('dialog:chooseArchives'),
   classifyDropped: (paths: string[]): Promise<{ folders: string[]; archives: string[] }> =>
     ipcRenderer.invoke('dialog:classifyDropped', paths),
+  // webUtils replaces the File.path property removed in Electron 32+
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
-  saveSettings: (patch: Partial<AppSettings>): Promise<AppSettings> => ipcRenderer.invoke('settings:set', patch),
+  saveSettings: (patch: Partial<AppSettings>): Promise<AppSettings> => ipcRenderer.invoke('settings:set', patch), // returns the full, updated settings
   getMenuRelease: (): Promise<MenuReleaseInfo> => ipcRenderer.invoke('releases:menu'),
   getMetadataRelease: (): Promise<MetadataReleaseInfo> => ipcRenderer.invoke('releases:metadata'),
   getEmulatorsInfo: (): Promise<EmulatorsInfo> => ipcRenderer.invoke('releases:emulators'),
@@ -49,11 +60,13 @@ const api = {
   windowClose: (): Promise<void> => ipcRenderer.invoke('win:close'),
   checkForUpdates: (): Promise<void> => ipcRenderer.invoke('updates:check'),
   installUpdate: (): Promise<void> => ipcRenderer.invoke('updates:install'),
+  // both subscribe methods return an unsubscribe function for React effects
   onWindowMaximized: (cb: (maximized: boolean) => void): (() => void) => {
     const listener = (_e: IpcRendererEvent, maximized: boolean): void => cb(maximized)
     ipcRenderer.on('win:maximized', listener)
     return () => ipcRenderer.removeListener('win:maximized', listener)
   },
+  // 'main:event' carries the unified AppEvent stream (log/step/progress/done/error/update)
   onEvent: (cb: (ev: AppEvent) => void): (() => void) => {
     const listener = (_e: IpcRendererEvent, ev: AppEvent): void => cb(ev)
     ipcRenderer.on('main:event', listener)
@@ -61,6 +74,8 @@ const api = {
   }
 }
 
+/** The shape of window.api; declared for the renderer in index.d.ts. */
 export type Api = typeof api
 
+// contextBridge exposes a frozen copy, so the renderer never gets direct Node/Electron access
 contextBridge.exposeInMainWorld('api', api)

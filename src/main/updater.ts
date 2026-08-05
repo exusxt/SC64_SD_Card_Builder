@@ -1,3 +1,10 @@
+// Update handling for the main process. Wires electron-updater (which reads the
+// latest.yml / latest-mac.yml / latest-linux.yml metadata that electron-builder
+// publishes next to the app's GitHub releases) and exposes the manual
+// check/install IPC handlers. Portable Windows builds cannot use electron-
+// updater, so they self-update by downloading the newer portable exe and
+// swapping it into place via a detached batch script.
+
 import { app, BrowserWindow } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { spawn } from 'node:child_process'
@@ -27,6 +34,9 @@ function send(ev: AppEvent): void {
   if (win && !win.isDestroyed()) win.webContents.send('main:event', ev)
 }
 
+// Plain numeric comparison (no semver dependency): pad the shorter segment list
+// with zeros so "1.10" beats "1.9". autoUpdater does its own comparison, but
+// the portable path checks versions from GitHub release tags here.
 function isNewerVersion(latest: string, current: string): boolean {
   const a = latest.split('.').map((x) => parseInt(x, 10))
   const b = current.split('.').map((x) => parseInt(x, 10))
@@ -44,6 +54,8 @@ function portableAssetName(version: string): string {
   return `SC64-SD-Card-Builder-${version}-${process.arch}.exe`
 }
 
+// Tries the arch-specific asset name first, then the version-only name, then
+// any non-setup .exe as a last resort for older release layouts.
 function pickPortableAsset(assets: ReleaseAsset[], version: string): ReleaseAsset | undefined {
   const exact = portableAssetName(version)
   return (
@@ -53,6 +65,9 @@ function pickPortableAsset(assets: ReleaseAsset[], version: string): ReleaseAsse
   )
 }
 
+// Portable update check. Uses the web-based release lookup (no API rate limit)
+// since electron-updater has no portable support. A newer version triggers the
+// download immediately; the renderer drives the actual install via installUpdate.
 async function portableCheck(): Promise<void> {
   try {
     const info = await getAppLatestRelease()
@@ -77,6 +92,8 @@ async function portableDownload(): Promise<void> {
   const p = pending
   if (!p) return
   try {
+    // The new exe is downloaded to the temp dir; it replaces the running binary
+    // only when the user confirms the install (portableReplace).
     const dest = join(app.getPath('temp'), `sc64-update-${p.version}.exe`)
     send({ type: 'update', state: 'downloading', percent: 0 })
     await downloadFile(p.asset.browser_download_url, dest, {
@@ -129,6 +146,8 @@ function portableReplace(): void {
   app.exit(0)
 }
 
+// Maps "no published versions"/"no releases" to a clean 'not-available' state
+// so a brand-new repo with nothing published does not surface as an error.
 function updaterErrorMessage(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err)
   if (/no published versions|no releases/i.test(message)) {
@@ -137,9 +156,17 @@ function updaterErrorMessage(err: unknown): string {
   return message
 }
 
+/**
+ * Wires the update pipeline for a window: configures electron-updater and
+ * forwards every update event to the renderer over the 'main:event' channel.
+ * electron-updater reads the latest.yml metadata files that electron-builder
+ * uploads as assets of each GitHub release.
+ */
 export function initUpdater(w: BrowserWindow): void {
   win = w
 
+  // Auto-download on check, but never auto-install: the user picks when to
+  // quit and apply the update.
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
   // On Linux .deb the updater installs synchronously while the app is still
@@ -178,6 +205,12 @@ export function initUpdater(w: BrowserWindow): void {
   })
 }
 
+/**
+ * Manual check for updates (renderer IPC entry point). Guarded by a busy flag
+ * so overlapping check triggers are ignored, and disabled entirely in dev
+ * (unpackaged) runs where there is no update feed. Portable builds route
+ * through portableCheck; everything else goes through autoUpdater.
+ */
 export function checkForUpdates(): void {
   if (busy) return
   if (!app.isPackaged) {
@@ -202,6 +235,7 @@ export function checkForUpdates(): void {
   }
 }
 
+/** Applies a downloaded update: portableReplace for portable builds, otherwise quitAndInstall. */
 export function installUpdate(): void {
   if (!app.isPackaged) return
   if (isPortable) {

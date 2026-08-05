@@ -1,7 +1,17 @@
+/**
+ * Horizontal 3-step indicator (Destination -> Options -> Run) that doubles as
+ * navigation. Highlights the active step, stamps completed steps with a check
+ * mark and lets the user jump back to an earlier step unless locked.
+ */
 import { cn } from '../lib'
 import { Check } from 'lucide-react'
 import type { T } from '../i18n'
 
+/**
+ * Wizard step strip. step is the 1-based index of the active step; onNavigate
+ * lets the user revisit an earlier step, while locked disables navigation
+ * (e.g. while a run is in progress).
+ */
 export function Stepper({
   t,
   step,
@@ -13,6 +23,7 @@ export function Stepper({
   onNavigate: (s: number) => void
   locked: boolean
 }): React.JSX.Element {
+  // The three wizard phases, in fixed order; each renders as a clickable card.
   const steps = [
     { n: 1, title: t('step.destination'), desc: t('step.destinationDesc') },
     { n: 2, title: t('step.options'), desc: t('step.optionsDesc') },
@@ -22,6 +33,7 @@ export function Stepper({
     <nav className="mb-6 flex items-center gap-2">
       {steps.map((s, i) => {
         const active = step === s.n
+        // A step is "done" when the wizard has moved past it, earning a check mark.
         const done = step > s.n
         return (
           <div key={s.n} className="flex flex-1 items-center gap-2">
@@ -57,6 +69,7 @@ export function Stepper({
                 <span className="block truncate text-[11px] text-sc64-muted">{s.desc}</span>
               </span>
             </button>
+            {/* Connector between adjacent steps, colored once the preceding step is done. */}
             {i < steps.length - 1 ? <span className={cn('h-px w-4 shrink-0', done ? 'bg-sc64-good/50' : 'bg-sc64-borderlight')} /> : null}
           </div>
         )

@@ -1,3 +1,12 @@
+/**
+ * Full-screen, faithful emulation of the N64FlashcartMenu file browser opened
+ * from the run summary. Draws a 640x480 CRT-styled screen with cursor-key and
+ * mouse-wheel navigation (wrap-around, centered scrolling), folder navigation
+ * with selection history, boxart plus an N64 description in the footer, random
+ * bundled backgrounds, and a scrollbar. The card root is passed in as `root`
+ * and all directory/boxart reads go through window.api.listPreviewDir and
+ * window.api.loadPreviewBoxart.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import type { PreviewEntry } from '../../../shared/types'
@@ -6,6 +15,10 @@ import { BACKGROUNDS } from '../backgrounds'
 import { Button } from './ui'
 import { moveSelection, restoreSelection, SelectionHistory, nextBackgroundIndex } from '../lib'
 
+// Coordinates of the emulated 640x480 screen. SEPARATOR_Y splits the list area
+// (file rows) from the footer (info bar); LIST_ENTRIES is how many rows fit in
+// the list, so scrolling windows are sized against it; TEXT_Y0 is the y of the
+// first row, and each following row steps down by ROW_H.
 const SCREEN_W = 640
 const SCREEN_H = 480
 const VISIBLE_X0 = 32
@@ -24,6 +37,7 @@ const EMULATOR_EXTS = new Set(['.nes', '.smc', '.sfc', '.fig', '.gb', '.gbc', '.
 
 const MONO = "'ui-monospace','SFMono-Regular','Menlo','Consolas',monospace"
 
+/** Formats a file size the way the console menu does: kB/MB/GB with floor division. */
 function menuSize(size: number): string {
   if (size < 0) return 'unknown'
   if (size === 0) return 'empty'
@@ -33,6 +47,7 @@ function menuSize(size: number): string {
   return `${Math.floor(size / 1024 / 1024 / 1024)} GB`
 }
 
+/** Labels an entry for the footer info line: directories, recognized ROM kinds, or raw file. */
 function entryType(e: PreviewEntry): string {
   if (e.isDir) return 'Directory'
   if (e.kind === 'n64') return 'N64 ROM'
@@ -45,6 +60,11 @@ function entryType(e: PreviewEntry): string {
   return 'File'
 }
 
+/**
+ * MenuPreview overlay. Owns the emulated screen state (current directory, entry
+ * list, selection, boxart, scale) and forwards onClose to unmount itself. All
+ * file-system access is delegated to the main process via the preload API.
+ */
 export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose: () => void }): React.JSX.Element {
   const [dirRel, setDirRel] = useState('')
   const [entries, setEntries] = useState<PreviewEntry[] | null>(null)
@@ -54,7 +74,10 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
   const [scale, setScale] = useState(1)
   const [bgUrl, setBgUrl] = useState<string | null>(null)
   const prevSelectedRef = useRef<string | null>(null)
+  // Last background index drawn, so the next one is different (see nextBackgroundIndex).
   const bgIdxRef = useRef(-1)
+  // Remembers which row was highlighted when each folder was entered, so going
+  // back up restores the folder you came from rather than jumping to the top.
   const selStackRef = useRef(new SelectionHistory())
 
   const loadDir = useCallback(
@@ -83,7 +106,10 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
 
   const selected = entries && entries.length > 0 ? entries[Math.min(sel, entries.length - 1)] : null
 
-  // Show a fresh random bundled background whenever a different entry (folder or ROM) gets selected.
+  // Gallery background logic: show a fresh random bundled background whenever a
+  // different entry (folder or ROM) gets selected. The key combines the folder
+  // path, entry kind and name so selecting a different file in the same folder
+  // (or the same file after navigating away and back) still triggers a change.
   const selectedKey = selected ? `${dirRel}\u0000${selected.isDir ? 'dir' : 'file'}\u0000${selected.name}` : null
   useEffect(() => {
     if (!selectedKey) {
@@ -104,6 +130,9 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
     }
   }, [selectedKey])
 
+  // Load the boxart for the highlighted entry. The cancellation flag drops the
+  // result when the selection changed before the read finished, avoiding a
+  // flicker of stale art on fast cursor movement.
   useEffect(() => {
     if (!selected?.boxart) {
       setBoxart(null)
@@ -119,11 +148,14 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
   }, [root, selected?.boxart])
 
   const openDir = (name: string): void => {
+    // Record the current selection before leaving so a later leave() can restore it.
     selStackRef.current.enter(sel)
     void loadDir(dirRel ? `${dirRel}/${name}` : name)
   }
 
   const goUp = (): void => {
+    // Pop the selection remembered for this folder and jump the listing back to
+    // the entry that was highlighted when the folder was originally entered.
     const restore = selStackRef.current.leave()
     const idx = dirRel.lastIndexOf('/')
     void loadDir(idx === -1 ? '' : dirRel.slice(0, idx), restore)
@@ -182,6 +214,10 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
     return () => window.removeEventListener('resize', compute)
   }, [])
 
+  // Centered scrolling window: keep the selection in the middle of the visible
+  // rows, clamping to 0 at the top and to the last full window at the bottom so
+  // the list never scrolls past an end. Everything within LIST_ENTRIES rows
+  // needs no window at all.
   const start = useMemo(() => {
     if (!entries || entries.length <= LIST_ENTRIES) return 0
     let s = sel - Math.floor(LIST_ENTRIES / 2)
@@ -192,6 +228,8 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
 
   const visible = entries ? entries.slice(start, start + LIST_ENTRIES) : []
 
+  // Mouse wheel maps to repeated key presses with wrap-around; fast wheels move
+  // up to 3 rows per tick so long lists still scroll at a usable speed.
   const onWheel = (e: React.WheelEvent<HTMLDivElement>): void => {
     if (!entries) return
     const dir: 'up' | 'down' = e.deltaY > 0 ? 'down' : 'up'
@@ -343,7 +381,12 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
             </div>
           ) : null}
 
-          {/* Footer / info bar */}
+          {/* Footer / info bar. Stacked inside the 80px band below SEPARATOR_Y:
+              filename (top 10), title/code/region line (top 34), size (right,
+              top 10) and, when present, the N64 description (top 52). The
+              description is positioned relative to this footer container, not
+              after the title line, because it can run to two lines and would
+              otherwise push into the fixed-height footer. */}
           <div style={{ position: 'absolute', left: 0, top: SEPARATOR_Y, width: SCREEN_W, height: SCREEN_H - SEPARATOR_Y }}>
             <div style={{ position: 'absolute', left: VISIBLE_X0, right: VISIBLE_X0, top: 0, height: 1, background: '#3f3f3f' }} />
             {selected ? (
@@ -363,6 +406,8 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
                     </div>
                     <div style={{ position: 'absolute', right: VISIBLE_X0 + 10, top: 10, fontSize: 12, color: '#fff' }}>{menuSize(selected.size)}</div>
                     {selected.description ? (
+                      // Clamp to two 13px lines via -webkit-line-clamp; the box has a fixed
+                      // 26px height so a long description cannot grow past the footer.
                       <div
                         style={{
                           position: 'absolute',
@@ -392,7 +437,10 @@ export function MenuPreview({ t, root, onClose }: { t: T; root: string; onClose:
             )}
           </div>
 
-          {/* CRT scanlines */}
+          {/* CRT scanline overlay. Two stacked effects simulate a CRT: repeating
+              horizontal lines for the scanlines and a radial vignette that keeps
+              the edges dim like an old tube. pointer-events-none so it never
+              swallows clicks. */}
           <div
             className="pointer-events-none"
             style={{

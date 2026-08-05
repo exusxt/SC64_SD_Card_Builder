@@ -1,3 +1,7 @@
+/**
+ * Renderer entry point: mounts the React root and renders <App /> inside
+ * StrictMode, importing the global Tailwind stylesheet first.
+ */
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'

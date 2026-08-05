@@ -1,3 +1,9 @@
+/**
+ * Frameless-window title bar: the draggable window chrome at the top of the
+ * app. Hosts the logo/version, File/Theme/Language dropdown menus, a
+ * Documentation button, the update-check indicator and the
+ * minimize/maximize/close controls, which the parent wires to window.api.
+ */
 import { useEffect, useRef, useState } from 'react'
 import { Download } from 'lucide-react'
 import type { Locale, ThemeId } from '../../../shared/i18n'
@@ -12,12 +18,18 @@ interface MenuProps {
   children: React.ReactNode
 }
 
+/**
+ * Dropdown menu button (e.g. File, Theme, Language). Clicking the label toggles
+ * a popover; a document-level mousedown listener closes it when the click lands
+ * outside the menu subtree.
+ */
 function Menu({ label, children }: MenuProps): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
+    // Close on any click outside the menu's own subtree (ref scopes the check).
     const onDoc = (e: MouseEvent): void => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
@@ -53,6 +65,11 @@ interface MenuItemProps {
   children: React.ReactNode
 }
 
+/**
+ * Single entry inside a dropdown menu. When active, it is tinted with the
+ * accent color and gets a check mark so the current Theme/Language selection
+ * is visible at a glance.
+ */
 function MenuItem({ active, onClick, children }: MenuItemProps): React.JSX.Element {
   return (
     <button
@@ -85,13 +102,23 @@ interface TitleBarProps {
   onClose: () => void
 }
 
+/**
+ * Renders the frameless window chrome. Presentational only: window controls
+ * and update-check calls are delegated via props so App owns the window.api
+ * calls, keeping main-process access in one place.
+ */
 export function TitleBar(props: TitleBarProps): React.JSX.Element {
   const { t, version, theme, language, maximized, updateState } = props
 
+  // Dot badge for update states worth highlighting; "not-available" and
+  // "error" deliberately keep the icon quiet.
   const updateActive =
     updateState === 'available' || updateState === 'downloading' || updateState === 'downloaded' || updateState === 'checking'
 
   return (
+    // Native drag region so the frameless window can be moved from anywhere on
+    // this bar. Also gives double-click-to-maximize for free. Every interactive
+    // child must opt out with no-drag or clicks would never reach it.
     <header
       className="flex h-10 shrink-0 select-none items-center gap-1 border-b border-sc64-border bg-sc64-panel2/70 pl-3 pr-1"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
@@ -137,6 +164,7 @@ export function TitleBar(props: TitleBarProps): React.JSX.Element {
           className="relative mr-1 flex h-8 w-9 items-center justify-center rounded-md text-sc64-muted transition-colors hover:bg-sc64-panel hover:text-sc64-text"
         >
           <Download className="h-4 w-4" />
+          {/* Corner dot: green when a build is ready to install, accent while checking/downloading. */}
           {updateActive ? (
             <span
               className={cn(
@@ -162,6 +190,7 @@ export function TitleBar(props: TitleBarProps): React.JSX.Element {
           onClick={props.onToggleMaximize}
           className="flex h-8 w-11 items-center justify-center rounded-md text-sc64-muted transition-colors hover:bg-sc64-panel hover:text-sc64-text"
         >
+          {/* Icon swaps with the maximized state: restore glyph (nested rects) vs maximize glyph. */}
           {maximized ? (
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
               <rect x="1" y="3" width="7" height="7" stroke="currentColor" />
@@ -177,7 +206,7 @@ export function TitleBar(props: TitleBarProps): React.JSX.Element {
           type="button"
           title={t('window.close')}
           onClick={props.onClose}
-          className="ml-1 flex h-8 w-11 items-center justify-center rounded-md text-sc64-muted transition-colors hover:bg-sc64-bad hover:text-white"
+          className="ml-1 flex h-8 w-11 items-center justify-center rounded-md text-sc64-muted transition-colors hover:bg-sc64-bad hover:text-white" /* Danger hover hints at the destructive action. */
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.2" />

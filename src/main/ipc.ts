@@ -1,3 +1,9 @@
+// IPC channel registry for the main process. Every channel the preload script
+// invokes is mapped to a handler here, and long-running jobs (prepare/format)
+// stream AppEvents to the renderer over 'main:event'. The renderer gets no raw
+// Node or Electron access - all of its filesystem/OS operations flow through
+// these handlers.
+
 import { app, dialog, ipcMain, shell, BrowserWindow, IpcMainInvokeEvent } from 'electron'
 import { existsSync, statSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
@@ -15,20 +21,33 @@ import { listDirDeep } from './unzip'
 import { listPreviewDir, loadPreviewBoxart } from './preview'
 import { translate } from '../shared/i18n'
 
+/** Mutable cancellation flag shared between a run handler and its cancel channel. */
 interface CancelToken {
   cancelled: boolean
 }
 
+// Current cancel tokens for the long-running prepare/format jobs. Each new
+// run replaces its token so a stale cancel never aborts the next run.
 let prepareCancel: CancelToken = { cancelled: false }
 let formatCancel: CancelToken = { cancelled: false }
 
+/**
+ * Pushes an AppEvent to a window's renderer via webContents.send. The
+ * destroyed-window guard keeps job progress from throwing after the user
+ * closes the window mid-run.
+ */
 function sendTo(win: BrowserWindow | null, ev: AppEvent): void {
   if (win && !win.isDestroyed()) win.webContents.send('main:event', ev)
 }
 
+/** Resolves the BrowserWindow that sent an IPC call, so dialogs open as its children. */
 function winOf(event: IpcMainInvokeEvent): BrowserWindow | null {
   return BrowserWindow.fromWebContents(event.sender)
 }
+
+// Native dialog helpers. The sender window is passed through so every dialog
+// stays modal to it. Results are raw paths, not File objects, because the
+// renderer cannot see the filesystem directly.
 
 async function pickFolder(win: BrowserWindow | null): Promise<string | null> {
   const opts = { properties: ['openDirectory', 'createDirectory'] as Electron.OpenDialogOptions['properties'] }
@@ -43,6 +62,8 @@ async function pickFolders(win: BrowserWindow | null): Promise<string[]> {
 }
 
 async function pickRomFiles(win: BrowserWindow | null): Promise<string[]> {
+  // The filter mirrors the extensions the copy step accepts (see EXTENSIONS
+  // in prepare.ts), so the dialog cannot offer files the pipeline would skip.
   const opts: Electron.OpenDialogOptions = {
     properties: ['openFile', 'multiSelections'],
     filters: [
@@ -62,6 +83,10 @@ async function pickArchives(win: BrowserWindow | null): Promise<string[]> {
   return res.canceled ? [] : res.filePaths
 }
 
+/**
+ * Splits drag-and-dropped paths into folders and archive files (zip/7z). The
+ * try/catch skips entries that cannot be stat'd instead of failing the drop.
+ */
 function classifyDroppedPaths(paths: string[]): { folders: string[]; archives: string[] } {
   const folders: string[] = []
   const archives: string[] = []
@@ -79,9 +104,17 @@ function classifyDroppedPaths(paths: string[]): { folders: string[]; archives: s
   return { folders, archives }
 }
 
+/**
+ * Registers every IPC channel once at startup. Channel names are the contract
+ * with the preload script (src/preload/index.ts); each block below covers one
+ * feature area of the UI.
+ */
 export function registerIpc(): void {
+  // Drives: candidate SD cards / removable media for the drive picker.
   ipcMain.handle('drives:list', () => listDrives())
 
+  // Window controls: the frameless window has no native title bar, so these
+  // are driven by buttons the renderer draws.
   ipcMain.handle('win:minimize', (e) => winOf(e)?.minimize())
   ipcMain.handle('win:toggleMaximize', (e) => {
     const win = winOf(e)
@@ -93,19 +126,23 @@ export function registerIpc(): void {
   ipcMain.handle('win:isMaximized', (e) => winOf(e)?.isMaximized() ?? false)
   ipcMain.handle('win:close', (e) => winOf(e)?.close())
 
+  // Dialogs: native pickers for folders, ROM files, and archives.
   ipcMain.handle('dialog:chooseFolder', (e) => pickFolder(winOf(e)))
   ipcMain.handle('dialog:chooseFolders', (e) => pickFolders(winOf(e)))
   ipcMain.handle('dialog:chooseRomFiles', (e) => pickRomFiles(winOf(e)))
   ipcMain.handle('dialog:chooseArchives', (e) => pickArchives(winOf(e)))
   ipcMain.handle('dialog:classifyDropped', (_e, paths: string[]) => classifyDroppedPaths(Array.isArray(paths) ? paths : []))
 
+  // Settings: the persisted JSON config is read/written wholesale.
   ipcMain.handle('settings:get', () => getSettings())
   ipcMain.handle('settings:set', (_e, patch: unknown) => saveSettings(patch as never))
 
+  // Releases: latest menu, metadata, and emulator info from GitHub.
   ipcMain.handle('releases:menu', () => getMenuRelease())
   ipcMain.handle('releases:metadata', () => getMetadataRelease())
   ipcMain.handle('releases:emulators', () => getEmulatorsInfo())
 
+  // App-level queries and out-of-process actions.
   ipcMain.handle('app:isAdmin', () => isElevated())
   ipcMain.handle('app:getVersion', () => app.getVersion())
   ipcMain.handle('app:relaunchAdmin', () => showAdminPrompt())
@@ -113,6 +150,10 @@ export function registerIpc(): void {
     void shell.openExternal('https://github.com/exusxt/SC64_SD_Card_Builder')
   })
 
+  // Each run starts with a fresh cancel token so the previous run's
+  // cancellation flag cannot leak into the new one. The run streams
+  // step/progress/log events to the sender's window and returns the final
+  // PrepareResult (ok, summary, report).
   ipcMain.handle('prepare:run', async (e, options: PrepareOptions) => {
     const win = winOf(e)
     prepareCancel = { cancelled: false }
@@ -122,20 +163,25 @@ export function registerIpc(): void {
       version: app.getVersion()
     })
   })
+  // fire-and-forget: sets the flag the running job polls via checkCancel().
   ipcMain.on('prepare:cancel', () => {
     prepareCancel.cancelled = true
   })
 
+  // Read-only scan of an existing card; unknown or missing paths yield null.
   ipcMain.handle('inspect:card', async (_e, path: string) => {
     if (!path || !existsSync(path)) return null
     return inspectCard(path)
   })
 
+  // Pre-flight check that a selected folder holds valid 64DD IPL dumps.
   ipcMain.handle('ddipl:validate', async (_e, dir: string) => {
     if (!dir || !existsSync(dir)) return null
     return scanDDIPLFolder(dir)
   })
 
+  // Sums the files/bytes of a previously staged folder so the UI can show how
+  // much the final copy step will move.
   ipcMain.handle('prepare:countPrepared', async (_e, path: string) => {
     if (!path || !existsSync(path)) return null
     const files = listDirDeep(path)
@@ -150,6 +196,10 @@ export function registerIpc(): void {
     return { files: files.length, bytes }
   })
 
+  // Formatting a raw device (e.g. \\.\PHYSICALDRIVE1) requires elevation on
+  // Windows; bail out with a localized message instead of failing deep inside
+  // the format machinery. Progress and log lines flow back over the same
+  // 'main:event' stream used by prepare.
   ipcMain.handle('format:run', async (e, opts: FormatOptions) => {
     const win = winOf(e)
     const elevated = await isElevated()
@@ -180,10 +230,12 @@ export function registerIpc(): void {
     formatCancel.cancelled = true
   })
 
+  // Open a file/folder in the OS file manager (or its default application).
   ipcMain.handle('app:reveal', (_e, path: string) => {
     shell.openPath(path)
   })
 
+  // Manual triggers for the auto-updater.
   ipcMain.handle('updates:check', () => {
     checkForUpdates()
   })
@@ -191,6 +243,8 @@ export function registerIpc(): void {
     installUpdate()
   })
 
+  // On-screen N64FlashcartMenu preview; both calls are guarded so a path
+  // outside the preview root (or a missing root) can never be read.
   ipcMain.handle('preview:list', async (_e, root: string, dir: string) => {
     if (!root || !existsSync(root)) return null
     return listPreviewDir(root, dir ?? '')

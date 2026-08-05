@@ -1,3 +1,10 @@
+/**
+ * Step 2 of the wizard: all preparation options. Toggles cover folder creation,
+ * menu/metadata/emulator downloads, 64DD IPL installation, ROM copy sources
+ * (folders and archives) with per-type checkboxes, clean collection, stock
+ * folders, cheats, saves, overwrite, verify, staging, and per-card format
+ * options (FAT32/exFAT) which are configured on step 1.
+ */
 import { FolderPlus, Trash2, FolderOpen, FileArchive } from 'lucide-react'
 import type { AppSettings, DdIplFileInfo, DdIplValidation, EmulatorsInfo, EmulatorKey, MenuReleaseInfo, MetadataReleaseInfo } from '../../../shared/types'
 import { DD_IPL_SIZE } from '../../../shared/types'
@@ -5,6 +12,11 @@ import type { T } from '../i18n'
 import { Badge, Button, Checkbox, Field } from './ui'
 import { cn, EMULATOR_LABELS, ROM_TYPE_LABELS } from '../lib'
 
+/**
+ * Explains why a 64DD IPL file was rejected. Checks are ordered so the most
+ * specific failure wins: wrong file size, byte-swapped data, missing header,
+ * then a bad header id; a fully valid file returns its readable id.
+ */
 function ddiplReason(t: T, f: DdIplFileInfo): string {
   if (f.size !== DD_IPL_SIZE) return t('opt.ddiplReasonSize', { size: String(f.size ?? 0), expected: String(DD_IPL_SIZE) })
   if (f.byteOrder === 'swapped') return t('opt.ddiplReasonSwap')
@@ -13,6 +25,10 @@ function ddiplReason(t: T, f: DdIplFileInfo): string {
   return f.id
 }
 
+/**
+ * Small chip-based readout of the 64DD IPL validation result: one badge per IPL
+ * file (valid / invalid / missing) plus a summary and per-file rejection reasons.
+ */
 function DDIPLStatus({ t, validation }: { t: T; validation: DdIplValidation }): React.JSX.Element {
   const validCount = validation.files.filter((f) => f.valid).length
   const invalid = validation.files.filter((f) => f.present && !f.valid)
@@ -62,6 +78,12 @@ function DDIPLStatus({ t, validation }: { t: T; validation: DdIplValidation }): 
   )
 }
 
+/**
+ * OptionsStep. Every control maps to a field on AppSettings, patched up through
+ * onSettingsChange; App.tsx owns the electron dialogs behind onAddSources/
+ * onRemoveSource/onAddArchives/onRemoveArchive/onChooseDDIPL and validates the
+ * 64DD IPL folder via window.api.validateDDIPL.
+ */
 export function OptionsStep({
   t,
   settings,
@@ -89,6 +111,9 @@ export function OptionsStep({
   onRemoveArchive: (path: string) => void
   onChooseDDIPL: () => void
 }): React.JSX.Element {
+  // True when any option actually performs work; gates the "nothing selected"
+  // warning. A previously prepared folder still counts as an action, so the
+  // step can be skipped when the card only needs a prepared-folder copy.
   const hasAnyAction =
     settings.downloadMenu ||
     settings.downloadMetadata ||

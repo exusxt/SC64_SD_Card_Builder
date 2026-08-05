@@ -1,6 +1,16 @@
+/**
+ * Shared renderer UI primitives: Button, Checkbox, Badge, Spinner, ProgressBar,
+ * Field, Input and Select. All styling is Tailwind-based on the sc64-* theme
+ * CSS variables so the components inherit whichever theme is active.
+ */
 import React from 'react'
 import { cn } from '../lib'
 
+/**
+ * Themed button. variant picks the visual style (default/primary/danger/ghost/
+ * outline), size picks padding and font size; all native button props pass
+ * through to the underlying <button>.
+ */
 export function Button({
   variant = 'default',
   size = 'md',
@@ -35,6 +45,10 @@ export function Button({
   )
 }
 
+/**
+ * Card-style checkbox row with an optional hint line; the whole card is
+ * clickable. onChange receives the checked state of the hidden input.
+ */
 export function Checkbox({
   label,
   hint,
@@ -76,6 +90,7 @@ export function Checkbox({
   )
 }
 
+/** Small pill label; tone selects the color scheme for status/type indicators. */
 export function Badge({
   children,
   tone = 'default',
@@ -99,6 +114,7 @@ export function Badge({
   )
 }
 
+/** Inline spinner for in-flight work; sized and colored via className. */
 export function Spinner({ className }: { className?: string }): React.JSX.Element {
   return (
     <svg className={cn('h-4 w-4 animate-spin text-sc64-accent', className)} viewBox="0 0 24 24" fill="none">
@@ -108,6 +124,10 @@ export function Spinner({ className }: { className?: string }): React.JSX.Elemen
   )
 }
 
+/**
+ * Labeled progress bar. Shows a percentage when max > 0, otherwise an animated
+ * indeterminate track via the indeterminate flag.
+ */
 export function ProgressBar({ value, max, label, indeterminate }: { value: number; max: number; label?: string; indeterminate?: boolean }): React.JSX.Element {
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0
   return (
@@ -126,6 +146,10 @@ export function ProgressBar({ value, max, label, indeterminate }: { value: numbe
   )
 }
 
+/**
+ * Form field wrapper: uppercase label above arbitrary children, with an
+ * optional hint line below.
+ */
 export function Field({
   label,
   children,
@@ -146,6 +170,7 @@ export function Field({
   )
 }
 
+/** Themed text input; accepts all native input attributes. */
 export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>): React.JSX.Element {
   return (
     <input
@@ -158,6 +183,7 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
   )
 }
 
+/** Themed dropdown; accepts all native select attributes and children (options). */
 export function Select({ className, children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>): React.JSX.Element {
   return (
     <select

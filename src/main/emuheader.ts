@@ -4,12 +4,14 @@ import { closeSync, openSync, readSync } from 'node:fs'
 // System / Game Gear ROMs the card's bundled emulators run. Mirrors
 // n64validate.ts: parse a header, then report issues (unrecognized format,
 // byte-swapped dump, checksum failure, header layout mismatches) without ever
-// blocking the copy.
+// blocking the copy. Runs in the main process; used during the ROM copy step
+// and card inspection.
 
 export type EmuKind = 'gb' | 'gbc' | 'snes' | 'sms' | 'gg'
 
 export type EmuByteOrder = 'native' | 'swapped'
 
+/** Issue codes shared across all emulated platforms. */
 export type EmuIssueCode =
   | 'not-gb'
   | 'not-snes'
@@ -26,6 +28,7 @@ export interface EmuIssue {
   detail?: 'headered' | 'unheadered'
 }
 
+/** Parsed emulator-ROM header, normalized so consumers only need these fields. */
 export interface EmuHeaderInfo {
   kind: EmuKind
   title: string
@@ -46,6 +49,8 @@ export interface EmuValidation {
   issues: EmuIssue[]
 }
 
+// Extensions that gate which parser to use; content is always re-checked, so a
+// mislabeled file still gets a 'not-*' issue rather than a hard failure.
 const GB_EXTS = new Set(['.gb', '.gbc'])
 const SNES_EXTS = new Set(['.smc', '.sfc', '.fig'])
 const SMS_EXTS = new Set(['.sms', '.gg'])
@@ -103,10 +108,12 @@ export function isGBExt(p: string): boolean {
   return GB_EXTS.has(extOf(p))
 }
 
+/** True when the path is a .smc/.sfc/.fig SNES ROM. */
 export function isSNESExt(p: string): boolean {
   return SNES_EXTS.has(extOf(p))
 }
 
+/** True when the path is a .sms/.gg Master System or Game Gear ROM. */
 export function isSMSExt(p: string): boolean {
   return SMS_EXTS.has(extOf(p))
 }
@@ -133,6 +140,8 @@ function readHead(filePath: string, size: number): Buffer | null {
 
 function swapBytes16(buf: Buffer): Buffer {
   const out = Buffer.alloc(buf.length)
+  // Swapping each 16-bit word lets a byte-swapped dump's logo and title be
+  // compared against their canonical big-endian bytes.
   for (let i = 0; i + 2 <= buf.length; i += 2) {
     out[i] = buf[i + 1]
     out[i + 1] = buf[i]
@@ -187,14 +196,23 @@ function parseGB(buf: Buffer, kind: EmuKind): EmuValidation | null {
   if (logoState === 'missing') issues.push({ code: 'not-gb', severity: 'warn' })
   if (!checksumOk) issues.push({ code: 'bad-dump', severity: 'warn' })
 
+  // A file with neither a readable title nor the Nintendo logo is unlikely to
+  // be a Game Boy ROM at all, so treat it as unrecognized instead of emitting a
+  // plausible-looking but wrong header.
   if (!title && logoState === 'missing') return null
 
   return {
     header: {
       kind,
       title,
+      // Destination code 0x14A: 0x00 means Japan; non-Japanese carts usually
+      // store 0x01 (USA) here but the field is inconsistent, so only Japan is
+      // labeled and everything else stays null.
       region: buf[0x14a] === 0x00 ? 'Japan' : null,
       byteOrder,
+      // Global checksum (0x14E), stored little-endian; used for duplicate
+      // identity only, not integrity — the header checksum above is the real
+      // validity check.
       checksum: buf.readUInt16LE(0x14e).toString(16).padStart(4, '0'),
       headerOk: logoState === 'ok',
       layout: null
@@ -203,6 +221,8 @@ function parseGB(buf: Buffer, kind: EmuKind): EmuValidation | null {
   }
 }
 
+// Map-mode byte ranges: 0x30-0x3F is HiROM, 0x50-0x5F ExLoROM, 0x60-0x6F
+// ExHiROM; everything else (chiefly 0x20-0x2F) is LoROM.
 function mapModeLabel(mode: number): string {
   if (mode >= 0x60 && mode <= 0x6f) return 'ExHiROM'
   if (mode >= 0x50 && mode <= 0x5f) return 'ExLoROM'
@@ -230,6 +250,8 @@ function parseSNES(buf: Buffer): EmuValidation | null {
     candidates.push({
       off,
       title,
+      // The 65816 is little-endian, so the internal checksum and its
+      // complement are read as 16-bit LE values.
       checksum: buf.readUInt16LE(off + 0x1c),
       complement: buf.readUInt16LE(off + 0x1e),
       mapMode: buf[off + 0x15],
@@ -238,6 +260,8 @@ function parseSNES(buf: Buffer): EmuValidation | null {
   }
   if (candidates.length === 0) return null
 
+  // Trust the first candidate whose checksum validates over an arbitrary later
+  // one; two zeroed bytes mean "checksum not set" and are not a failure.
   const best = candidates.find((c) => (c.checksum ^ c.complement) === 0xffff) ?? candidates[0]
   const valid = (best.checksum ^ best.complement) === 0xffff
   const unset = best.checksum === 0 && best.complement === 0
@@ -286,6 +310,8 @@ function validateSMS(buf: Buffer, kind: EmuKind): EmuValidation {
     if (buf.length < off + 0x10) continue
     if (buf.toString('latin1', off, off + 8) !== 'TMR SEGA') continue
     const headered = off === 0x81f0 || off === 0x41f0 || off === 0x21f0
+    // The platform (SMS vs Game Gear) comes from the file extension, not the
+    // header; the region nibble only drives the label below.
     const regionNib = buf[off + 0x0f] & 0x0f
     return {
       header: {
@@ -293,6 +319,7 @@ function validateSMS(buf: Buffer, kind: EmuKind): EmuValidation {
         title: '',
         region: SMS_REGIONS[regionNib] ?? null,
         byteOrder: 'native',
+        // Header checksum at +0x0A, stored little-endian; used for identity.
         checksum: buf.readUInt16LE(off + 0x0a).toString(16).padStart(4, '0'),
         headerOk: true,
         layout: headered ? 'sms (copier header)' : 'sms',
@@ -304,14 +331,22 @@ function validateSMS(buf: Buffer, kind: EmuKind): EmuValidation {
   return { header: null, issues: [{ code: 'not-sms', severity: 'warn' }] }
 }
 
+/**
+ * Pick the parser by file extension and validate the file, reading only a
+ * fixed header prefix so the rest of the ROM is never touched. Returns an
+ * EmuValidation with a 'not-*' warning when the file cannot be parsed.
+ */
 export function validateEmuFile(filePath: string): EmuValidation {
   const ext = extOf(filePath)
   if (GB_EXTS.has(ext)) {
+    // 0x150 covers the whole GB header block (0x100-0x14F) plus one byte.
     const buf = readHead(filePath, 0x150)
     if (!buf) return { header: null, issues: [{ code: 'not-gb', severity: 'warn' }] }
     return validateGB(buf, ext === '.gbc' ? 'gbc' : 'gb')
   }
   if (SNES_EXTS.has(ext)) {
+    // 0x10200 reaches the highest SNES header candidate (0x101C0) and its
+    // 21-byte title field.
     const buf = readHead(filePath, 0x10200)
     if (!buf) return { header: null, issues: [{ code: 'not-snes', severity: 'warn' }] }
     return validateSNES(buf, ext)
@@ -324,7 +359,8 @@ export function validateEmuFile(filePath: string): EmuValidation {
   return { header: null, issues: [] }
 }
 
-// Preview only needs the parsed title/kind/region, so this stays light.
+// Preview only needs the parsed title/kind/region, so this stays light: no
+// issue generation, just the header (or null) for the file-picker UI.
 export function inspectEmuFile(filePath: string): EmuHeaderInfo | null {
   const ext = extOf(filePath)
   if (GB_EXTS.has(ext)) {
@@ -342,10 +378,11 @@ export function inspectEmuFile(filePath: string): EmuHeaderInfo | null {
   return null
 }
 
-// Identity for duplicate detection. The header carries a dump checksum (GB
-// global checksum, SNES internal checksum, SMS/GG header checksum); fall back
-// to size when it is unset. SMS/GG ROMs have no title field, so the product
-// code stands in for it.
+/**
+ * Stable lowercase identity for duplicate detection: kind + title (or SMS/GG
+ * product code, which has no title field) + the dump checksum. Size replaces
+ * an unset checksum; weaker, but still catches identical files.
+ */
 export function emuIdentity(header: EmuHeaderInfo, size: number): string {
   const checksum = header.checksum !== '0000' ? header.checksum : `size:${size}`
   const tag = header.title || header.productCode || 'untitled'

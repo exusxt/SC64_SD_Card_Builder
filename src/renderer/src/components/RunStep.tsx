@@ -1,3 +1,10 @@
+/**
+ * Step 3 of the wizard: run the prepare/format pipeline. Shows a summary of the
+ * selected actions, a live log fed from the AppEvent streams, a stepper and a
+ * progress bar, and offers cancel. On success it surfaces the final report
+ * links and the menu preview; in "prepared folder" mode it acts as a pure copy
+ * step that counts the files already prepared.
+ */
 import { useEffect, useRef } from 'react'
 import { CheckCircle2, Play, Square, XCircle, ListChecks, Check, Copy, MonitorPlay, FileDown, FileCode2 } from 'lucide-react'
 import type { AppSettings, StepState } from '../../../shared/types'
@@ -5,12 +12,19 @@ import type { T } from '../i18n'
 import { Button, ProgressBar, Spinner } from './ui'
 import { cn } from '../lib'
 
+/** One line of the live prepare/format log. id is unique per run so React can key the entries. */
 export interface LogEntry {
   id: number
   level: 'info' | 'success' | 'warn' | 'error'
   message: string
 }
 
+/**
+ * RunStep. Pipeline execution and the AppEvent streams (progress/steps/log/
+ * result) live in App.tsx; this component only renders them and forwards the
+ * run/cancel/preview callbacks back up. window.api.prepare/format/cancel*
+ * are invoked by App.tsx, never here.
+ */
 export function RunStep({
   t,
   settings,
@@ -42,14 +56,20 @@ export function RunStep({
 }): React.JSX.Element {
   const logRef = useRef<HTMLDivElement>(null)
 
+  // Keep the log pinned to the newest line: when a new entry arrives, jump the
+  // scroller to the bottom, which is where the user's attention should be.
   useEffect(() => {
     const el = logRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [log])
 
+  // Choose what the run actually does: copy an already-prepared folder, or run
+  // the prepare pipeline either staged or writing straight to the destination.
   const mode = settings.preparedSource ? 'fromPrepared' : settings.stage ? 'staged' : 'direct'
   const emulatorCount = Object.values(settings.emulators).filter(Boolean).length
 
+  // The summary chips only list the actions the user enabled, so the run step
+  // doubles as a final confirmation of what will happen before running.
   const summary: Array<{ label: string; active: boolean }> = [
     { label: t('opt.folders'), active: settings.createFolders },
     { label: t('opt.menu'), active: settings.downloadMenu },
@@ -63,6 +83,8 @@ export function RunStep({
     summary.unshift({ label: `${t('dest.preparedTitle')} (${preparedCount.files})`, active: true })
   }
 
+  // Run needs at least one real action (or an existing prepared folder), a
+  // destination, and no pipeline already in flight.
   const runningNow = running !== null
   const canRun = (summary.length > 0 || mode === 'fromPrepared') && destination.trim().length > 0 && !runningNow
 

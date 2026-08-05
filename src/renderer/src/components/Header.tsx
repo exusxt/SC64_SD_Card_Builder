@@ -1,3 +1,9 @@
+/**
+ * In-window header/banner at the top of the wizard body (below the frameless
+ * title bar). Shows the app identity, badges for the loaded menu and artwork
+ * release tags, a launcher for the menu preview and the admin status or
+ * elevation-request control.
+ */
 import { MonitorPlay, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type { MenuReleaseInfo, MetadataReleaseInfo } from '../../../shared/types'
 import type { T } from '../i18n'
@@ -5,6 +11,10 @@ import { Badge, Button, Spinner } from './ui'
 import { cn } from '../lib'
 import appIcon from '../assets/app-icon.png'
 
+/**
+ * Wizard banner. Pure presentation: release info, admin state and callbacks
+ * all arrive as props, so this stays unaware of how they were obtained.
+ */
 export function Header({
   t,
   menu,
@@ -39,10 +49,14 @@ export function Header({
       <div className="flex flex-wrap items-center gap-2">
         {menu ? <Badge tone="accent">{t('header.menu', { tag: menu.tag })}</Badge> : null}
         {metadata ? <Badge tone="default">{t('header.art', { tag: metadata.tag })}</Badge> : null}
+        {/* Preview needs a menu release to browse, so it stays disabled until one loads. */}
         <Button variant="outline" size="sm" onClick={onPreview} disabled={!canPreview} title={t('preview.open')}>
           <MonitorPlay className="h-3.5 w-3.5" />
           {t('preview.open')}
         </Button>
+        {/* Admin: a passive green badge. Otherwise a warning-colored pill that
+            requests elevation; it shows a spinner and disables itself while a
+            relaunch is in flight to guard against double-click. */}
         {isAdmin ? (
           <Badge tone="good">
             <ShieldCheck className="h-3 w-3" />

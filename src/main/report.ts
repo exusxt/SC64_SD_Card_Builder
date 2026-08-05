@@ -1,11 +1,19 @@
-﻿import { writeFile } from 'node:fs/promises'
+﻿// Validation report writer for the main process. After a prepare run it emits
+// a self-contained sc64-report.html (inline CSS, no external assets) and a
+// matching sc64-report.csv at the card root, built from the run's log lines,
+// per-file rows and counters: app version, duration, ok flag, and one status
+// per file (copied/duplicate/verify-fail/not-n64/not-gb/etc.).
+
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { PrepareMode } from '../shared/types'
 import { translate, type Locale, type TranslationKey } from '../shared/i18n'
 import { ensureDir } from './fspaths'
 
+/** Outcome of one file during the prepare run, shown per row in the report. */
 export type ReportRowStatus = 'copied' | 'skipped' | 'duplicate' | 'verify-fail' | 'not-n64' | 'other'
 
+/** One file row in the report: what happened to it and where it went. */
 export interface ReportRow {
   status: ReportRowStatus
   source: string
@@ -16,11 +24,13 @@ export interface ReportRow {
   note: string
 }
 
+/** One entry of the run's activity log, rendered into the HTML report. */
 export interface ReportLog {
   level: 'info' | 'success' | 'warn' | 'error'
   message: string
 }
 
+/** Summary counters for the run; each maps to a stat tile in the HTML report. */
 export interface ReportCounts {
   romsCopied: number
   duplicates: number
@@ -35,6 +45,7 @@ export interface ReportCounts {
   metadataTag: string
 }
 
+/** Everything the report needs: run context, counters, per-file rows and logs. */
 export interface ReportData {
   appVersion: string
   locale: Locale
@@ -48,6 +59,8 @@ export interface ReportData {
   logs: ReportLog[]
 }
 
+// Ordered list driving the summary stat grid; keeps the HTML output free of
+// hard-coded stat order and lets the i18n labels and counters stay in one place.
 const REPORT_STATS: Array<{ key: string; countKey: keyof ReportCounts }> = [
   { key: 'report.romsCopied', countKey: 'romsCopied' },
   { key: 'report.duplicates', countKey: 'duplicates' },
@@ -60,11 +73,14 @@ const REPORT_STATS: Array<{ key: string; countKey: keyof ReportCounts }> = [
   { key: 'report.ddiplInstalled', countKey: 'ddiplInstalled' }
 ]
 
+// Escapes the five characters that are significant inside HTML text so any
+// filename or log message is safe to inline verbatim.
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
 function formatSize(bytes: number): string {
+  // Zero/unknown sizes render as an em dash instead of "0 B".
   if (!bytes || bytes <= 0) return '\u2014'
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
   let v = bytes
@@ -85,7 +101,10 @@ function humanizeDuration(ms: number): string {
 
 function csvField(value: string | number): string {
   let s = String(value)
+  // Guard against CSV formula injection: a leading =, +, -, or @ would be
+  // evaluated by Excel, so it is neutralized with a leading apostrophe.
   if (/^[=+\-@]/.test(s)) s = "'" + s
+  // Wrap in quotes (doubling inner quotes) when the value contains separators.
   if (/[",;\r\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"'
   return s
 }
@@ -94,6 +113,10 @@ function tl(locale: Locale, key: string, vars?: Record<string, string | number>)
   return translate(locale, key as TranslationKey, vars)
 }
 
+/**
+ * Builds the CSV report: a header row plus one line per file row, all fields
+ * localized and CSV-escaped. Lines use CRLF so the file opens cleanly in Excel.
+ */
 export function buildReportCsv(data: ReportData): string {
   const header = [
     tl(data.locale, 'report.columnStatus'),
@@ -114,9 +137,17 @@ export function buildReportCsv(data: ReportData): string {
   return lines.join('\r\n') + '\r\n'
 }
 
+/**
+ * Builds the self-contained HTML report (inline CSS, localized labels, dark
+ * theme). The overall status banner reflects the ok flag and the severest log
+ * level, while the summary grid, file table and activity log come straight
+ * from the run's counters, rows and logs.
+ */
 export function buildReportHtml(data: ReportData): string {
   const counts = data.counts
 
+  // A run can finish "ok" yet still contain warning/error log lines; the
+  // banner picks the severest of those before settling on plain "ok".
   const statusKey = data.ok
     ? data.logs.some((l) => l.level === 'error') ? 'report.statusErrors'
       : data.logs.some((l) => l.level === 'warn') ? 'report.statusWarnings'
@@ -221,6 +252,11 @@ export function buildReportHtml(data: ReportData): string {
 </html>`
 }
 
+/**
+ * Writes sc64-report.html and sc64-report.csv into the card root and returns
+ * their paths. Returns null when no destination is given or a write fails, so
+ * a report problem never fails the whole prepare run.
+ */
 export async function writeReport(data: ReportData, destRoot: string): Promise<{ html: string; csv: string } | null> {
   if (!destRoot) return null
   try {

@@ -1,15 +1,22 @@
+// Existing-card inspection: walks a card's folder tree counting ROMs by
+// system, save folders, files and bytes, reads the sc64menu.n64 version, and
+// reports free space. Backs the inspect panel that warns the user what a
+// prepare run would find on the card before anything is overwritten.
+
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { existsSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { freeSpaceOf } from './drives'
 import { extOf } from './n64validate'
 
+/** What an existing card holds: whether sc64menu.n64 is present and its parsed version/size. */
 export interface InspectMenuInfo {
   present: boolean
   version: string | null
   size: number | null
 }
 
+/** Result of inspecting an existing card: menu info, per-system ROM counts, saves, files/bytes, free space. */
 export interface CardInspection {
   menu: InspectMenuInfo
   roms: { n64: number; gb: number; gbc: number; snes: number; sms: number; gg: number; other: number }
@@ -19,6 +26,8 @@ export interface CardInspection {
   freeBytes: number | null
 }
 
+// Extension sets per system; OTHER_EXTS captures NES/Channel F/64DD images,
+// which the menu loads via emulators but which have no dedicated counter.
 const N64_EXTS = new Set(['.n64', '.z64', '.v64'])
 const GB_EXTS = new Set(['.gb'])
 const GBC_EXTS = new Set(['.gbc'])
@@ -35,6 +44,12 @@ const TS_RE = /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/
 const VERSION_RE = /[vV]\d+\.\d+\.\d+/
 const TS_WINDOW = 1024
 
+/**
+ * Extracts the version string from a sc64menu.n64 dump by scanning the whole
+ * binary for the embedded build timestamp and reading the version nearby. A
+ * timestamp with no version means a dev build, so 'Preview release' is
+ * returned; a file with neither timestamp nor version is reported as null.
+ */
 export function parseMenuVersion(buf: Buffer): string | null {
   const text = buf.toString('latin1')
   let foundTimestamp = false
@@ -50,6 +65,12 @@ export function parseMenuVersion(buf: Buffer): string | null {
   return foundTimestamp ? 'Preview release' : null
 }
 
+/**
+ * Inspects an existing card at `root`: parses the root sc64menu.n64, walks the
+ * whole tree counting ROMs by system and saves/ folders, and reports total
+ * files/bytes and free space. Returns null when the root is missing or not a
+ * directory.
+ */
 export async function inspectCard(root: string): Promise<CardInspection | null> {
   let rootStat
   try {
@@ -66,6 +87,7 @@ export async function inspectCard(root: string): Promise<CardInspection | null> 
       const buf = readFileSync(menuPath)
       menu = { present: true, version: parseMenuVersion(buf), size: buf.length }
     } catch {
+      // An unreadable menu is still "present"; only version/size are unknown.
       menu = { present: true, version: null, size: null }
     }
   }
@@ -91,6 +113,7 @@ export async function inspectCard(root: string): Promise<CardInspection | null> 
     for (const ent of entries) {
       const full = join(dir, ent.name)
       if (ent.isDirectory()) {
+        // A folder literally named "saves" is the menu's save directory.
         if (ent.name.toLowerCase() === 'saves') saves++
         walk(full)
         continue
@@ -102,6 +125,8 @@ export async function inspectCard(root: string): Promise<CardInspection | null> 
       } catch {
         // ignore
       }
+      // The root menu counts toward files/bytes but not the ROM counters, and
+      // the entire menu/ folder tree is excluded from ROM counts too.
       if (full === menuPath) continue
       const rel = relative(root, full)
       if (rel.startsWith('menu' + sep)) continue
