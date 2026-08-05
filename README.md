@@ -215,3 +215,8 @@ powershell -File scripts/make-icons.ps1   # regenerates build/icon.ico, build/ic
 ## License
 
 MIT
+
+## Credits
+
+- [SummerCart64](https://github.com/Polprzewodnikowy/SummerCart64) by Polprzewodnikowy
+- [N64FlashcartMenu](https://github.com/Polprzewodnikowy/N64FlashcartMenu) (sc64menu.n64)
