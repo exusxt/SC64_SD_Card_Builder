@@ -2,6 +2,10 @@
 
 Prepare an SD card for the [SummerCart64](https://github.com/Polprzewodnikowy/SummerCart64) running [N64FlashcartMenu](https://github.com/Polprzewodnikowy/N64FlashcartMenu). Cross-platform Electron app for Windows, macOS and Linux, with 18 languages and 14 themes.
 
+## Screenshots
+
+![SC64 SD Card Builder](screenshot.png)
+
 ## Supported operating systems
 
 The executables below are the actual artifacts shipped with the current release (v0.11.2). All of them are published to the [Releases page](https://github.com/exusxt/SC64_SD_Card_Builder/releases).
