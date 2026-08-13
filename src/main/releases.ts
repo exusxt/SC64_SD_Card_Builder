@@ -330,4 +330,21 @@ export async function getAppLatestRelease(): Promise<AppUpdateInfo> {
   }
 }
 
+// Markdown body of one app release; release notes in the update toast. Bodies
+// can be long, so the notes are capped at a few thousand chars.
+const RELEASE_NOTES_MAX = 6000
+
+/**
+ * Release notes (markdown body) of the app release tagged v{version}, or null
+ * when that tag has no notes. One API call per version, cached like every other
+ * release lookup.
+ */
+export async function getAppReleaseNotes(version: string): Promise<string | null> {
+  const tag = /^v/i.test(version) ? version : `v${version}`
+  const rel = await githubRequest<{ body: string | null }>(`/repos/${APP_REPO}/releases/tags/${tag}`)
+  const body = rel?.body?.trim()
+  if (!body) return null
+  return body.length > RELEASE_NOTES_MAX ? `${body.slice(0, RELEASE_NOTES_MAX).trimEnd()}\n…` : body
+}
+
 export type { EmulatorKey, EmulatorInfo }

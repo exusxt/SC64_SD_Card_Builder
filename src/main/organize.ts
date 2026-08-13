@@ -2,6 +2,7 @@
 // copy step each game lands in its own "Title (Region)" folder, de-duplicated
 // with a numeric suffix, and any sibling .cht cheat file is copied in beside
 // it. Used when the "organize ROMs" and "copy cheats" options are enabled.
+// Emulator (GB/SNES/SMS/GG) ROMs use the same naming via emuOrganizeBase.
 
 import { N64_REGION_LABELS, type N64Header } from './n64validate'
 
@@ -34,6 +35,17 @@ export function cleanTitle(raw: string): string {
  */
 export function organizeBase(header: N64Header): string {
   return `${cleanTitle(header.title)} (${N64_REGION_LABELS[header.region]})`
+}
+
+/**
+ * The folder base for an emulator (GB/SNES/SMS/GG) ROM. SMS/GG games have no
+ * title field, so their product code is used instead; a region label is
+ * appended when the header carries one (e.g. "Sonic (SMS Export)").
+ */
+export function emuOrganizeBase(title: string, region: string | null, productCode?: string): string {
+  const name = title || productCode || 'Unknown'
+  const clean = cleanTitle(name)
+  return region ? `${clean} (${region})` : clean
 }
 
 /**

@@ -118,6 +118,7 @@ export function OptionsStep({
     settings.downloadMenu ||
     settings.downloadMetadata ||
     settings.createFolders ||
+    settings.writeMenuConfig ||
     settings.downloadEmulators ||
     (settings.installDDIPL && settings.ddiplSource !== null) ||
     (settings.copyRoms && settings.romSources.length > 0 && (settings.copyAllTypes || Object.values(settings.romTypes).some(Boolean))) ||
@@ -161,6 +162,13 @@ export function OptionsStep({
         hint={t('opt.emulatorsHint')}
         checked={settings.downloadEmulators}
         onChange={(v) => onSettingsChange({ downloadEmulators: v })}
+      />
+
+      <Checkbox
+        label={t('opt.menuConfig')}
+        hint={t('opt.menuConfigHint')}
+        checked={settings.writeMenuConfig}
+        onChange={(v) => onSettingsChange({ writeMenuConfig: v })}
       />
 
       <div className={cn('space-y-2 pl-1 transition-opacity', !settings.downloadEmulators && 'pointer-events-none opacity-40')}>
@@ -328,6 +336,16 @@ export function OptionsStep({
             hint={t('opt.copyCheatsHint')}
             checked={settings.copyCheats}
             onChange={(v) => onSettingsChange({ copyCheats: v })}
+            className="flex-1"
+          />
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Checkbox
+            label={t('opt.normalize')}
+            hint={t('opt.normalizeHint')}
+            checked={settings.normalizeN64}
+            onChange={(v) => onSettingsChange({ normalizeN64: v })}
             className="flex-1"
           />
         </div>

@@ -18,8 +18,9 @@ import { formatDisk, FormatRequest } from './format'
 import { isElevated, showAdminPrompt } from './admin'
 import { checkForUpdates, installUpdate } from './updater'
 import { listDirDeep } from './unzip'
-import { listPreviewDir, loadPreviewBoxart } from './preview'
-import { translate } from '../shared/i18n'
+import { listPreviewDir, loadPreviewBoxart, previewEntry } from './preview'
+import { backupSaves, restoreSaves } from './saves'
+import { translate, type Locale } from '../shared/i18n'
 
 /** Mutable cancellation flag shared between a run handler and its cancel channel. */
 interface CancelToken {
@@ -147,7 +148,7 @@ export function registerIpc(): void {
   ipcMain.handle('app:getVersion', () => app.getVersion())
   ipcMain.handle('app:relaunchAdmin', () => showAdminPrompt())
   ipcMain.handle('app:openDocs', () => {
-    void shell.openExternal('https://github.com/exusxt/SC64_SD_Card_Builder')
+    void shell.openExternal('https://github.com/exusxt/SC64_SD_Card_Builder/wiki')
   })
 
   // Each run starts with a fresh cancel token so the previous run's
@@ -243,6 +244,22 @@ export function registerIpc(): void {
     installUpdate()
   })
 
+  // Saves backup/restore: mirror the card's saves/ trees into a folder on the
+  // computer (run before reformatting) and write them back afterwards. Both
+  // sides return a localized SavesResult for the destination-step UI.
+  ipcMain.handle('saves:backup', async (_e, cardRoot: string, backupDir: string, locale: Locale) => {
+    if (!cardRoot || !backupDir || !existsSync(cardRoot)) {
+      return { ok: false, message: translate(locale ?? 'en', 'saves.backupError', { message: 'Missing path' }), files: 0, folders: 0, bytes: 0 }
+    }
+    return backupSaves(cardRoot, backupDir, locale ?? 'en')
+  })
+  ipcMain.handle('saves:restore', async (_e, cardRoot: string, backupDir: string, locale: Locale) => {
+    if (!cardRoot || !backupDir || !existsSync(cardRoot)) {
+      return { ok: false, message: translate(locale ?? 'en', 'saves.restoreError', { message: 'Missing path' }), files: 0, folders: 0, bytes: 0 }
+    }
+    return restoreSaves(cardRoot, backupDir, locale ?? 'en')
+  })
+
   // On-screen N64FlashcartMenu preview; both calls are guarded so a path
   // outside the preview root (or a missing root) can never be read.
   ipcMain.handle('preview:list', async (_e, root: string, dir: string) => {
@@ -252,5 +269,9 @@ export function registerIpc(): void {
   ipcMain.handle('preview:boxart', (_e, root: string, path: string) => {
     if (!root || !existsSync(root)) return null
     return loadPreviewBoxart(root, path)
+  })
+  ipcMain.handle('preview:entry', (_e, root: string, rel: string) => {
+    if (!root || !existsSync(root)) return null
+    return previewEntry(root, rel)
   })
 }

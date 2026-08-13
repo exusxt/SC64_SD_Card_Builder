@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, writeFile, rm, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { parseHeader } from '../src/main/n64validate'
-import { cleanTitle, organizeBase, uniqueBase, chtNameOf } from '../src/main/organize'
+import { cleanTitle, organizeBase, uniqueBase, chtNameOf, emuOrganizeBase } from '../src/main/organize'
 import { prepare } from '../src/main/prepare'
 import type { PrepareOptions } from '../src/shared/types'
 
@@ -48,6 +48,27 @@ describe('organizeBase', () => {
     expect(organizeBase(header)).toBe('MARIO (Japan)')
     const pal = parseHeader(makeZ64Buffer({ title: 'MARIO', gameCode: 'NSMP', country: 'P' }), 0x800000)!
     expect(organizeBase(pal)).toBe('MARIO (PAL)')
+  })
+})
+
+describe('emuOrganizeBase', () => {
+  it('uses the title with the region label when a region is known', () => {
+    expect(emuOrganizeBase('SUPER MARIO LAND', 'SMS Export')).toBe('SUPER MARIO LAND (SMS Export)')
+    expect(emuOrganizeBase('TETRIS', 'USA')).toBe('TETRIS (USA)')
+  })
+
+  it('omits the region when the header carries none', () => {
+    expect(emuOrganizeBase('ZELDA', null)).toBe('ZELDA')
+  })
+
+  it('falls back to the product code for SMS/GG ROMs that lack a title', () => {
+    expect(emuOrganizeBase('', null, 'SONIC')).toBe('SONIC')
+    expect(emuOrganizeBase('', 'SMS Export', 'GAME')).toBe('GAME (SMS Export)')
+  })
+
+  it('sanitizes titles like the N64 path does', () => {
+    expect(emuOrganizeBase('A?B*C', null)).toBe('A B C')
+    expect(emuOrganizeBase('', null, '')).toBe('Unknown')
   })
 })
 

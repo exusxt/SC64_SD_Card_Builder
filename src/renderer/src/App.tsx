@@ -110,7 +110,15 @@ export default function App(): React.JSX.Element {
         window.clearTimeout(updateTimer.current)
         updateTimer.current = null
       }
-      setUpdate({ state: ev.state, version: ev.version, percent: ev.percent, message: ev.message })
+      // Keep notes from a previous update snapshot when the new event does not
+      // carry them, so the "What's new" section survives the state transitions.
+      setUpdate((prev) => ({
+        state: ev.state,
+        version: ev.version,
+        percent: ev.percent,
+        message: ev.message,
+        notes: ev.notes ?? prev?.notes
+      }))
       if (ev.state === 'not-available') {
         // Auto-dismiss the "no update" toast after a short pause.
         updateTimer.current = window.setTimeout(() => setUpdate(null), 4000)
@@ -253,6 +261,7 @@ export default function App(): React.JSX.Element {
     settings.downloadMetadata ||
     settings.createFolders ||
     settings.downloadEmulators ||
+    settings.writeMenuConfig ||
     (settings.installDDIPL && settings.ddiplSource !== null) ||
     (settings.copyRoms && settings.romSources.length > 0 && (settings.copyAllTypes || Object.values(settings.romTypes).some(Boolean))) ||
     (settings.copyRoms && settings.archiveSources.length > 0)
@@ -329,6 +338,7 @@ export default function App(): React.JSX.Element {
       downloadMenu: settings.downloadMenu,
       downloadMetadata: settings.downloadMetadata,
       createFolders: settings.createFolders,
+      writeMenuConfig: settings.writeMenuConfig,
       downloadEmulators: settings.downloadEmulators,
       emulators: settings.emulators,
       installDDIPL: settings.installDDIPL,
@@ -343,7 +353,8 @@ export default function App(): React.JSX.Element {
       verify: settings.verify,
       organizeRoms: settings.organizeRoms,
       stockFolders: settings.stockFolders,
-      copyCheats: settings.copyCheats
+      copyCheats: settings.copyCheats,
+      normalizeN64: settings.normalizeN64
     })
     setResult({ kind: 'prepare', ok: res.ok, message: res.summary, report: res.report })
     setRunning(null)
@@ -566,7 +577,34 @@ export default function App(): React.JSX.Element {
         />
       ) : null}
 
-      {previewRoot ? <MenuPreview t={t} root={previewRoot} onClose={() => setPreviewRoot(null)} /> : null}
+      {previewRoot ? (
+        <MenuPreview
+          t={t}
+          root={previewRoot}
+          favorites={settings.previewFavorites ?? []}
+          history={settings.previewHistory ?? []}
+          onToggleFavorite={(key) =>
+            setSettings((s) => {
+              const favs = s.previewFavorites ?? []
+              return { ...s, previewFavorites: favs.includes(key) ? favs.filter((k) => k !== key) : [...favs, key] }
+            })
+          }
+          onAddHistory={(key) =>
+            setSettings((s) => {
+              const hist = s.previewHistory ?? []
+              return { ...s, previewHistory: [key, ...hist.filter((k) => k !== key)].slice(0, 100) }
+            })
+          }
+          onRemoveFromList={(kind, key) =>
+            setSettings((s) =>
+              kind === 'favorites'
+                ? { ...s, previewFavorites: (s.previewFavorites ?? []).filter((k) => k !== key) }
+                : { ...s, previewHistory: (s.previewHistory ?? []).filter((k) => k !== key) }
+            )
+          }
+          onClose={() => setPreviewRoot(null)}
+        />
+      ) : null}
     </div>
   )
 }

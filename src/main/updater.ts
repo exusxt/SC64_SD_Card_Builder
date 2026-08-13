@@ -11,7 +11,7 @@ import { spawn } from 'node:child_process'
 import { join } from 'node:path'
 import { writeFileSync } from 'node:fs'
 import { downloadFile } from './download'
-import { getAppLatestRelease } from './releases'
+import { getAppLatestRelease, getAppReleaseNotes } from './releases'
 import type { ReleaseAsset } from './releases'
 import type { AppEvent } from '../shared/types'
 
@@ -26,12 +26,24 @@ interface PendingUpdate {
   version: string
   asset: ReleaseAsset
   downloadedPath: string | null
+  notes?: string
 }
 
 let pending: PendingUpdate | null = null
 
 function send(ev: AppEvent): void {
   if (win && !win.isDestroyed()) win.webContents.send('main:event', ev)
+}
+
+// Release notes for a version, best-effort: a failed/absent lookup just yields
+// no notes so the toast renders without a "What's new" section.
+async function releaseNotes(version?: string): Promise<string | undefined> {
+  if (!version) return undefined
+  try {
+    return (await getAppReleaseNotes(version)) ?? undefined
+  } catch {
+    return undefined
+  }
 }
 
 // Plain numeric comparison (no semver dependency): pad the shorter segment list
@@ -81,7 +93,9 @@ async function portableCheck(): Promise<void> {
       return
     }
     pending = { version: info.version, asset, downloadedPath: null }
-    send({ type: 'update', state: 'available', version: info.version })
+    const notes = await releaseNotes(info.version)
+    if (pending) pending.notes = notes
+    send({ type: 'update', state: 'available', version: info.version, notes })
     await portableDownload()
   } catch (e) {
     send({ type: 'update', state: 'error', message: e instanceof Error ? e.message : String(e) })
@@ -105,7 +119,7 @@ async function portableDownload(): Promise<void> {
         })
     })
     p.downloadedPath = dest
-    send({ type: 'update', state: 'downloaded', version: p.version })
+    send({ type: 'update', state: 'downloaded', version: p.version, notes: p.notes })
   } catch (e) {
     send({ type: 'update', state: 'error', message: e instanceof Error ? e.message : String(e) })
   }
@@ -181,7 +195,12 @@ export function initUpdater(w: BrowserWindow): void {
     send({ type: 'update', state: 'checking' })
   })
   autoUpdater.on('update-available', (info) => {
-    send({ type: 'update', state: 'available', version: info.version })
+    // Release notes need an extra API call, so the 'available' event is sent
+    // once they arrive (they are cached by getAppReleaseNotes afterwards).
+    void (async () => {
+      const notes = await releaseNotes(info.version)
+      send({ type: 'update', state: 'available', version: info.version, notes })
+    })()
   })
   autoUpdater.on('update-not-available', () => {
     busy = false
@@ -192,7 +211,10 @@ export function initUpdater(w: BrowserWindow): void {
   })
   autoUpdater.on('update-downloaded', (info) => {
     busy = false
-    send({ type: 'update', state: 'downloaded', version: info.version })
+    void (async () => {
+      const notes = await releaseNotes(info.version)
+      send({ type: 'update', state: 'downloaded', version: info.version, notes })
+    })()
   })
   autoUpdater.on('error', (err) => {
     busy = false

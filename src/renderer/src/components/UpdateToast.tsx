@@ -5,19 +5,23 @@
  * once a build is ready. State changes arrive through the parent, which feeds
  * it from window.api AppEvent update events.
  */
-import { CheckCircle2, Download, X, XCircle } from 'lucide-react'
+import { useState } from 'react'
+import { CheckCircle2, ChevronDown, ChevronRight, Download, X, XCircle } from 'lucide-react'
 import type { T } from '../i18n'
 import { Button, Spinner } from './ui'
+import { cn } from '../lib'
 
 /**
  * One snapshot of the auto-update flow. percent tracks download progress while
- * downloading; version and message carry detail for the available/error states.
+ * downloading; version, message and notes carry detail for the available/error
+ * states (notes is the release body, shown as an expandable "What's new").
  */
 export type UpdateState = {
   state: 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
   version?: string
   percent?: number
   message?: string
+  notes?: string
 }
 
 /**
@@ -37,6 +41,8 @@ export function UpdateToast({
   onInstall: () => void
 }): React.JSX.Element {
   const { state } = update
+  const [notesOpen, setNotesOpen] = useState(false)
+  const hasNotes = state === 'available' && (update.notes?.trim().length ?? 0) > 0
 
   return (
     <div className="fixed bottom-4 right-4 z-50 w-80 rounded-2xl border border-sc64-border bg-sc64-panel p-4 shadow-2xl shadow-black/50 backdrop-blur">
@@ -81,6 +87,30 @@ export function UpdateToast({
             className="h-full rounded-full bg-sc64-accent transition-[width] duration-300"
             style={{ width: `${update.percent ?? 0}%` }}
           />
+        </div>
+      ) : null}
+
+      {hasNotes ? (
+        // Collapsible release notes: markdown is shown verbatim with wrapping
+        // and a scroll cap so very long bodies never explode the toast.
+        <div className="mt-3 overflow-hidden rounded-xl border border-sc64-border bg-sc64-panel2/60">
+          <button
+            type="button"
+            onClick={() => setNotesOpen((o) => !o)}
+            className="flex w-full items-center gap-1.5 px-3 py-2 text-xs font-medium text-sc64-accent transition-colors hover:bg-sc64-panel2"
+          >
+            {notesOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            {t('update.whatsNew')}
+          </button>
+          {notesOpen ? (
+            <pre
+              className={cn(
+                'max-h-40 overflow-y-auto whitespace-pre-wrap break-words border-t border-sc64-border px-3 py-2 text-[11px] leading-relaxed text-sc64-text'
+              )}
+            >
+              {update.notes}
+            </pre>
+          ) : null}
         </div>
       ) : null}
 

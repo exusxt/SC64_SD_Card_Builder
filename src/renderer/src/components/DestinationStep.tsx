@@ -5,11 +5,107 @@
  * Settings are read from props and patched up via onSettingsChange.
  */
 import { useEffect, useState } from 'react'
-import { AlertTriangle, CheckCircle2, FolderOpen, HardDrive, RefreshCw, ShieldAlert, Eye, XCircle, X, PackageOpen, Database } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, FolderOpen, HardDrive, RefreshCw, ShieldAlert, Eye, XCircle, X, PackageOpen, Database, Save, HardDriveDownload, HardDriveUpload } from 'lucide-react'
 import type { AppSettings, CardInspection, DriveInfo, Filesystem, FormatResult } from '../../../shared/types'
 import type { T } from '../i18n'
 import { Button, Checkbox, Field, Input, ProgressBar, Select } from './ui'
 import { cn, formatBytes } from '../lib'
+
+/**
+ * Saves backup/restore panel. The N64FlashcartMenu writes .sav files into
+ * saves/ folders next to each game; the user backs those up before formatting
+ * the card and restores them afterwards. Both directions copy between the
+ * destination and a backup folder the user picks (stored in savesBackupDir).
+ */
+function SavesSection({
+  t,
+  settings,
+  destination,
+  onSettingsChange
+}: {
+  t: T
+  settings: AppSettings
+  destination: string
+  onSettingsChange: (patch: Partial<AppSettings>) => void
+}): React.JSX.Element {
+  const [busy, setBusy] = useState<null | 'backup' | 'restore'>(null)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const pickDir = async (): Promise<void> => {
+    const dir = await window.api.chooseFolder()
+    if (dir) onSettingsChange({ savesBackupDir: dir })
+  }
+
+  const run = async (kind: 'backup' | 'restore'): Promise<void> => {
+    const dir = settings.savesBackupDir
+    if (!dir) return
+    setBusy(kind)
+    setMsg(null)
+    try {
+      const res =
+        kind === 'backup'
+          ? await window.api.backupSaves(destination, dir, settings.language)
+          : await window.api.restoreSaves(destination, dir, settings.language)
+      if (res.ok) {
+        setMsg({ ok: true, text: res.message })
+      } else {
+        setMsg({ ok: false, text: res.message })
+      }
+    } catch (err) {
+      const key = kind === 'backup' ? 'saves.backupError' : 'saves.restoreError'
+      setMsg({ ok: false, text: t(key, { message: err instanceof Error ? err.message : String(err) }) })
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border border-sc64-border bg-sc64-panel2/60 p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <Save className="h-4 w-4 text-sc64-accent" />
+        <div>
+          <div className="text-sm font-semibold text-sc64-text">{t('saves.title')}</div>
+          <div className="text-xs text-sc64-muted">{t('saves.hint')}</div>
+        </div>
+      </div>
+
+      {settings.savesBackupDir ? (
+        <div className="flex items-center gap-2">
+          <span className="min-w-0 flex-1 truncate rounded-lg border border-sc64-borderlight bg-sc64-panel px-3 py-2 font-mono text-xs text-sc64-accent">
+            {settings.savesBackupDir}
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => onSettingsChange({ savesBackupDir: null })}>
+            <X className="h-3.5 w-3.5" /> {t('common.clear')}
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Button variant="outline" size="sm" onClick={pickDir}>
+          <FolderOpen className="h-3.5 w-3.5" /> {t('saves.chooseDir')}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => void run('backup')} disabled={busy !== null || !settings.savesBackupDir}>
+          <HardDriveDownload className="h-3.5 w-3.5" /> {t('saves.backup')}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => void run('restore')} disabled={busy !== null || !settings.savesBackupDir}>
+          <HardDriveUpload className="h-3.5 w-3.5" /> {t('saves.restore')}
+        </Button>
+      </div>
+
+      {msg ? (
+        <div
+          className={cn(
+            'mt-3 flex items-start gap-2 rounded-lg border p-3 text-xs',
+            msg.ok ? 'border-sc64-good/40 bg-sc64-good/10 text-sc64-good' : 'border-sc64-bad/40 bg-sc64-bad/10 text-sc64-bad'
+          )}
+        >
+          {msg.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
+          <span className="whitespace-pre-wrap break-all">{msg.text}</span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 /**
  * DestinationStep. The wizard body is driven by App.tsx: drives and inspection
@@ -61,12 +157,26 @@ export function DestinationStep({
   // Local draft of the folder path; only committed to settings when the user confirms, so a
   // half-typed path never silently replaces the saved destination.
   const [folderDraft, setFolderDraft] = useState(settings.folder ?? '')
+  // The "copy from a prepared folder" panel can source from either a plain folder or another
+  // SD card; this local toggle switches between the two pickers.
+  const [cloneSourceMode, setCloneSourceMode] = useState<'folder' | 'card'>('folder')
 
   useEffect(() => {
     setFolderDraft(settings.folder ?? '')
   }, [settings.folder])
   // Only removable drives are offered; internal/system drives are never eligible to be written or formatted.
   const removableDrives = drives.filter((d) => d.removable)
+  // Drives that can serve as a clone source: removable, mounted, and not the destination
+  // itself — a card can never sensibly copy onto itself.
+  const destMount = destination.trim().replace(/[\\/]+$/, '').toLowerCase()
+  const cloneCardDrives = removableDrives.filter((d) => {
+    const mp = (d.mountpoint ?? '').trim().replace(/[\\/]+$/, '').toLowerCase()
+    return mp.length > 0 && mp !== destMount
+  })
+  const sameCardWarning =
+    settings.preparedSource !== null &&
+    settings.preparedSource.trim().replace(/[\\/]+$/, '').toLowerCase() === destMount &&
+    destMount.length > 0
   const selected = drives.find((d) => d.id === settings.driveId) ?? null
   const hasDest = destination.trim().length > 0
   const fs = (selected?.filesystem ?? '').trim().toUpperCase()
@@ -389,7 +499,59 @@ export function DestinationStep({
               <div className="text-xs text-sc64-muted">{t('dest.preparedHint')}</div>
             </div>
           </div>
-          {settings.preparedSource ? (
+
+          {/* Source-type switch: an already-prepared folder, or a full card-to-card clone. */}
+          <div className="mb-3 flex w-fit rounded-lg border border-sc64-borderlight bg-sc64-panel2 p-0.5">
+            <button
+              onClick={() => setCloneSourceMode('folder')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                cloneSourceMode === 'folder' ? 'bg-sc64-accent2/20 text-sc64-accent2' : 'text-sc64-muted hover:text-sc64-text'
+              )}
+            >
+              <FolderOpen className="h-3.5 w-3.5" /> {t('dest.cloneSourceFolder')}
+            </button>
+            <button
+              onClick={() => setCloneSourceMode('card')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                cloneSourceMode === 'card' ? 'bg-sc64-accent2/20 text-sc64-accent2' : 'text-sc64-muted hover:text-sc64-text'
+              )}
+            >
+              <HardDrive className="h-3.5 w-3.5" /> {t('dest.cloneSourceCard')}
+            </button>
+          </div>
+
+          {cloneSourceMode === 'card' ? (
+            <div className="space-y-2">
+              <Select
+                value={settings.preparedSource ?? ''}
+                onChange={(e) => {
+                  const mount = e.target.value || null
+                  // Card clones always verify so the copy is guaranteed good byte-for-byte.
+                  onSettingsChange({ preparedSource: mount, verify: true })
+                }}
+              >
+                <option value="">{t('dest.cloneCardSelect')}</option>
+                {cloneCardDrives.map((d) => (
+                  <option key={d.id} value={d.mountpoint ?? ''}>
+                    {d.volumeLabel || d.name} · {d.mountpoint} · {formatBytes(d.size)}
+                  </option>
+                ))}
+                {cloneCardDrives.length === 0 ? <option disabled>{t('dest.cloneCardNoRemovable')}</option> : null}
+              </Select>
+              <p className="flex items-center gap-1.5 text-xs text-sc64-muted">
+                <HardDriveUpload className="h-3.5 w-3.5 shrink-0" />
+                <span>{t('dest.cloneCardNote')}</span>
+              </p>
+              {sameCardWarning ? (
+                <p className="flex items-center gap-1.5 text-xs text-sc64-warn">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  <span>{t('dest.cloneCardSame')}</span>
+                </p>
+              ) : null}
+            </div>
+          ) : settings.preparedSource ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate rounded-lg border border-sc64-borderlight bg-sc64-panel px-3 py-2 font-mono text-xs text-sc64-accent">
@@ -510,6 +672,10 @@ export function DestinationStep({
           </div>
         ) : null}
       </div>
+
+      {hasDest ? (
+        <SavesSection t={t} settings={settings} destination={destination} onSettingsChange={onSettingsChange} />
+      ) : null}
 
       <div className="flex items-start gap-2 rounded-xl border border-sc64-border bg-sc64-panel/40 px-4 py-3 text-xs text-sc64-muted">
         <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-sc64-warn" />

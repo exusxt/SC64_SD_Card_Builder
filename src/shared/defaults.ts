@@ -29,13 +29,18 @@ export const DEFAULT_SETTINGS: AppSettings = {
   copyAllTypes: true,
   romTypes: { n64: true, nes: true, snes: true, gb: true, sms: true, chf: true, ndd: true },
   createSaves: true,
+  writeMenuConfig: true,
   includeSubdirs: true,
   overwrite: false,
   organizeRoms: false,
   stockFolders: true,
   copyCheats: false,
+  normalizeN64: false,
   stage: false, // stage first, then copy to the card on request
   verify: true,
   preparedSource: null,
+  savesBackupDir: null,
+  previewFavorites: [],
+  previewHistory: [],
   formatOptions: { fullFormat: false, filesystem: 'fat32' } // quick format, FAT32 for broad compatibility
 }

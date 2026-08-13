@@ -17,7 +17,8 @@ import type {
   MetadataReleaseInfo,
   PrepareOptions,
   PrepareResult,
-  PreviewEntry
+  PreviewEntry,
+  SavesResult
 } from '../shared/types'
 /**
  * The renderer-facing API surface. Each method maps one-to-one to an IPC
@@ -49,8 +50,13 @@ const api = {
   countPreparedFolder: (path: string): Promise<{ files: number; bytes: number } | null> =>
     ipcRenderer.invoke('prepare:countPrepared', path),
   inspectCard: (path: string): Promise<CardInspection | null> => ipcRenderer.invoke('inspect:card', path),
+  backupSaves: (cardRoot: string, backupDir: string, locale: string): Promise<SavesResult> =>
+    ipcRenderer.invoke('saves:backup', cardRoot, backupDir, locale),
+  restoreSaves: (cardRoot: string, backupDir: string, locale: string): Promise<SavesResult> =>
+    ipcRenderer.invoke('saves:restore', cardRoot, backupDir, locale),
   listPreviewDir: (root: string, dir: string): Promise<PreviewEntry[] | null> => ipcRenderer.invoke('preview:list', root, dir),
   loadPreviewBoxart: (root: string, path: string): Promise<string | null> => ipcRenderer.invoke('preview:boxart', root, path),
+  resolvePreviewEntry: (root: string, rel: string): Promise<PreviewEntry | null> => ipcRenderer.invoke('preview:entry', root, rel),
   validateDDIPL: (dir: string): Promise<DdIplValidation | null> => ipcRenderer.invoke('ddipl:validate', dir),
   format: (options: FormatOptions): Promise<FormatResult> => ipcRenderer.invoke('format:run', options),
   cancelFormat: (): void => ipcRenderer.send('format:cancel'),

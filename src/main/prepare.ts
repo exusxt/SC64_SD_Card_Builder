@@ -16,9 +16,10 @@ import { getMenuRelease, getMetadataRelease, latestReleaseAssets, GB64_TEMPLATE_
 import { extractZip, findEntriesInZip, extractEntryTo, copyDirContents, rmTree, listDirDeep, extractArchive } from './unzip'
 import { verifyFile } from './verify'
 import { pathContains } from './pathguard'
-import { organizeBase, uniqueBase, chtNameOf } from './organize'
+import { organizeBase, uniqueBase, emuOrganizeBase, chtNameOf } from './organize'
 import { inspectN64File, isN64Ext, romIdentity, N64_REGION_LABELS, N64Header, N64Issue, N64Region } from './n64validate'
 import { validateEmuFile, emuIdentity, isGBExt, isSNESExt, isSMSExt, EmuHeaderInfo, EmuIssue, EmuKind } from './emuheader'
+import { normalizeN64ToFile, verifyNormalized } from './normalize'
 import { installDDIPL } from './ddipl'
 import { writeReport, type ReportCounts, type ReportLog, type ReportRow } from './report'
 
@@ -132,13 +133,17 @@ function findCht(romPath: string): string | null {
 class Runner {
   private steps: Record<StepId, StepState>
   private readonly locale: Locale
+  // The options of the run currently executing; set by prepare() before any
+  // step runs so step helpers (e.g. the menu config.ini writer) can read the
+  // run's overwrite/createSaves flags without parameter plumbing.
+  opts: PrepareOptions | null = null
   lastCopyCount = 0
   readonly logs: ReportLog[] = []
   readonly rows: ReportRow[] = []
   readonly counts: ReportCounts = {
     romsCopied: 0, duplicates: 0, verified: 0, verifyFailures: 0,
     cheatsCopied: 0, savesCreated: 0, archivesExtracted: 0,
-    emulatorsInstalled: 0, ddiplInstalled: 0, menuTag: '', metadataTag: ''
+    emulatorsInstalled: 0, ddiplInstalled: 0, normalized: 0, menuTag: '', metadataTag: ''
   }
   readonly startedAt: string = new Date().toISOString()
 
@@ -226,19 +231,62 @@ class Runner {
   /**
    * Creates the menu folder tree (menu/, menu/metadata/, menu/64ddipl/,
    * menu/emulators/) and, when stockFolders is set, the per-console game
-   * folders GBC/, snes_rom/ and smsPlus64/.
+   * folders GBC/, snes_rom/ and smsPlus64/. When the run is configured to
+   * write a menu config.ini, that is pre-created here too so the menu boots
+   * with the chosen saves-folder layout even on a card it has never seen.
    */
   async createFolders(destination: string, enabled: boolean, stockFolders = false): Promise<void> {
-    if (!enabled) {
+    const menuConfig = this.opts?.writeMenuConfig === true
+    if (!enabled && !menuConfig) {
       this.markSkipped('folders')
       return
     }
     this.step('folders', 'running')
-    const dirs = ['menu', join('menu', 'metadata'), join('menu', '64ddipl'), join('menu', 'emulators')]
-    if (stockFolders) dirs.push('GBC', 'snes_rom', 'smsPlus64')
-    for (const d of dirs) await ensureDir(join(destination, d))
-    this.log('info', this.t('log.createdFolders'))
+    if (enabled) {
+      const dirs = ['menu', join('menu', 'metadata'), join('menu', '64ddipl'), join('menu', 'emulators')]
+      if (stockFolders) dirs.push('GBC', 'snes_rom', 'smsPlus64')
+      for (const d of dirs) await ensureDir(join(destination, d))
+      this.log('info', this.t('log.createdFolders'))
+    }
+    if (menuConfig) await this.writeMenuConfigFile(destination)
     this.step('folders', 'done')
+  }
+
+  /**
+   * Pre-writes menu/config.ini (the N64FlashcartMenu settings file) when it
+   * does not exist yet. The values mirror exactly what the menu would write on
+   * first boot (settings.c defaults), except use_saves_folder follows the
+   * run's createSaves option so the config always matches the card layout the
+   * app just produced.
+   */
+  private async writeMenuConfigFile(destination: string): Promise<void> {
+    const configPath = join(destination, 'menu', 'config.ini')
+    if (existsSync(configPath) && !this.opts?.overwrite) {
+      this.log('warn', this.t('log.menuConfigExists'))
+      return
+    }
+    await ensureDir(join(destination, 'menu'))
+    const useSaves = this.opts?.createSaves ? 'true' : 'false'
+    const body = [
+      '[menu]',
+      'schema_revision=1',
+      'first_run=true',
+      'pal60=false',
+      'force_progressive_scan=false',
+      'show_protected_entries=false',
+      'default_directory=/',
+      `use_saves_folder=${useSaves}`,
+      'show_saves_folder=false',
+      'show_save_files=false',
+      'show_cheat_files=false',
+      'show_rom_configuration_files=false',
+      'soundfx_enabled=false',
+      'bgm_enabled=false',
+      'reboot_rom_enabled=false',
+      ''
+    ].join('\n')
+    await writeFile(configPath, body, 'utf8')
+    this.log('success', this.t('log.menuConfigWritten', { useSaves }))
   }
 
   /**
@@ -457,9 +505,9 @@ class Runner {
   /**
    * The core copying step: extracts archives into the destination, walks every
    * ROM source, validates N64 and emulator headers, dedupes by identity, and
-   * copies matching files (organizing and creating saves/cheats as
-   * configured). Optionally byte-for-byte verifies each copy. Returns how many
-   * ROMs and save folders were produced.
+   * copies matching files (organizing, byte-swap normalizing and creating
+   * saves/cheats as configured). Optionally verifies each copy. Returns how
+   * many ROMs and save folders were produced.
    */
   async copyRoms(options: PrepareOptions): Promise<{ roms: number; saves: number }> {
     const archiveList = (options.archiveSources ?? []).filter((a) => existsSync(a))
@@ -491,6 +539,7 @@ class Runner {
     let n64Count = 0
     let warningCount = 0
     let duplicateCount = 0
+    let normalizedCount = 0
     const regionCounts: Partial<Record<N64Region, number>> = {}
     const emuCounts: Partial<Record<EmuKind, number>> = {}
     const usedBases = new Set<string>()
@@ -603,15 +652,44 @@ class Runner {
           }
         }
 
-        if (n64Header && options.organizeRoms) {
+        // Byte-swap normalization: a parsed N64 header that is not already
+        // big-endian (and the option on) means the copy converts the dump to
+        // canonical .z64 while it streams.
+        const normalizeOrder = options.normalizeN64 === true && n64Header && n64Header.byteOrder !== 'z64' ? n64Header.byteOrder : null
+        let outExt = extOf(file)
+        if (normalizeOrder) {
+          outExt = '.z64'
+          // Point the target at the normalized name, then re-check overwrite
+          // because the .z64 target may exist even when the .v64/.n64 one does
+          // not (and vice versa).
+          const targetExt = extOf(target)
+          const normTarget = targetExt ? `${target.slice(0, target.length - targetExt.length)}${outExt}` : `${target}${outExt}`
+          if (normTarget !== target) {
+            target = normTarget
+            if (existsSync(target) && !options.overwrite) continue
+          }
+        }
+
+        if (options.organizeRoms && (n64Header || emuHeader)) {
           // Organize mode: each game lands in its own "Title (Region)" folder;
           // uniqueBase appends a numeric suffix when two titles collide.
-          const base = uniqueBase(organizeBase(n64Header), usedBases)
-          target = join(destRoot, base, `${base}${extOf(file)}`)
+          // Emulator ROMs stay under their stock folder (GBC/, snes_rom/,
+          // smsPlus64/) when the stock layout is on; N64 games organize into
+          // the card root.
+          const base = n64Header
+            ? uniqueBase(organizeBase(n64Header), usedBases)
+            : uniqueBase(emuOrganizeBase(emuHeader!.title, emuHeader!.region, emuHeader!.productCode), usedBases)
+          const parent = !n64Header && options.stockFolders ? join(destRoot, stockFolderOf(file) ?? '') : destRoot
+          target = join(parent, base, `${base}${outExt}`)
         }
 
         await ensureDir(dirname(target))
-        await copyFile(file, target)
+        if (normalizeOrder) {
+          await normalizeN64ToFile(file, target, normalizeOrder)
+          normalizedCount++
+        } else {
+          await copyFile(file, target)
+        }
         roms++
         // Remember the folder for the saves/ subfolder pass below.
         if (options.createSaves) saveDirs.add(dirname(target))
@@ -632,8 +710,10 @@ class Runner {
 
         if (options.verify) {
           // Byte-for-byte comparison of the copy against the source before the
-          // next file is written.
-          if (await verifyFile(file, target)) {
+          // next file is written; a normalized file is compared against its
+          // normalized bytes instead of a raw hash.
+          const ok = normalizeOrder ? await verifyNormalized(file, target, normalizeOrder) : await verifyFile(file, target)
+          if (ok) {
             verified++
           } else {
             mismatches++
@@ -674,6 +754,10 @@ class Runner {
       this.log('info', this.t('emu.summary', { roms: String(emuTotal), kinds, warnings: String(warningCount), dupes: String(duplicateCount) }))
     }
 
+    if (normalizedCount > 0) {
+      this.log('success', this.t('log.normalized', { count: String(normalizedCount) }))
+    }
+
     let saves = 0
     if (options.createSaves) {
       // saveDirs collected every folder that received a ROM; each gets one
@@ -703,6 +787,7 @@ class Runner {
     this.counts.verifyFailures = mismatches
     this.counts.cheatsCopied = cheatsCopied
     this.counts.savesCreated = saves
+    this.counts.normalized = normalizedCount
     return { roms, saves }
   }
 
@@ -806,6 +891,7 @@ function isInsideDest(p: string, destNorm: string): boolean {
  */
 export async function prepare(options: PrepareOptions, cb: PrepareCallbacks): Promise<PrepareResult> {
   const runner = new Runner(cb, options.locale ?? 'en')
+  runner.opts = options
   const startMs = Date.now()
   try {
     // Conflict guard: refuse to build when a source folder contains the

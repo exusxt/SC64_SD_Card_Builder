@@ -104,6 +104,10 @@ function extOf(p: string): string {
   return last >= 0 ? p.slice(last).toLowerCase() : ''
 }
 
+function baseNameOf(p: string): string {
+  return p.split(/[/\\]/).pop() ?? p
+}
+
 async function inspectFile(metaRoot: string, boxartRoot: string, filePath: string): Promise<Pick<PreviewEntry, 'kind' | 'title' | 'gameCode' | 'region' | 'boxart' | 'description'>> {
   if (isN64Ext(filePath)) {
     const v = await inspectN64File(filePath)
@@ -224,6 +228,38 @@ export async function listPreviewDir(root: string, dirRel: string): Promise<Prev
     return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
   })
   return out
+}
+
+/**
+ * Resolves one relative entry (favorite/history key) to a preview entry, or
+ * null when it is missing or escapes the card root. This is how the preview's
+ * Favorites/History tabs materialize persisted keys back into entries.
+ */
+export async function previewEntry(root: string, rel: string): Promise<PreviewEntry | null> {
+  const base = resolve(root)
+  try {
+    if (!statSync(base).isDirectory()) return null
+  } catch {
+    return null
+  }
+  const segments = rel.split(/[/\\]/).filter((s) => s.length > 0)
+  if (segments.length === 0) return null
+  const target = resolve(base, ...segments)
+  if (!isInside(base, target)) return null
+  let st
+  try {
+    st = statSync(target)
+  } catch {
+    return null
+  }
+  const metaRoot = join(base, 'menu', 'metadata')
+  const boxartRoot = join(base, 'menu', 'boxart')
+  const name = baseNameOf(target)
+  if (st.isDirectory()) {
+    return { name, isDir: true, size: 0, kind: 'other', title: null, gameCode: null, region: null, boxart: null, description: null }
+  }
+  const info = await inspectFile(metaRoot, boxartRoot, target)
+  return { name, isDir: false, size: st.size, ...info }
 }
 
 /**

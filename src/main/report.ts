@@ -41,6 +41,7 @@ export interface ReportCounts {
   archivesExtracted: number
   emulatorsInstalled: number
   ddiplInstalled: number
+  normalized: number
   menuTag: string
   metadataTag: string
 }
@@ -70,7 +71,8 @@ const REPORT_STATS: Array<{ key: string; countKey: keyof ReportCounts }> = [
   { key: 'report.savesCreated', countKey: 'savesCreated' },
   { key: 'report.archivesExtracted', countKey: 'archivesExtracted' },
   { key: 'report.emulatorsInstalled', countKey: 'emulatorsInstalled' },
-  { key: 'report.ddiplInstalled', countKey: 'ddiplInstalled' }
+  { key: 'report.ddiplInstalled', countKey: 'ddiplInstalled' },
+  { key: 'report.normalized', countKey: 'normalized' }
 ]
 
 // Escapes the five characters that are significant inside HTML text so any

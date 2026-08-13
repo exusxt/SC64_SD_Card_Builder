@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, sep } from 'node:path'
 import { describe, expect, it, afterEach } from 'vitest'
-import { listPreviewDir, loadPreviewBoxart, isInside } from '../src/main/preview'
+import { listPreviewDir, loadPreviewBoxart, isInside, previewEntry } from '../src/main/preview'
 
 let roots: string[] = []
 
@@ -184,6 +184,41 @@ describe('listPreviewDir', () => {
   it('returns null for a missing root', async () => {
     const entries = await listPreviewDir(join(tmpdir(), 'does-not-exist-sc64'), '')
     expect(entries).toBeNull()
+  })
+})
+
+describe('previewEntry', () => {
+  it('resolves a favorite key back to its entry with header info', async () => {
+    const root = makeRoot()
+    const games = join(root, 'Games')
+    mkdirSync(games, { recursive: true })
+    writeFileSync(join(games, 'Mario.z64'), makeHeader('SUPER MARIO 64', 'NGEE', 'E'))
+
+    const entry = await previewEntry(root, 'Games/Mario.z64')
+    expect(entry).not.toBeNull()
+    expect(entry!.name).toBe('Mario.z64')
+    expect(entry!.isDir).toBe(false)
+    expect(entry!.kind).toBe('n64')
+    expect(entry!.title).toBe('SUPER MARIO 64')
+    expect(entry!.region).toBe('USA')
+    expect(entry!.size).toBe(0x100)
+  })
+
+  it('returns null for a missing file', async () => {
+    const root = makeRoot()
+    const entry = await previewEntry(root, 'Games/Missing.z64')
+    expect(entry).toBeNull()
+  })
+
+  it('returns null for paths that escape the card root', async () => {
+    const root = makeRoot()
+    const entry = await previewEntry(root, '../../secret')
+    expect(entry).toBeNull()
+  })
+
+  it('returns null for a missing root', async () => {
+    const entry = await previewEntry(join(tmpdir(), 'does-not-exist-sc64'), 'Games/Mario.z64')
+    expect(entry).toBeNull()
   })
 })
 

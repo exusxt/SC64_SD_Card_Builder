@@ -138,14 +138,19 @@ export interface AppSettings {
   copyAllTypes: boolean // when false, only the types enabled in romTypes are copied
   romTypes: Record<'n64' | 'nes' | 'snes' | 'gb' | 'sms' | 'chf' | 'ndd', boolean> // per-system ROM type toggle; ndd = 64DD disk images
   createSaves: boolean
+  writeMenuConfig: boolean // pre-create menu/config.ini for N64FlashcartMenu when it is missing
   includeSubdirs: boolean
   overwrite: boolean // overwrite existing files on the card instead of skipping them
   organizeRoms: boolean // split ROMs into per-console folders instead of the stock layout
   stockFolders: boolean // use the folder names N64FlashcartMenu expects (menu/, roms/, saves/, cheats/)
   copyCheats: boolean
+  normalizeN64: boolean // convert byte-swapped N64 dumps (.v64/.n64) to big-endian .z64 while copying
   stage: boolean // prepare into a staging folder first, then copy to the card on request
   verify: boolean // byte-for-byte verification after writing
   preparedSource: string | null // staging folder from a prior staged run (used with mode = 'fromPrepared')
+  savesBackupDir: string | null // folder saves/ trees are backed up to and restored from
+  previewFavorites: string[] // preview favorites, each keyed as `${root}\u0000${relPath}`
+  previewHistory: string[] // preview open-history, most recent first, capped at PREVIEW_HISTORY_MAX
   formatOptions: {
     fullFormat: boolean // full vs. quick format
     filesystem: Filesystem
@@ -170,6 +175,7 @@ export interface PrepareOptions {
   createFolders: boolean
   downloadEmulators: boolean
   emulators: Record<EmulatorKey, boolean>
+  writeMenuConfig?: boolean // pre-create menu/config.ini for N64FlashcartMenu when it is missing
   installDDIPL: boolean
   ddiplSource?: string | null // folder containing the 64DD IPL dump
   copyRoms: boolean
@@ -182,7 +188,44 @@ export interface PrepareOptions {
   organizeRoms: boolean
   stockFolders: boolean
   copyCheats: boolean
+  normalizeN64?: boolean // when true, byte-swapped N64 dumps are converted to big-endian .z64 on copy
   verify: boolean
+}
+
+/**
+ * Result of a saves backup/restore operation, surfaced in the destination step
+ * UI and the activity log. `message` is already localized for the run's locale.
+ */
+export interface SavesResult {
+  ok: boolean
+  message: string
+  files: number
+  folders: number
+  bytes: number
+}
+
+/** How a saves backup/restore run is routed: out of the card, or back onto it. */
+export type SavesOperation = 'backup' | 'restore'
+
+/**
+ * The preview remembers favorite files and recently opened games across
+ * sessions (see previewFavorites/previewHistory). Each entry is a stable key
+ * scoped to its card root so a favorite can never resolve on a different card.
+ */
+export const PREVIEW_KEY_SEP = '\u0000'
+/** History is capped so the persisted settings object stays small. */
+export const PREVIEW_HISTORY_MAX = 100
+
+/** Builds the persisted key for a preview entry inside `root`. */
+export function previewKey(root: string, rel: string): string {
+  return `${root}${PREVIEW_KEY_SEP}${rel}`
+}
+
+/** Splits a persisted preview key back into its root and relative path. */
+export function parsePreviewKey(key: string): { root: string; rel: string } {
+  const idx = key.indexOf(PREVIEW_KEY_SEP)
+  if (idx === -1) return { root: key, rel: '' }
+  return { root: key.slice(0, idx), rel: key.slice(idx + PREVIEW_KEY_SEP.length) }
 }
 
 /**
@@ -237,6 +280,7 @@ export type AppEvent =
       version?: string
       percent?: number
       message?: string
+      notes?: string // release notes body, shown as expandable "What's new" in the update toast
     }
 
 /**
