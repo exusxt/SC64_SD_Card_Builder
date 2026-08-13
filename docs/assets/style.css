@@ -267,7 +267,7 @@ kbd,
   max-width: 640px;
   margin: 0 auto 34px;
   font-size: 18px;
-  color: var(--sc64-muted);
+  color: var(--sc64-text);
 }
 .hero-actions {
   display: flex;
@@ -380,7 +380,7 @@ section {
 }
 .section-head p {
   margin: 0;
-  color: var(--sc64-muted);
+  color: var(--sc64-text);
 }
 
 /* Feature cards. */
