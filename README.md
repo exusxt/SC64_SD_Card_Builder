@@ -3,8 +3,12 @@
 [![CI](https://github.com/exusxt/SC64_SD_Card_Builder/actions/workflows/ci.yml/badge.svg)](https://github.com/exusxt/SC64_SD_Card_Builder/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Releases](https://img.shields.io/github/v/release/exusxt/SC64_SD_Card_Builder)](https://github.com/exusxt/SC64_SD_Card_Builder/releases)
+[![Website](https://img.shields.io/badge/website-online-38bdf8)](https://exusxt.github.io/SC64_SD_Card_Builder)
+[![Wiki](https://img.shields.io/badge/wiki-docs-a78bfa)](https://github.com/exusxt/SC64_SD_Card_Builder/wiki)
 
 Prepare an SD card for the [SummerCart64](https://github.com/Polprzewodnikowy/SummerCart64) running [N64FlashcartMenu](https://github.com/Polprzewodnikowy/N64FlashcartMenu). Cross-platform Electron app for Windows, macOS and Linux, with 18 languages and 14 themes.
+
+See the **[project website](https://exusxt.github.io/SC64_SD_Card_Builder)** for a tour of the app, and the **[wiki](https://github.com/exusxt/SC64_SD_Card_Builder/wiki)** for full documentation.
 
 ## Screenshots
 
